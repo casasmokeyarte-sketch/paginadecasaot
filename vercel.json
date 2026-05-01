@@ -1,4 +1,6 @@
 {
+  "buildCommand": "node tools/generate-llms.js || true && npx vite build",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/(.*)",
