@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Instalar dependencias",
+			"type": "shell",
+			"command": "npm install",
+			"group": "build"
+		},
+		{
+			"label": "Iniciar servidor de desarrollo",
+			"type": "shell",
+			"command": "npm run dev",
+			"group": "build"
+		}
+	]
+}
