@@ -193,6 +193,22 @@ export const AuthProvider = ({ children }) => {
     return { data, error };
   }, [toast]);
 
+  const deleteAccount = useCallback(async () => {
+    const { error } = await supabase.rpc('delete_user');
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error al eliminar cuenta",
+        description: error.message || "No se pudo eliminar la cuenta. Intenta de nuevo.",
+      });
+      return { error };
+    }
+
+    await supabase.auth.signOut();
+    return { error: null };
+  }, [toast]);
+
   const role = profile?.role ?? null;
   const isAdmin = ADMIN_ROLES.has(normalizeRole(role));
 
@@ -216,8 +232,9 @@ export const AuthProvider = ({ children }) => {
     signOut,
     requestPasswordReset,
     updatePassword,
+    deleteAccount,
     refreshProfile: () => fetchProfile(user?.id),
-  }), [user, session, profile, profileError, role, isAdmin, loading, signUp, signIn, signOut, requestPasswordReset, updatePassword, fetchProfile]);
+  }), [user, session, profile, profileError, role, isAdmin, loading, signUp, signIn, signOut, requestPasswordReset, updatePassword, deleteAccount, fetchProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

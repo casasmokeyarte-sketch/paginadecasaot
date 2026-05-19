@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUserPanel } from '@/hooks/useUserPanel';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, User, Phone, MapPin, Mail, FileText, Calendar, ShoppingBag, Download, ExternalLink, Clock } from 'lucide-react';
+import { Save, User, Phone, MapPin, Mail, FileText, Calendar, ShoppingBag, Download, ExternalLink, Clock, Trash2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 const UserProfile = () => {
@@ -17,8 +18,12 @@ const UserProfile = () => {
     loadingBookings 
   } = useUserPanel();
   
-  const { user } = useAuth();
+  const { user, deleteAccount } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [showDeleteZone, setShowDeleteZone] = useState(false);
   
   const [formData, setFormData] = useState({
     full_name: '',
@@ -48,6 +53,16 @@ const UserProfile = () => {
       duration: 3000,
     });
     // Here you would typically trigger a real PDF download
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'ELIMINAR') return;
+    setIsDeletingAccount(true);
+    const { error } = await deleteAccount();
+    setIsDeletingAccount(false);
+    if (!error) {
+      navigate('/', { replace: true });
+    }
   };
 
   if (loadingProfile) return <div className="text-[#a7a8c7]">Cargando perfil...</div>;
@@ -259,6 +274,46 @@ const UserProfile = () => {
 
         </TabsContent>
       </Tabs>
+
+      {/* --- DANGER ZONE --- */}
+      <div className="mt-10">
+        <button
+          onClick={() => setShowDeleteZone((v) => !v)}
+          className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 transition-colors"
+        >
+          <AlertTriangle size={16} />
+          {showDeleteZone ? 'Ocultar zona de peligro' : 'Zona de peligro'}
+        </button>
+
+        {showDeleteZone && (
+          <div className="mt-4 bg-red-950/30 border border-red-500/30 rounded-2xl p-6">
+            <h3 className="text-lg font-bold text-red-400 flex items-center gap-2 mb-2">
+              <Trash2 size={20} /> Eliminar mi cuenta
+            </h3>
+            <p className="text-sm text-[#a7a8c7] mb-4">
+              Esta acción es <strong className="text-white">permanente e irreversible</strong>. Se eliminarán tu cuenta, perfil y todos tus datos personales.
+              Escribe <span className="font-mono font-bold text-red-400">ELIMINAR</span> para confirmar.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="Escribe ELIMINAR"
+                className="flex-1 bg-[#050510] border border-red-500/40 rounded-xl py-2 px-4 text-white placeholder-[#a7a8c7] focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none"
+              />
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== 'ELIMINAR' || isDeletingAccount}
+                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <Trash2 size={16} />
+                {isDeletingAccount ? 'Eliminando...' : 'Eliminar cuenta'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
