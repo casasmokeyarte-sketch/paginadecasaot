@@ -1,6 +1,7 @@
 {
-  "buildCommand": "node tools/generate-llms.js || true && node node_modules/vite/bin/vite.js build",
+  "buildCommand": "node tools/generate-llms.js || true && ./node_modules/.bin/vite build",
   "outputDirectory": "dist",
+  "framework": null,
   "rewrites": [
     {
       "source": "/(.*)",

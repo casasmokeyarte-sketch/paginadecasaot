@@ -3,13 +3,28 @@
   "type": "module",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "vite --host :: --port 3000",
     "build": "node tools/generate-llms.js || true && npx vite build",
     "preview": "vite preview --host :: --port 3000",
-    "lint": "eslint . --quiet"
+    "lint": "eslint . --quiet",
+    "mobile:sync": "npm run build && npx cap sync",
+    "mobile:copy": "npm run build && npx cap copy",
+    "android:open": "npx cap open android",
+    "android:bundle": "npm run mobile:sync && cd android && gradlew bundleRelease",
+    "android:apk:release": "npm run mobile:sync && cd android && gradlew assembleRelease",
+    "android:run": "npm run mobile:sync && npx cap run android",
+    "ios:open": "npx cap open ios",
+    "ios:run": "npm run mobile:sync && npx cap run ios"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/ios": "^7.4.3",
+    "@emailjs/browser": "^4.4.1",
     "@emotion/is-prop-valid": "^1.3.1",
     "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-dialog": "^1.1.4",
@@ -31,6 +46,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
