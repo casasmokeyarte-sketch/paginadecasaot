@@ -1,5 +1,5 @@
 {
-  "buildCommand": "node tools/generate-llms.js || true && ./node_modules/.bin/vite build",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": null,
   "rewrites": [
