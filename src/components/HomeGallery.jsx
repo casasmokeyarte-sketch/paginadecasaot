@@ -134,5 +134,3 @@ const HomeGallery = () => {
 };
 
 export default HomeGallery;
-
-export default HomeGallery;
