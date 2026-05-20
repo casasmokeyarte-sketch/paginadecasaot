@@ -1,0 +1,6 @@
+# Copia este archivo como key.properties y completa tus datos reales.
+# Ejemplo de ruta en Windows con / o con \\ escapada.
+storeFile=C:/Users/TU_USUARIO/keys/casa-smoke-upload-key.jks
+storePassword=CAMBIA_ESTA_PASSWORD
+keyAlias=upload
+keyPassword=CAMBIA_ESTA_PASSWORD

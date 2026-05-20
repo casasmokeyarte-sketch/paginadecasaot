@@ -100,8 +100,8 @@ const About = () => {
                
                <div className="relative h-full w-full rounded-2xl overflow-hidden bg-[#050510] border border-white/10 shadow-2xl">
                  <img
-                   src="https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/whatsapp-image-2025-12-15-at-12.52.46-am-5mY0I.jpeg"
-                   alt="Tattoo artists working in the studio"
+                   src="/nosotros.jpeg"
+                   alt="Productos y accesorios de Casa Smoke y Arte"
                    className="w-full h-full object-cover"
                  />
                  {/* Dark Overlay for better text visibility (optional, currently minimal) */}

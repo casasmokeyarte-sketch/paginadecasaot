@@ -1,56 +1,65 @@
 export const galleryImages = [
   {
     id: "dulce-farma",
-    src: "https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/70d3163337a54e0a753cc2c953d1e993.png",
+    src: null,
+    gradient: "from-pink-600 via-pink-800 to-purple-900",
+    icon: "💊",
     alt: "Dulce Farma - Farmacia",
     category: "brand",
     link: "/store"
   },
   {
     id: "smoke-sex-ot",
-    src: "https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/dfd6112bc5f0c9bddc46ee724ae585c7.png",
+    src: "/zona-smokesex.png",
+    gradient: "from-purple-600 via-fuchsia-800 to-pink-900",
+    icon: "🌸",
     alt: "Smoke Sex OT - Sex Shop",
     category: "brand",
     link: "/store"
   },
   {
-    id: "zona-smok",
-    src: "https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/9d115bb362571d612f8838da0d1f0976.png",
-    alt: "Zona Smok - Accesorios",
+    id: "zona-vip",
+    src: "/zona-vip.png",
+    gradient: "from-yellow-700 via-amber-800 to-orange-900",
+    icon: "⭐",
+    alt: "Zona VIP",
     category: "brand",
-    link: "/store"
+    link: "/store",
+    proximamente: true
   },
   {
     id: "tattoo-studio",
-    src: "https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/0c24e309f344717c364a115c244f539a.png",
+    src: null,
+    gradient: "from-gray-700 via-slate-800 to-black",
+    icon: "🖋️",
     alt: "Tattoo Studio - Citas",
     category: "brand",
-    link: "/booking"
+    link: "/booking",
+    renovacion: true
   },
   {
     id: "sazon-relleno",
-    src: "https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/1f2f2e701a8d28cee5f33011217e2431.png",
+    src: "/zona-sazon.png",
+    gradient: "from-orange-600 via-red-700 to-rose-900",
+    icon: "🍽️",
     alt: "Sazon Relleno - Comidas",
     category: "brand",
     link: "/store"
   },
   {
-    id: "zona-art",
-    src: "https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/d806ef702b2db3639582dda83b6f2b48.png",
-    alt: "Zona de Art - Galería",
-    category: "brand",
-    link: "/photos"
-  },
-  {
     id: "sabias-que",
-    src: "https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/53f5a3ec02f4e16526ec143c20a9d58d.png",
+    src: "/zona-sabiasque.png",
+    gradient: "from-emerald-600 via-green-800 to-teal-900",
+    icon: "💡",
     alt: "Sabías Que - Curiosidades",
     category: "education",
     link: "/did-you-know"
   },
   {
     id: "ot-te-escucha",
-    src: "https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/0ef7ed36c6b1c49cb01156be6ed6a697.png",
+    src: "/zona-podcast.png",
+    gradient: "from-blue-600 via-indigo-700 to-purple-900",
+    icon: "🎙️",
     alt: "OT Te EscuchA - Podcast",
     category: "podcast",
     link: "/podcast"

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
+import { productsData } from '@/data/products';
+import { galleryImages } from '@/data/galleryImages';
 
 export const useSupabaseData = () => {
   const { toast } = useToast();
@@ -21,10 +23,13 @@ export const useSupabaseData = () => {
       setLoadingProducts(true);
       const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
       if (error) throw error;
-      setProducts(data || []);
-      setStats((prev) => ({ ...prev, productsCount: data?.length || 0 }));
+      const resolvedProducts = data?.length ? data : productsData;
+      setProducts(resolvedProducts);
+      setStats((prev) => ({ ...prev, productsCount: resolvedProducts.length }));
     } catch (error) {
       console.error('Error fetching products:', error);
+      setProducts(productsData);
+      setStats((prev) => ({ ...prev, productsCount: productsData.length }));
     } finally {
       setLoadingProducts(false);
     }
@@ -35,10 +40,13 @@ export const useSupabaseData = () => {
       setLoadingGallery(true);
       const { data, error } = await supabase.from('gallery_images').select('*').order('created_at', { ascending: false });
       if (error) throw error;
-      setGallery(data || []);
-      setStats((prev) => ({ ...prev, galleryCount: data?.length || 0 }));
+      const resolvedGallery = data?.length ? data : galleryImages;
+      setGallery(resolvedGallery);
+      setStats((prev) => ({ ...prev, galleryCount: resolvedGallery.length }));
     } catch (error) {
       console.error('Error fetching gallery:', error);
+      setGallery(galleryImages);
+      setStats((prev) => ({ ...prev, galleryCount: galleryImages.length }));
     } finally {
       setLoadingGallery(false);
     }

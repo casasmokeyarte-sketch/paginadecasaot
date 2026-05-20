@@ -6,6 +6,8 @@ import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/components/ui/use-toast';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 
+const FALLBACK_PRODUCT_IMAGE = 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&q=80&w=1200';
+
 const ProductCard = ({ product, index }) => {
   const { addToCart } = useCart();
   const { toast } = useToast();
@@ -65,6 +67,10 @@ const ProductCard = ({ product, index }) => {
           <img
             src={product.image}
             alt={product.name}
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
+            }}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#050510] to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-300" />

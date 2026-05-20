@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart as ShoppingCartIcon, X, Trash2, Plus, Minus } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
-import { initializeCheckout } from '@/api/EcommerceApi';
 import { useToast } from '@/components/ui/use-toast';
 
 const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
@@ -22,21 +21,30 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
 
     try {
       const items = cartItems.map(item => ({
-        variant_id: item.variant.id,
+        title: item.product.title + (item.variant.title ? ` - ${item.variant.title}` : ''),
         quantity: item.quantity,
+        unit_price: Math.round((item.variant.sale_price_in_cents ?? item.variant.price_in_cents) / 100),
       }));
 
       const successUrl = `${window.location.origin}/success`;
       const cancelUrl = window.location.href;
 
-      const { url } = await initializeCheckout({ items, successUrl, cancelUrl });
+      const res = await fetch('/api/create-preference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items, successUrl, cancelUrl }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Error al crear el pago');
 
       clearCart();
-      window.location.href = url;
+      window.location.href = data.url;
     } catch (error) {
       toast({
         title: 'Error de pago',
-        description: 'Hubo un problema al iniciar el pago. Inténtalo de nuevo.',
+        description: error.message || 'Hubo un problema al iniciar el pago. Inténtalo de nuevo.',
         variant: 'destructive',
       });
     }

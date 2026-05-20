@@ -23,7 +23,22 @@ const AgeVerificationModal = () => {
     setIsBlocked(true);
     // Optional: Redirect after a delay or just show blocked state
     setTimeout(() => {
-        window.location.href = 'https://www.google.com';
+      const deniedRedirectUrl = 'https://www.google.com';
+
+      if (window.self !== window.top) {
+        try {
+          window.parent.postMessage({
+            type: 'horizons-navigation-error',
+            url: deniedRedirectUrl,
+            source: 'age-verification-deny'
+          }, '*');
+        } catch {}
+
+        window.open(deniedRedirectUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      window.location.href = deniedRedirectUrl;
     }, 2000);
   };
 

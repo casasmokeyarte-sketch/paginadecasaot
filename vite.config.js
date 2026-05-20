@@ -149,27 +149,75 @@ window.fetch = function(...args) {
 `;
 
 const configNavigationHandler = `
-if (window.navigation && window.self !== window.top) {
-	window.navigation.addEventListener('navigate', (event) => {
-		const url = event.destination.url;
-
-		try {
-			const destinationUrl = new URL(url);
-			const destinationOrigin = destinationUrl.origin;
-			const currentOrigin = window.location.origin;
-
-			if (destinationOrigin === currentOrigin) {
-				return;
-			}
-		} catch (error) {
-			return;
-		}
-
+if (window.self !== window.top) {
+	const notifyNavigationError = (url, source) => {
 		window.parent.postMessage({
 			type: 'horizons-navigation-error',
 			url,
+			source,
 		}, '*');
-	});
+	};
+
+	const isCrossOriginHttpNavigation = (url) => {
+		try {
+			const destinationUrl = new URL(url, window.location.href);
+
+			if (!['http:', 'https:'].includes(destinationUrl.protocol)) {
+				return false;
+			}
+
+			return destinationUrl.origin !== window.location.origin;
+		} catch {
+			return false;
+		}
+	};
+
+	document.addEventListener('click', (event) => {
+		const link = event.target?.closest?.('a[href]');
+		if (!link) return;
+
+		const href = link.getAttribute('href');
+		if (!href || href.startsWith('#')) return;
+
+		if (link.hasAttribute('download')) return;
+		if (link.target && link.target.toLowerCase() === '_blank') return;
+
+		if (!isCrossOriginHttpNavigation(href)) return;
+
+		event.preventDefault();
+		notifyNavigationError(href, 'anchor-click');
+
+		try {
+			window.open(href, '_blank', 'noopener,noreferrer');
+		} catch {}
+	}, true);
+
+	document.addEventListener('submit', (event) => {
+		const form = event.target;
+		if (!(form instanceof HTMLFormElement)) return;
+
+		const action = form.getAttribute('action') || window.location.href;
+		if (!isCrossOriginHttpNavigation(action)) return;
+
+		event.preventDefault();
+		notifyNavigationError(action, 'form-submit');
+	}, true);
+
+	if (window.navigation) {
+		window.navigation.addEventListener('navigate', (event) => {
+			const url = event.destination.url;
+
+			if (!isCrossOriginHttpNavigation(url)) {
+				return;
+			}
+
+			if (event.cancelable) {
+				event.preventDefault();
+			}
+
+			notifyNavigationError(url, 'navigation-api');
+		});
+	}
 }
 `;
 

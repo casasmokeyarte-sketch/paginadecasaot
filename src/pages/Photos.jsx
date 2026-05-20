@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Helmet } from 'react-helmet';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { galleryImages } from '@/data/galleryImages';
+
+const FALLBACK_PHOTO_IMAGE = 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&q=80&w=1200';
 
 const Photos = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -51,10 +54,11 @@ const Photos = () => {
 
   const categories = ['todos', 'place', 'products', 'tattoo', 'art', 'brand', 'community'];
   const [activeFilter, setActiveFilter] = useState('todos');
+  const baseGallery = gallery?.length ? gallery : galleryImages;
 
-  const filteredImages = gallery ? (activeFilter === 'todos' 
-    ? gallery 
-    : gallery.filter(img => img.category === activeFilter)) : [];
+  const filteredImages = baseGallery ? (activeFilter === 'todos' 
+    ? baseGallery 
+    : baseGallery.filter(img => img.category === activeFilter)) : [];
 
   return (
     <>
@@ -132,6 +136,10 @@ const Photos = () => {
                     <img 
                         src={image.src} 
                         alt={image.alt} 
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = FALLBACK_PHOTO_IMAGE;
+                        }}
                         className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
                     />
@@ -179,6 +187,10 @@ const Photos = () => {
               exit={{ scale: 0.8, opacity: 0 }}
               src={selectedImage.src}
               alt={selectedImage.alt}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = FALLBACK_PHOTO_IMAGE;
+              }}
               className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
               onClick={(e) => e.stopPropagation()} // Prevent closing when clicking image
             />

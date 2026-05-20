@@ -17,7 +17,7 @@ SET search_path = public
 AS $$
 BEGIN
   -- Elimina el perfil y datos relacionados en cascada (si tienes FK con ON DELETE CASCADE)
-  DELETE FROM public.profiles WHERE id = auth.uid();
+  DELETE FROM public.profiles WHERE user_id = auth.uid();
 
   -- Elimina el usuario de auth.users
   DELETE FROM auth.users WHERE id = auth.uid();

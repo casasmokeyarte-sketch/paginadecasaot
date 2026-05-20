@@ -64,7 +64,7 @@ const Header = () => {
             >
               <Link to="/">
                 <img 
-                  src="https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/5042524decaeef7dde8cc84509a7f9d8.png" 
+                  src="/logo.png" 
                   alt="Casa Smoke y Arte Logo" 
                   className="h-10 w-auto md:h-12"
                 />

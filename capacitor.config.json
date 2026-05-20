@@ -1,0 +1,6 @@
+{
+  "appId": "com.casasmokeyarte.app",
+  "appName": "Casa Smoke y Arte",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

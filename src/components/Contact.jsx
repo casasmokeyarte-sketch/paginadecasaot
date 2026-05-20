@@ -4,6 +4,7 @@ import { Mail, Phone, MapPin, Facebook, Send, Instagram as Whatsapp } from 'luci
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Helmet } from 'react-helmet';
+import emailjs from '@emailjs/browser';
 
 // Custom TikTok Icon Component since it's not in this version of Lucide
 const TikTokIcon = ({
@@ -14,6 +15,7 @@ const TikTokIcon = ({
   </svg>;
 const Contact = () => {
   const ref = useRef(null);
+  const formRef = useRef(null);
   const isInView = useInView(ref, {
     once: true,
     margin: "-100px"
@@ -27,26 +29,32 @@ const Contact = () => {
     phone: '',
     message: ''
   });
-  const handleSubmit = e => {
-    e.preventDefault();
+  const [sending, setSending] = useState(false);
 
-    // Store in localStorage for demonstration
-    const submissions = JSON.parse(localStorage.getItem('contactSubmissions') || '[]');
-    submissions.push({
-      ...formData,
-      date: new Date().toISOString()
-    });
-    localStorage.setItem('contactSubmissions', JSON.stringify(submissions));
-    toast({
-      title: "¡Mensaje enviado!",
-      description: "Gracias por contactarnos. Te responderemos pronto."
-    });
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      message: ''
-    });
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setSending(true);
+    try {
+      await emailjs.sendForm(
+        'YOUR_SERVICE_ID',
+        'YOUR_TEMPLATE_ID',
+        formRef.current,
+        'YOUR_PUBLIC_KEY'
+      );
+      toast({
+        title: "¡Mensaje enviado!",
+        description: "Gracias por contactarnos. Te responderemos pronto."
+      });
+      setFormData({ name: '', email: '', phone: '', message: '' });
+    } catch {
+      toast({
+        title: "Error al enviar",
+        description: "No se pudo enviar el mensaje. Inténtalo de nuevo.",
+        variant: "destructive"
+      });
+    } finally {
+      setSending(false);
+    }
   };
   const handleChange = e => {
     setFormData({
@@ -194,7 +202,7 @@ const Contact = () => {
           } : {}} transition={{
             duration: 0.8
           }}>
-              <form onSubmit={handleSubmit} className="bg-[#111322] p-8 rounded-2xl shadow-lg border border-white/5 h-full">
+              <form ref={formRef} onSubmit={handleSubmit} className="bg-[#111322] p-8 rounded-2xl shadow-lg border border-white/5 h-full">
                 <h3 className="text-2xl font-bold text-[#f5f5f5] mb-6">Envíanos un Mensaje</h3>
                 
                 <div className="space-y-6">
@@ -226,8 +234,8 @@ const Contact = () => {
                     <textarea id="message" name="message" value={formData.message} onChange={handleChange} required rows="5" className="w-full px-4 py-3 bg-[#15162a] border border-white/10 text-[#f5f5f5] rounded-lg focus:ring-2 focus:ring-[#ff2df0] focus:border-transparent transition-all resize-none placeholder-[#a7a8c7]/50" placeholder="Cuéntanos sobre tu idea de tatuaje..."></textarea>
                   </div>
 
-                  <Button type="submit" className="w-full bg-gradient-to-r from-[#ff2df0] to-[#d91cb8] hover:from-[#d91cb8] hover:to-[#b31797] text-white py-6 rounded-lg font-semibold text-lg flex items-center justify-center space-x-2 group border-none shadow-[0_0_15px_rgba(255,45,240,0.4)]">
-                    <span>Enviar Mensaje</span>
+                  <Button type="submit" disabled={sending} className="w-full bg-gradient-to-r from-[#ff2df0] to-[#d91cb8] hover:from-[#d91cb8] hover:to-[#b31797] text-white py-6 rounded-lg font-semibold text-lg flex items-center justify-center space-x-2 group border-none shadow-[0_0_15px_rgba(255,45,240,0.4)] disabled:opacity-60">
+                    <span>{sending ? 'Enviando...' : 'Enviar Mensaje'}</span>
                     <Send className="group-hover:translate-x-1 transition-transform" size={20} />
                   </Button>
                 </div>

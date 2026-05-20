@@ -12,8 +12,8 @@ const Hero = () => {
         <div className="absolute inset-0 z-0">
           <img 
             className="w-full h-full object-cover opacity-30" 
-            alt="Flamingos with 'WE'RE BACK!' sign, celebrating" 
-            src="https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/128b5bc1b1dec03d2ca711e0005acfda.png" 
+            alt="Casa Smoke y Arte fondo" 
+            src="/logo2.png"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-[#050510] via-transparent to-[#050510]"></div>
           <div className="absolute inset-0 bg-gradient-to-r from-[#050510]/90 via-transparent to-[#050510]/90"></div>
@@ -31,7 +31,7 @@ const Hero = () => {
                 initial={{ scale: 0.8, opacity: 0 }} 
                 animate={{ scale: 1, opacity: 1 }} 
                 transition={{ duration: 0.8, delay: 0.2 }} 
-                src="https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/5042524decaeef7dde8cc84509a7f9d8.png" 
+                src="/logo.png" 
                 alt="Casa Smoke y Arte SSOT Logo" 
                 className="w-48 md:w-64 h-auto drop-shadow-[0_0_15px_rgba(255,45,240,0.3)] mb-4 mx-auto" 
               />
