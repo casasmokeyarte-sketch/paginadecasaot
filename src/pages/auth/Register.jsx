@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, Mail, User, Phone, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Lock, Mail, User, Phone, ArrowRight, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -10,11 +10,14 @@ const Register = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     fullName: '',
     phone: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const { signUp } = useAuth();
   const { toast } = useToast();
 
@@ -24,6 +27,16 @@ const Register = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: 'Las contraseñas no coinciden',
+        description: 'Verifica que ambas contraseñas sean iguales.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     const signUpOptions = {
@@ -157,16 +170,51 @@ const Register = () => {
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#a7a8c7]" size={20} />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
                 required
                 minLength={6}
-                className="w-full rounded-xl border border-white/10 bg-[#050510] py-3 pl-12 pr-4 text-white outline-none transition-all focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0]"
+                className="w-full rounded-xl border border-white/10 bg-[#050510] py-3 pl-12 pr-12 text-white outline-none transition-all focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0]"
                 placeholder="Minimo 6 caracteres"
               />
+              <button type="button" onClick={() => setShowPassword(p => !p)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#a7a8c7] hover:text-white">
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="ml-1 text-sm font-medium text-[#a7a8c7]">Confirmar Contrasena</label>
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#a7a8c7]" size={20} />
+              <input
+                type={showConfirm ? 'text' : 'password'}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                minLength={6}
+                className={`w-full rounded-xl border py-3 pl-12 pr-12 text-white outline-none transition-all focus:ring-1 bg-[#050510] ${
+                  formData.confirmPassword && formData.password !== formData.confirmPassword
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                    : formData.confirmPassword && formData.password === formData.confirmPassword
+                    ? 'border-green-500 focus:border-green-500 focus:ring-green-500'
+                    : 'border-white/10 focus:border-[#ff2df0] focus:ring-[#ff2df0]'
+                }`}
+                placeholder="Repite tu contraseña"
+              />
+              <button type="button" onClick={() => setShowConfirm(p => !p)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#a7a8c7] hover:text-white">
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+              <p className="text-xs text-red-400 ml-1">Las contraseñas no coinciden</p>
+            )}
+            {formData.confirmPassword && formData.password === formData.confirmPassword && (
+              <p className="text-xs text-green-400 ml-1">✓ Las contraseñas coinciden</p>
+            )}
           </div>
 
           <Button

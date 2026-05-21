@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Search, SlidersHorizontal, X } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/components/ui/use-toast';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
@@ -101,8 +101,19 @@ const ProductCard = ({ product, index }) => {
   );
 };
 
+const PRICE_RANGES = [
+  { label: 'Todos los precios', min: 0, max: Infinity },
+  { label: 'Hasta $20.000',     min: 0, max: 20000 },
+  { label: '$20.000 – $50.000', min: 20000, max: 50000 },
+  { label: '$50.000 – $100.000',min: 50000, max: 100000 },
+  { label: 'Más de $100.000',   min: 100000, max: Infinity },
+];
+
 const ProductsList = () => {
   const [activeCategory, setActiveCategory] = useState('Todos');
+  const [searchTerm, setSearchTerm]         = useState('');
+  const [priceRange, setPriceRange]         = useState(0);   // index into PRICE_RANGES
+  const [showFilters, setShowFilters]       = useState(false);
   const { products, loadingProducts, fetchProducts } = useSupabaseData();
 
   useEffect(() => {
@@ -116,9 +127,25 @@ const ProductsList = () => {
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
-    if (activeCategory === 'Todos') return products;
-    return products.filter(p => p.category === activeCategory);
-  }, [activeCategory, products]);
+    const range = PRICE_RANGES[priceRange];
+    return products.filter(p => {
+      const matchCat   = activeCategory === 'Todos' || p.category === activeCategory;
+      const matchPrice = p.price >= range.min && p.price <= range.max;
+      const matchText  = !searchTerm ||
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.category.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchCat && matchPrice && matchText;
+    });
+  }, [activeCategory, priceRange, searchTerm, products]);
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setPriceRange(0);
+    setActiveCategory('Todos');
+  };
+
+  const hasActiveFilters = searchTerm || priceRange !== 0 || activeCategory !== 'Todos';
 
   if (loadingProducts) {
     return <div className="text-center py-20 text-[#a7a8c7]">Cargando catálogo...</div>;
@@ -126,8 +153,74 @@ const ProductsList = () => {
 
   return (
     <div>
-      {/* Category Filter */}
-      <div className="flex flex-wrap justify-center gap-3 mb-12">
+      {/* ── Barra de búsqueda + botón filtros ── */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#a7a8c7]" size={18} />
+          <input
+            type="text"
+            placeholder="Buscar productos..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full bg-[#111322] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder:text-[#a7a8c7]/60 focus:outline-none focus:border-[#ff2df0] transition-colors"
+          />
+          {searchTerm && (
+            <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a7a8c7] hover:text-white">
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        <button
+          onClick={() => setShowFilters(p => !p)}
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl border font-semibold text-sm transition-all ${
+            showFilters || priceRange !== 0
+              ? 'bg-[#ff2df0] border-[#ff2df0] text-white'
+              : 'bg-[#111322] border-white/10 text-[#a7a8c7] hover:text-white hover:border-white/30'
+          }`}
+        >
+          <SlidersHorizontal size={16} /> Filtros
+          {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-white inline-block" />}
+        </button>
+        {hasActiveFilters && (
+          <button onClick={clearFilters} className="flex items-center gap-1 px-4 py-3 rounded-xl text-sm text-[#a7a8c7] hover:text-white border border-white/10 hover:border-white/30 transition-all">
+            <X size={14} /> Limpiar
+          </button>
+        )}
+      </div>
+
+      {/* ── Panel de filtros expandible ── */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden mb-6"
+          >
+            <div className="bg-[#111322] border border-white/10 rounded-2xl p-5">
+              <p className="text-xs font-bold text-[#a7a8c7] uppercase tracking-wider mb-3">Rango de precio</p>
+              <div className="flex flex-wrap gap-2">
+                {PRICE_RANGES.map((r, i) => (
+                  <button
+                    key={r.label}
+                    onClick={() => setPriceRange(i)}
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                      priceRange === i
+                        ? 'bg-[#00e5ff] text-[#050510]'
+                        : 'bg-[#15162a] text-[#a7a8c7] hover:bg-[#1a1c2e] hover:text-white border border-white/5'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Filtros de categoría ── */}
+      <div className="flex flex-wrap justify-center gap-3 mb-10">
         {categories.map(category => (
           <button
             key={category}
@@ -143,6 +236,13 @@ const ProductsList = () => {
         ))}
       </div>
 
+      {/* Resultado */}
+      {filteredProducts.length > 0 && hasActiveFilters && (
+        <p className="text-sm text-[#a7a8c7] mb-4 text-center">
+          {filteredProducts.length} producto{filteredProducts.length !== 1 ? 's' : ''} encontrado{filteredProducts.length !== 1 ? 's' : ''}
+        </p>
+      )}
+
       <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <AnimatePresence>
           {filteredProducts.map((product, index) => (
@@ -153,7 +253,12 @@ const ProductsList = () => {
 
       {filteredProducts.length === 0 && (
         <div className="text-center py-20">
-          <p className="text-gray-400 text-lg">No hay productos disponibles por el momento.</p>
+          <p className="text-gray-400 text-lg">No hay productos que coincidan con tu búsqueda.</p>
+          {hasActiveFilters && (
+            <button onClick={clearFilters} className="mt-4 text-[#ff2df0] hover:underline text-sm">
+              Limpiar filtros
+            </button>
+          )}
         </div>
       )}
     </div>

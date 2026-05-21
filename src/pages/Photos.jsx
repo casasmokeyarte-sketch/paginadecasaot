@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, X, FileImage as ImageIcon, ZoomIn } from 'lucide-react';
+import { X, FileImage as ImageIcon, ZoomIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Helmet } from 'react-helmet';
@@ -12,45 +12,12 @@ const FALLBACK_PHOTO_IMAGE = 'https://images.unsplash.com/photo-1505691938895-17
 const Photos = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const { toast } = useToast();
-  const fileInputRef = React.useRef(null);
   
-  const { gallery, loadingGallery, fetchGallery, addGalleryImage } = useSupabaseData();
+  const { gallery, loadingGallery, fetchGallery } = useSupabaseData();
 
   useEffect(() => {
     fetchGallery();
   }, []);
-
-  const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-         toast({
-          title: "Archivo muy grande",
-          description: "Por favor selecciona una imagen menor a 5MB.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // In a real app we upload to storage bucket, here we just preview or pretend
-      // For this demo, we'll assume the URL is created locally for now as we don't have bucket setup code
-      const imageUrl = URL.createObjectURL(file);
-      
-      try {
-        await addGalleryImage({
-           src: imageUrl, // In production this would be a Supabase Storage URL
-           alt: "Foto de la comunidad",
-           category: "community"
-        });
-        toast({
-            title: "¡Foto subida!",
-            description: "Tu foto se ha agregado a la galería.",
-        });
-      } catch (e) {
-         console.error(e);
-      }
-    }
-  };
 
   const categories = ['todos', 'place', 'products', 'tattoo', 'art', 'brand', 'community'];
   const [activeFilter, setActiveFilter] = useState('todos');
@@ -72,30 +39,13 @@ const Photos = () => {
           
           {/* Header Section */}
           <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-            <div>
+          <div>
               <h1 className="text-4xl md:text-6xl font-bold text-[#f5f5f5] mb-4">
                 Galería <span className="text-[#00e5ff]">Visual</span>
               </h1>
               <p className="text-[#a7a8c7] max-w-xl">
-                Nuestra comunidad en imágenes. Sube tus propias fotos o explora el universo de Casa Smoke y Arte.
+                Explora el universo de Casa Smoke y Arte en imágenes.
               </p>
-            </div>
-
-            <div className="flex gap-4">
-               <input 
-                  type="file" 
-                  ref={fileInputRef}
-                  className="hidden" 
-                  accept="image/*"
-                  onChange={handleFileUpload}
-               />
-               <Button 
-                  onClick={() => fileInputRef.current.click()}
-                  className="bg-[#ff2df0] hover:bg-[#d91cb8] text-white font-bold px-6 py-6 rounded-xl flex items-center gap-2 shadow-[0_0_20px_rgba(255,45,240,0.3)] transition-all hover:scale-105"
-               >
-                  <Upload size={20} />
-                  Subir Foto
-               </Button>
             </div>
           </div>
 
