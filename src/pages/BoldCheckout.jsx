@@ -49,29 +49,40 @@ const BoldCheckout = () => {
   }, []);
 
   const injectBold = ({ orderId, amount, hash, apiKey }) => {
-    // 1. Librería principal de Bold (solo si no existe)
-    if (!document.getElementById('bold-lib-script')) {
-      const lib    = document.createElement('script');
-      lib.id       = 'bold-lib-script';
-      lib.src      = BOLD_LIB;
-      document.head.appendChild(lib);
+    const addButton = () => {
+      const container = document.getElementById('bold-btn-container');
+      if (!container) return;
+      // Limpiar intentos anteriores
+      container.innerHTML = '';
+      const btn = document.createElement('script');
+      btn.setAttribute('data-bold-button',         'dark-L');
+      btn.setAttribute('data-api-key',             apiKey);
+      btn.setAttribute('data-amount',              String(amount));
+      btn.setAttribute('data-currency',            'COP');
+      btn.setAttribute('data-order-id',            orderId);
+      btn.setAttribute('data-integrity-signature', hash);
+      btn.setAttribute('data-description',         'Compra en Casa Smoke y Arte');
+      btn.setAttribute('data-redirection-url',     `${window.location.origin}/pago/resultado`);
+      btn.setAttribute('data-render-mode',         'embedded');
+      container.appendChild(btn);
+    };
+
+    // Si la librería ya está cargada, inyectar directamente
+    if (document.getElementById('bold-lib-script')) {
+      addButton();
+      return;
     }
 
-    // 2. Script del botón con todos los atributos
-    const btn = document.createElement('script');
-    btn.setAttribute('data-bold-button',         '');
-    btn.setAttribute('data-api-key',             apiKey);
-    btn.setAttribute('data-amount',              String(amount));
-    btn.setAttribute('data-currency',            'COP');
-    btn.setAttribute('data-order-id',            orderId);
-    btn.setAttribute('data-integrity-signature', hash);
-    btn.setAttribute('data-description',         'Compra en Casa Smoke y Arte');
-    btn.setAttribute('data-redirection-url',     `${window.location.origin}/pago/resultado`);
-    btn.setAttribute('data-render-mode',         'embedded');
-    btn.setAttribute('data-bold-button',         'dark-L');
-
-    const container = document.getElementById('bold-btn-container');
-    if (container) container.appendChild(btn);
+    // Si no, cargarla primero y esperar onload
+    const lib  = document.createElement('script');
+    lib.id     = 'bold-lib-script';
+    lib.src    = BOLD_LIB;
+    lib.onload = addButton;
+    lib.onerror = () => {
+      setErrorMsg('No se pudo cargar la librería de Bold. Verifica tu conexión.');
+      setStatus('error');
+    };
+    document.head.appendChild(lib);
   };
 
   return (
