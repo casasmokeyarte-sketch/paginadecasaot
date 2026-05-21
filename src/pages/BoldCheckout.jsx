@@ -47,38 +47,31 @@ const BoldCheckout = () => {
     if (status !== 'ready' || !boldData) return;
 
     const { orderId, amount, hash, apiKey } = boldData;
+    const container = document.getElementById('bold-btn-container');
+    if (!container) return;
 
-    const addButton = () => {
-      const container = document.getElementById('bold-btn-container');
-      if (!container) return;
-      container.innerHTML = '';
+    // Limpiar intentos anteriores y librería vieja
+    container.innerHTML = '';
+    document.getElementById('bold-lib-script')?.remove();
 
-      const btn = document.createElement('script');
-      btn.setAttribute('data-bold-button',         'dark-L');
-      btn.setAttribute('data-api-key',             apiKey);
-      btn.setAttribute('data-amount',              String(amount));
-      btn.setAttribute('data-currency',            'COP');
-      btn.setAttribute('data-order-id',            orderId);
-      btn.setAttribute('data-integrity-signature', hash);
-      btn.setAttribute('data-description',         'Compra en Casa Smoke y Arte');
-      btn.setAttribute('data-redirection-url',     `${window.location.origin}/pago/resultado`);
-      btn.setAttribute('data-render-mode',         'embedded');
-      container.appendChild(btn);
+    // Un solo script con src + atributos (método recomendado para React/SPA)
+    const btn = document.createElement('script');
+    btn.id  = 'bold-lib-script';
+    btn.src = BOLD_LIB;
+    btn.setAttribute('data-bold-button',         'dark-L');
+    btn.setAttribute('data-api-key',             apiKey);
+    btn.setAttribute('data-amount',              String(amount));
+    btn.setAttribute('data-currency',            'COP');
+    btn.setAttribute('data-order-id',            orderId);
+    btn.setAttribute('data-integrity-signature', hash);
+    btn.setAttribute('data-description',         'Compra en Casa Smoke y Arte');
+    btn.setAttribute('data-redirection-url',     `${window.location.origin}/pago/resultado`);
+    btn.setAttribute('data-render-mode',         'embedded');
+    btn.onerror = () => {
+      setErrorMsg('No se pudo cargar la librería de Bold.');
+      setStatus('error');
     };
-
-    if (document.getElementById('bold-lib-script')) {
-      addButton();
-    } else {
-      const lib    = document.createElement('script');
-      lib.id       = 'bold-lib-script';
-      lib.src      = BOLD_LIB;
-      lib.onload   = addButton;
-      lib.onerror  = () => {
-        setErrorMsg('No se pudo cargar la librería de Bold.');
-        setStatus('error');
-      };
-      document.head.appendChild(lib);
-    }
+    container.appendChild(btn);
   }, [status, boldData]); // se ejecuta cuando el DOM ya tiene el contenedor
 
   return (
