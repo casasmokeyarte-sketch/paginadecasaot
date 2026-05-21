@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAdminData } from '@/hooks/useAdminData';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 import {
   FileText, Plus, Printer, X, CheckCircle, XCircle,
   DollarSign, Search, Eye, Clock, AlertCircle, Package
@@ -123,6 +124,7 @@ const AdminBilling = () => {
     orders, fetchOrders,
     createInvoice, updateInvoiceStatus,
   } = useAdminData();
+  const { products, fetchProducts } = useSupabaseData();
 
   const [search, setSearch]         = useState('');
   const [statusFilter, setStatus]   = useState('all');
@@ -130,13 +132,13 @@ const AdminBilling = () => {
   const [showNew, setShowNew]        = useState(false);  // new invoice modal
   const [selectedOrder, setSelOrder] = useState('');
   const [manualClient, setManual]    = useState({ name: '', email: '', phone: '', address: '', nit: '' });
-  const [manualItems, setItems]      = useState([{ name: '', quantity: 1, unit_price: 0 }]);
+  const [manualItems, setItems]      = useState([{ product_id: '', name: '', quantity: 1, unit_price: 0 }]);
   const [payMethod, setPayMethod]    = useState('efectivo');
   const [notes, setNotes]            = useState('');
   const [saving, setSaving]          = useState(false);
   const printRef = useRef(null);
 
-  useEffect(() => { fetchInvoices(); fetchOrders(); }, []);
+  useEffect(() => { fetchInvoices(); fetchOrders(); fetchProducts(); }, []);
 
   // Pre-fill from order
   useEffect(() => {
@@ -163,9 +165,15 @@ const AdminBilling = () => {
   const computedTax      = computedSubtotal * IVA_RATE;
   const computedTotal    = computedSubtotal + computedTax;
 
-  const handleAddItem  = () => setItems(p => [...p, { name: '', quantity: 1, unit_price: 0 }]);
+  const handleAddItem  = () => setItems(p => [...p, { product_id: '', name: '', quantity: 1, unit_price: 0 }]);
   const handleRemItem  = (idx) => setItems(p => p.filter((_, i) => i !== idx));
   const handleItemChg  = (idx, field, val) => setItems(p => p.map((it, i) => i === idx ? { ...it, [field]: val } : it));
+
+  const handleItemProductSelect = (idx, productId) => {
+    const prod = products.find(p => p.id === productId);
+    if (!prod) return;
+    setItems(p => p.map((it, i) => i === idx ? { ...it, product_id: prod.id, name: prod.name, unit_price: prod.price } : it));
+  };
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -180,6 +188,7 @@ const AdminBilling = () => {
         client_address: manualClient.address,
         client_nit: manualClient.nit,
         items: manualItems.map(i => ({
+          product_id: i.product_id || null,
           name: i.name,
           quantity: Number(i.quantity),
           unit_price: Number(i.unit_price),
@@ -196,7 +205,7 @@ const AdminBilling = () => {
       });
       setShowNew(false);
       setSelOrder(''); setManual({ name:'',email:'',phone:'',address:'',nit:'' });
-      setItems([{ name:'', quantity:1, unit_price:0 }]); setNotes(''); setPayMethod('efectivo');
+      setItems([{ product_id:'', name:'', quantity:1, unit_price:0 }]); setNotes(''); setPayMethod('efectivo');
     } finally { setSaving(false); }
   };
 
@@ -405,22 +414,41 @@ const AdminBilling = () => {
                     <p className="text-xs font-bold text-[#a7a8c7] uppercase tracking-wider">Productos / Servicios</p>
                     <button type="button" onClick={handleAddItem} className="text-xs text-[#ff2df0] hover:underline flex items-center gap-1"><Plus size={12}/> Agregar</button>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {manualItems.map((item, idx) => (
-                      <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                        <input placeholder="Descripción" value={item.name}
-                          onChange={e => handleItemChg(idx,'name',e.target.value)}
-                          className="col-span-5 px-3 py-2 bg-[#050510] border border-white/10 rounded-lg text-white text-sm placeholder:text-[#a7a8c7]/50 outline-none focus:border-[#ff2df0]"
-                        />
-                        <input type="number" min="1" placeholder="Cant." value={item.quantity}
-                          onChange={e => handleItemChg(idx,'quantity',e.target.value)}
-                          className="col-span-2 px-3 py-2 bg-[#050510] border border-white/10 rounded-lg text-white text-sm outline-none focus:border-[#ff2df0]"
-                        />
-                        <input type="number" min="0" placeholder="Precio" value={item.unit_price}
-                          onChange={e => handleItemChg(idx,'unit_price',e.target.value)}
-                          className="col-span-4 px-3 py-2 bg-[#050510] border border-white/10 rounded-lg text-white text-sm outline-none focus:border-[#ff2df0]"
-                        />
-                        <button type="button" onClick={() => handleRemItem(idx)} className="col-span-1 text-red-400 hover:text-red-300"><X size={16}/></button>
+                      <div key={idx} className="space-y-1.5 p-3 bg-[#050510] rounded-xl border border-white/5">
+                        {/* Selector de producto (opcional) */}
+                        <select
+                          value={item.product_id || ''}
+                          onChange={e => e.target.value ? handleItemProductSelect(idx, e.target.value) : handleItemChg(idx,'product_id','')}
+                          className="w-full px-3 py-2 bg-[#111322] border border-white/10 rounded-lg text-white text-xs outline-none focus:border-[#ff2df0]"
+                        >
+                          <option value="">— Ingreso manual o selecciona producto —</option>
+                          {products.map(p => (
+                            <option key={p.id} value={p.id}>
+                              {p.name} · {COP(p.price)} · Stock: {p.stock ?? 0}
+                            </option>
+                          ))}
+                        </select>
+                        {/* Campos manuales */}
+                        <div className="grid grid-cols-12 gap-2 items-center">
+                          <input placeholder="Descripción" value={item.name}
+                            onChange={e => handleItemChg(idx,'name',e.target.value)}
+                            className="col-span-5 px-3 py-2 bg-[#111322] border border-white/10 rounded-lg text-white text-sm placeholder:text-[#a7a8c7]/50 outline-none focus:border-[#ff2df0]"
+                          />
+                          <input type="number" min="1" placeholder="Cant." value={item.quantity}
+                            onChange={e => handleItemChg(idx,'quantity',e.target.value)}
+                            className="col-span-2 px-3 py-2 bg-[#111322] border border-white/10 rounded-lg text-white text-sm outline-none focus:border-[#ff2df0]"
+                          />
+                          <input type="number" min="0" placeholder="Precio" value={item.unit_price}
+                            onChange={e => handleItemChg(idx,'unit_price',e.target.value)}
+                            className="col-span-4 px-3 py-2 bg-[#111322] border border-white/10 rounded-lg text-white text-sm outline-none focus:border-[#ff2df0]"
+                          />
+                          <button type="button" onClick={() => handleRemItem(idx)} className="col-span-1 text-red-400 hover:text-red-300"><X size={16}/></button>
+                        </div>
+                        {item.product_id && (
+                          <p className="text-xs text-[#ff2df0]/70 pl-1">✓ Stock se descontará al emitir</p>
+                        )}
                       </div>
                     ))}
                   </div>

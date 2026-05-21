@@ -274,6 +274,21 @@ export const useAdminData = () => {
         .select()
         .single();
       if (error) throw error;
+
+      // Descontar stock de productos vinculados
+      const itemsWithProduct = (invoiceData.items || []).filter(i => i.product_id);
+      for (const item of itemsWithProduct) {
+        const { data: prod } = await supabase
+          .from('products')
+          .select('stock')
+          .eq('id', item.product_id)
+          .single();
+        if (prod) {
+          const newStock = Math.max(0, (prod.stock || 0) - Number(item.quantity));
+          await supabase.from('products').update({ stock: newStock }).eq('id', item.product_id);
+        }
+      }
+
       toast({ title: '¡Factura emitida!', description: `Número: ${invoiceNumber}` });
       fetchInvoices();
       return data;

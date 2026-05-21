@@ -21,6 +21,7 @@ import { AuthProvider } from '@/contexts/SupabaseAuthContext';
 
 // Components
 import FloatingChat from '@/components/FloatingChat';
+import FloatingAnnounce from '@/components/FloatingAnnounce';
 
 // Page Imports
 import Policies from '@/pages/Policies';
@@ -150,6 +151,7 @@ function App() {
         </main>
         
         {!isAdminRoute && !isUserRoute && <FloatingChat />}
+        {!isAdminRoute && !isUserRoute && <FloatingAnnounce />}
         {!isAdminRoute && <Footer />}
         <Toaster />
       </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { Plus, Pencil, Trash2, X, Save, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Save, Search, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { uploadFileToBucket } from '@/lib/storageUpload';
 import MediaPicker from '@/components/admin/MediaPicker';
@@ -91,6 +91,11 @@ const AdminProducts = () => {
     }
   };
 
+  const handleStockAdjust = async (product, delta) => {
+    const newStock = Math.max(0, (product.stock ?? 0) + delta);
+    await updateProduct(product.id, { stock: newStock });
+  };
+
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -159,13 +164,27 @@ const AdminProducts = () => {
                       {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(product.price)}
                     </td>
                     <td className="p-4 text-center">
-                      <span className={`px-2 py-1 rounded-lg text-xs font-bold ${
-                        (product.stock ?? 0) === 0 ? 'bg-red-500/20 text-red-400' :
-                        (product.stock ?? 0) < 5  ? 'bg-yellow-500/20 text-yellow-400' :
-                                                    'bg-green-500/20 text-green-400'
-                      }`}>
-                        {product.stock ?? 0}
-                      </span>
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => handleStockAdjust(product, -1)}
+                          className="w-6 h-6 rounded bg-white/5 hover:bg-red-500/20 text-[#a7a8c7] hover:text-red-400 flex items-center justify-center transition-colors"
+                        >
+                          <Minus size={11} />
+                        </button>
+                        <span className={`px-2 py-0.5 rounded-lg text-xs font-bold min-w-[32px] text-center ${
+                          (product.stock ?? 0) === 0 ? 'bg-red-500/20 text-red-400' :
+                          (product.stock ?? 0) < 5  ? 'bg-yellow-500/20 text-yellow-400' :
+                                                      'bg-green-500/20 text-green-400'
+                        }`}>
+                          {product.stock ?? 0}
+                        </span>
+                        <button
+                          onClick={() => handleStockAdjust(product, +1)}
+                          className="w-6 h-6 rounded bg-white/5 hover:bg-green-500/20 text-[#a7a8c7] hover:text-green-400 flex items-center justify-center transition-colors"
+                        >
+                          <Plus size={11} />
+                        </button>
+                      </div>
                     </td>
                     <td className="p-4">
                       <div className="flex justify-end gap-2">
