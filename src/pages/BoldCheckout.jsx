@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 const BOLD_LIB = 'https://checkout.bold.co/library/boldPaymentButton.js';
 
 const BoldCheckout = () => {
-  const navigate   = useNavigate();
-  const [status, setStatus]   = useState('loading'); // loading | ready | error
-  const [errorMsg, setErrorMsg] = useState('');
+  const navigate = useNavigate();
+  const [status, setStatus]       = useState('loading'); // loading | ready | error
+  const [errorMsg, setErrorMsg]   = useState('');
+  const [boldData, setBoldData]   = useState(null);
 
+  // ── Efecto 1: pedir hash al backend ──────────────────────────────────────
   useEffect(() => {
-    // Recuperar datos del carrito guardados por ShoppingCart
     const raw = sessionStorage.getItem('bold_cart');
     if (!raw) {
       setErrorMsg('No hay productos en el carrito.');
@@ -22,38 +23,36 @@ const BoldCheckout = () => {
 
     const { cartItems } = JSON.parse(raw);
 
-    const prepare = async () => {
-      try {
-        const res  = await fetch('/api/bold-checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cartItems }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Error preparando el pago');
-
-        injectBold(data);
-        setStatus('ready');
-      } catch (err) {
+    fetch('/api/bold-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cartItems }),
+    })
+      .then(res => res.json().then(data => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok) throw new Error(data.error || 'Error preparando el pago');
+        setBoldData(data);    // ← guarda; dispara efecto 2
+        setStatus('ready');   // ← renderiza el contenedor primero
+      })
+      .catch(err => {
         setErrorMsg(err.message);
         setStatus('error');
-      }
-    };
+      });
 
-    prepare();
-
-    // Limpiar script de Bold al desmontar
-    return () => {
-      document.getElementById('bold-lib-script')?.remove();
-    };
+    return () => { document.getElementById('bold-lib-script')?.remove(); };
   }, []);
 
-  const injectBold = ({ orderId, amount, hash, apiKey }) => {
+  // ── Efecto 2: inyectar Bold DESPUÉS de que el contenedor esté en el DOM ──
+  useEffect(() => {
+    if (status !== 'ready' || !boldData) return;
+
+    const { orderId, amount, hash, apiKey } = boldData;
+
     const addButton = () => {
       const container = document.getElementById('bold-btn-container');
       if (!container) return;
-      // Limpiar intentos anteriores
       container.innerHTML = '';
+
       const btn = document.createElement('script');
       btn.setAttribute('data-bold-button',         'dark-L');
       btn.setAttribute('data-api-key',             apiKey);
@@ -67,23 +66,20 @@ const BoldCheckout = () => {
       container.appendChild(btn);
     };
 
-    // Si la librería ya está cargada, inyectar directamente
     if (document.getElementById('bold-lib-script')) {
       addButton();
-      return;
+    } else {
+      const lib    = document.createElement('script');
+      lib.id       = 'bold-lib-script';
+      lib.src      = BOLD_LIB;
+      lib.onload   = addButton;
+      lib.onerror  = () => {
+        setErrorMsg('No se pudo cargar la librería de Bold.');
+        setStatus('error');
+      };
+      document.head.appendChild(lib);
     }
-
-    // Si no, cargarla primero y esperar onload
-    const lib  = document.createElement('script');
-    lib.id     = 'bold-lib-script';
-    lib.src    = BOLD_LIB;
-    lib.onload = addButton;
-    lib.onerror = () => {
-      setErrorMsg('No se pudo cargar la librería de Bold. Verifica tu conexión.');
-      setStatus('error');
-    };
-    document.head.appendChild(lib);
-  };
+  }, [status, boldData]); // se ejecuta cuando el DOM ya tiene el contenedor
 
   return (
     <>
