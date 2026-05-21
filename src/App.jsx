@@ -57,6 +57,8 @@ import PublicPQR from '@/pages/PublicPQR';
 import DidYouKnow from '@/pages/DidYouKnow';
 import Podcast from '@/pages/Podcast';
 import AdminLiveActivity from '@/pages/admin/AdminLiveActivity';
+import BoldCheckout from '@/pages/BoldCheckout';
+import BoldSuccess from '@/pages/BoldSuccess';
 import { trackPageView } from '@/lib/analytics';
 
 
@@ -105,6 +107,8 @@ function App() {
             <Route path="/photos" element={<Photos />} />
             <Route path="/product/:id" element={<ProductDetailPage />} />
             <Route path="/success" element={<SuccessPage />} />
+            <Route path="/checkout" element={<BoldCheckout />} />
+            <Route path="/pago/resultado" element={<BoldSuccess />} />
             <Route path="/styles" element={<div className="pt-16"><TattooStyles /></div>} />
             <Route path="/services" element={<div className="pt-16"><Services /></div>} />
             <Route path="/delivery-calculator" element={<div className="pt-16"><DeliveryCalculator /></div>} />

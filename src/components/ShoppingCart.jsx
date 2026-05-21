@@ -4,12 +4,14 @@ import { ShoppingCart as ShoppingCartIcon, X, Trash2, Plus, Minus } from 'lucide
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
   const { toast } = useToast();
+  const navigate  = useNavigate();
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
 
-  const handleCheckout = useCallback(async () => {
+  const handleCheckout = useCallback(() => {
     if (cartItems.length === 0) {
       toast({
         title: 'Tu carrito está vacío',
@@ -18,37 +20,11 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
       });
       return;
     }
-
-    try {
-      const items = cartItems.map(item => ({
-        title: item.product.title + (item.variant.title ? ` - ${item.variant.title}` : ''),
-        quantity: item.quantity,
-        unit_price: Math.round((item.variant.sale_price_in_cents ?? item.variant.price_in_cents) / 100),
-      }));
-
-      const successUrl = `${window.location.origin}/success`;
-      const cancelUrl = window.location.href;
-
-      const res = await fetch('/api/create-preference', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, successUrl, cancelUrl }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || 'Error al crear el pago');
-
-      clearCart();
-      window.location.href = data.url;
-    } catch (error) {
-      toast({
-        title: 'Error de pago',
-        description: error.message || 'Hubo un problema al iniciar el pago. Inténtalo de nuevo.',
-        variant: 'destructive',
-      });
-    }
-  }, [cartItems, clearCart, toast]);
+    // Guardar carrito en sessionStorage para que BoldCheckout lo recupere
+    sessionStorage.setItem('bold_cart', JSON.stringify({ cartItems }));
+    setIsCartOpen(false);
+    navigate('/checkout');
+  }, [cartItems, navigate, setIsCartOpen, toast]);
 
   return (
     <AnimatePresence>
@@ -160,7 +136,7 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
                   onClick={handleCheckout} 
                   className="w-full bg-gradient-to-r from-[#ff2df0] to-[#d91cb8] hover:shadow-[0_0_20px_rgba(255,45,240,0.4)] text-white font-bold py-6 text-lg rounded-xl transition-all"
                 >
-                  Pagar Ahora
+                  Pagar con Bold
                 </Button>
               </div>
             )}
