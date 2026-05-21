@@ -50,9 +50,8 @@ const Services = () => {
     description: 'TODO LO QUE NECESITAS EN TU MOMENTÓ EUFÓRICO',
     features: ['Cuidado Personal', 'Productos Exclusivos', 'Novedades', 'Para tu Bienestar'],
     icon: Pill,
-    // Using Pill icon for pharma/well-being
+    image: '/dulce-farma.png',
     gradient: 'from-[#e040fb] to-[#7b1fa2]',
-    // Magenta/Purple for pharma
     price: 'Vitalidad'
   }, {
     title: 'SMOKE SEX OT',
@@ -104,9 +103,15 @@ const Services = () => {
               <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${service.gradient}`}></div>
               
               <div className="p-6 flex-grow flex flex-col">
-                <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${service.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg mx-auto`}>
-                  <service.icon className="text-white mix-blend-overlay" size={32} />
-                </div>
+                {service.image ? (
+                  <div className="w-full rounded-xl overflow-hidden mb-4 border border-white/10">
+                    <img src={service.image} alt={service.title} className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-500" />
+                  </div>
+                ) : (
+                  <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${service.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg mx-auto`}>
+                    <service.icon className="text-white mix-blend-overlay" size={32} />
+                  </div>
+                )}
 
                 <h3 className="text-2xl font-bold text-[#f5f5f5] mb-1 text-center">{service.title}</h3>
                 <p className="text-sm text-[#a7a8c7] text-center mb-3 uppercase tracking-wider">{service.subtitle}</p>
