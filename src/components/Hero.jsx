@@ -1,7 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { CalendarCheck, Home } from 'lucide-react';
 import HomeGallery from '@/components/HomeGallery';
 
 const Hero = () => {
@@ -20,7 +18,7 @@ const Hero = () => {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 container mx-auto px-4 flex flex-col items-center justify-center h-full pt-20 pb-24 text-center">
+        <div className="relative z-10 container mx-auto px-4 flex flex-col items-center justify-center h-full pt-20 pb-16 text-center">
             <motion.div 
               initial={{ opacity: 0, y: 50 }} 
               animate={{ opacity: 1, y: 0 }} 
@@ -67,33 +65,6 @@ const Hero = () => {
             </motion.div>
         </div>
 
-        {/* Full Width Buttons at Bottom */}
-        <motion.div
-           initial={{ opacity: 0, y: 50 }}
-           animate={{ opacity: 1, y: 0 }}
-           transition={{ duration: 0.8, delay: 1 }}
-           className="absolute bottom-0 left-0 right-0 z-30 flex flex-col md:flex-row w-full"
-        >
-           <Link to="/store" className="flex-1">
-             <motion.button 
-               whileHover={{ backgroundColor: "rgba(17, 19, 34, 0.95)" }}
-               className="w-full py-6 bg-[#111322]/90 backdrop-blur-md border-t border-r-0 md:border-r border-white/10 text-[#f5f5f5] hover:text-[#ff2df0] font-bold text-lg transition-all flex items-center justify-center gap-2 group"
-             >
-               <Home className="group-hover:scale-110 transition-transform" size={24} />
-               IR A LA TIENDA
-             </motion.button>
-           </Link>
-
-           <Link to="/booking" className="flex-1">
-            <motion.button 
-              whileHover={{ backgroundColor: "rgba(255, 45, 240, 0.9)" }}
-              className="w-full py-6 bg-[#ff2df0] backdrop-blur-md border-t border-white/10 text-white font-bold text-lg transition-all flex items-center justify-center gap-2 group shadow-[0_-5px_20px_rgba(255,45,240,0.3)]"
-            >
-              <CalendarCheck className="group-hover:scale-110 transition-transform" size={24} />
-              TATTO CITA
-            </motion.button>
-          </Link>
-        </motion.div>
       </section>
       
       {/* Gallery Showcase Section */}

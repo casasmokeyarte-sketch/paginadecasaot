@@ -46,7 +46,7 @@ const DeliveryCalculator = () => {
 
             <div className="flex flex-col items-center relative z-10">
               <div className="relative w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl mb-10 border border-white/5 bg-[#050510]/50">
-                 <img src="https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/7e77a4abbd1a9921cb36887f7d46ab27.png" alt="Calculadora Smoke OT Flamingo - Calculadora de Domicilios" className="w-full h-auto object-contain hover:scale-105 transition-transform duration-700 ease-in-out" />
+                 <img src="/calculadora-flamingo.png" alt="Calculadora Smoke OT Flamingo - Calculadora de Domicilios" className="w-full h-auto object-contain hover:scale-105 transition-transform duration-700 ease-in-out" />
               </div>
 
               <div className="text-center space-y-8 w-full max-w-md">

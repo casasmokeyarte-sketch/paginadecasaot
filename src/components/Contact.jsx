@@ -65,13 +65,13 @@ const Contact = () => {
   const contactInfo = [{
     icon: Phone,
     title: 'VENTAS',
-    content: '302 300 71 93',
-    link: 'tel:+573023007193'
+    content: '302 300 69 86',
+    link: 'tel:+573023006986'
   }, {
     icon: Phone,
     title: 'ATENCIÓN AL CLIENTE',
-    content: '302 300 69 86',
-    link: 'tel:+573023006986'
+    content: '302 300 71 93',
+    link: 'tel:+573023007193'
   }, {
     icon: Mail,
     title: 'Email',
@@ -169,10 +169,17 @@ const Contact = () => {
                      Nuestra Ubicación
                    </h3>
                 </div>
-                <div className="w-full h-[250px] bg-[#111322]">
-                  <iframe src="https://maps.google.com/maps?q=Calle+63B+%2322-16+Barrio+Muequeta%2C+Bogot%C3%A1&t=&z=15&ie=UTF8&iwloc=&output=embed" width="100%" height="100%" style={{
-                  border: 0
-                }} allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Ubicación Casa Smoke y Arte" className="grayscale hover:grayscale-0 transition-all duration-500"></iframe>
+                <div className="w-full h-[250px] bg-[#111322] flex flex-col items-center justify-center gap-4 px-6 text-center">
+                  <MapPin className="text-[#ff2df0]" size={40} />
+                  <p className="text-[#a7a8c7] text-sm">Calle 63B #22-16, Barrio Muequeta<br/>Bogotá, Colombia</p>
+                  <a
+                    href="https://www.google.com/maps/search/?api=1&query=Calle+63B+%2322-16+Barrio+Muequeta+Bogota+Colombia"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#ff2df0] hover:bg-[#d91cb8] text-white font-bold rounded-xl transition-colors text-sm"
+                  >
+                    <MapPin size={16} /> Abrir en Google Maps
+                  </a>
                 </div>
                 <div className="p-4 text-xs text-[#a7a8c7] flex justify-between items-center">
                    <span>Barrio Muequeta, Bogotá</span>

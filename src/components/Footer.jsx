@@ -8,7 +8,7 @@ const Footer = () => {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center justify-between">
           <div className="flex items-center space-x-2 mb-4 md:mb-0">
-            <img src="https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/5042524decaeef7dde8cc84509a7f9d8.png" alt="Casa Smoke y Arte Logo" className="h-12 w-auto" />
+            <img src="/logo.png" alt="Casa Smoke y Arte Logo" className="h-12 w-auto" />
           </div>
 
           <div className="text-center md:text-left mb-4 md:mb-0">
