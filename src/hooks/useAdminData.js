@@ -11,6 +11,8 @@ export const useAdminData = () => {
   const [pqr, setPqr] = useState([]);
   const [orders, setOrders] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [stats, setStats] = useState({
     usersCount: 0,
     educationCount: 0,
@@ -237,6 +239,61 @@ export const useAdminData = () => {
     }
   };
 
+  // ── Billing / Invoices ───────────────────────────────────────────────────────
+  const fetchInvoices = async () => {
+    setLoadingInvoices(true);
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setInvoices(data || []);
+    } catch {
+      toast({ title: 'Error', description: 'No se pudieron cargar las facturas', variant: 'destructive' });
+    } finally {
+      setLoadingInvoices(false);
+    }
+  };
+
+  const createInvoice = async (invoiceData) => {
+    try {
+      // Generate invoice number via DB function or fallback
+      let invoiceNumber;
+      const { data: fnData, error: fnError } = await supabase.rpc('generate_invoice_number');
+      if (fnError || !fnData) {
+        const year = new Date().getFullYear();
+        invoiceNumber = `FACT-${year}-${String((invoices.length || 0) + 1).padStart(4, '0')}`;
+      } else {
+        invoiceNumber = fnData;
+      }
+
+      const { data, error } = await supabase
+        .from('invoices')
+        .insert([{ ...invoiceData, invoice_number: invoiceNumber }])
+        .select()
+        .single();
+      if (error) throw error;
+      toast({ title: '¡Factura emitida!', description: `Número: ${invoiceNumber}` });
+      fetchInvoices();
+      return data;
+    } catch (error) {
+      toast({ title: 'Error', description: 'No se pudo crear la factura', variant: 'destructive' });
+      throw error;
+    }
+  };
+
+  const updateInvoiceStatus = async (id, status) => {
+    try {
+      const { error } = await supabase.from('invoices').update({ status }).eq('id', id);
+      if (error) throw error;
+      toast({ title: 'Factura actualizada', description: `Estado: ${status}` });
+      fetchInvoices();
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo actualizar la factura', variant: 'destructive' });
+    }
+  };
+
   return {
     loading,
     stats,
@@ -247,6 +304,8 @@ export const useAdminData = () => {
     pqr,
     orders,
     bookings,
+    invoices,
+    loadingInvoices,
     fetchStats,
     fetchUsers,
     updateUserProfile,
@@ -262,5 +321,8 @@ export const useAdminData = () => {
     updateOrderStatus,
     fetchBookings,
     updateBookingStatus,
+    fetchInvoices,
+    createInvoice,
+    updateInvoiceStatus,
   };
 };

@@ -18,7 +18,9 @@ const AdminProducts = () => {
     category: '',
     price: '',
     image: '',
-    description: ''
+    description: '',
+    stock: 0,
+    sku: ''
   });
 
   useEffect(() => {
@@ -28,7 +30,7 @@ const AdminProducts = () => {
   const resetForm = () => {
     setEditingProduct(null);
     setImageFile(null);
-    setFormData({ name: '', category: '', price: '', image: '', description: '' });
+    setFormData({ name: '', category: '', price: '', image: '', description: '', stock: 0, sku: '' });
   };
 
   const handleSubmit = async (e) => {
@@ -76,7 +78,9 @@ const AdminProducts = () => {
       category: product.category,
       price: product.price,
       image: product.image,
-      description: product.description || ''
+      description: product.description || '',
+      stock: product.stock ?? 0,
+      sku: product.sku || ''
     });
     setIsModalOpen(true);
   };
@@ -130,6 +134,7 @@ const AdminProducts = () => {
                 <th className="p-4">Nombre</th>
                 <th className="p-4">Categoria</th>
                 <th className="p-4">Precio</th>
+                <th className="p-4 text-center">Stock</th>
                 <th className="p-4 text-right">Acciones</th>
               </tr>
             </thead>
@@ -152,6 +157,15 @@ const AdminProducts = () => {
                     <td className="p-4 text-[#a7a8c7]">{product.category}</td>
                     <td className="p-4 text-[#00e5ff] font-bold">
                       {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(product.price)}
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className={`px-2 py-1 rounded-lg text-xs font-bold ${
+                        (product.stock ?? 0) === 0 ? 'bg-red-500/20 text-red-400' :
+                        (product.stock ?? 0) < 5  ? 'bg-yellow-500/20 text-yellow-400' :
+                                                    'bg-green-500/20 text-green-400'
+                      }`}>
+                        {product.stock ?? 0}
+                      </span>
                     </td>
                     <td className="p-4">
                       <div className="flex justify-end gap-2">
@@ -229,6 +243,29 @@ const AdminProducts = () => {
                       value={formData.price}
                       onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                       className="w-full bg-[#050510] border border-white/10 rounded-lg p-2 text-white focus:border-[#ff2df0] outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-[#a7a8c7] mb-1">Stock (unidades)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.stock}
+                      onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+                      className="w-full bg-[#050510] border border-white/10 rounded-lg p-2 text-white focus:border-[#ff2df0] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-[#a7a8c7] mb-1">SKU (opcional)</label>
+                    <input
+                      type="text"
+                      value={formData.sku}
+                      onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                      placeholder="Ej: CSA-001"
+                      className="w-full bg-[#050510] border border-white/10 rounded-lg p-2 text-white focus:border-[#ff2df0] outline-none placeholder:text-[#a7a8c7]/50"
                     />
                   </div>
                 </div>

@@ -37,6 +37,7 @@ import AdminEducation from '@/pages/admin/AdminEducation';
 import AdminPodcast from '@/pages/admin/AdminPodcast';
 import AdminPQR from '@/pages/admin/AdminPQR';
 import AdminOrders from '@/pages/admin/AdminOrders';
+import AdminBilling from '@/pages/admin/AdminBilling';
 
 // User Imports
 import Login from '@/pages/auth/Login';
@@ -137,6 +138,7 @@ function App() {
               <Route path="users" element={<AdminUsers />} />
               <Route path="products" element={<AdminProducts />} />
               <Route path="orders" element={<AdminOrders />} />
+              <Route path="billing" element={<AdminBilling />} />
               <Route path="bookings" element={<AdminBookings />} />
               <Route path="gallery" element={<AdminGallery />} />
               <Route path="education" element={<AdminEducation />} />
