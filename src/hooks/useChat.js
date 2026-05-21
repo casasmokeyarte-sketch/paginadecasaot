@@ -62,6 +62,35 @@ export const useChat = () => {
         const state = presenceChannel.current.presenceState();
         setOnlineUsers(extractPresenceUsers(state));
       })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        setOnlineUsers(prev => {
+          const updated = { ...prev };
+          (newPresences || []).forEach(p => {
+            const info = p?.user_info || p || {};
+            const id = p?.user_id || info.id || key;
+            if (!id) return;
+            updated[id] = {
+              id,
+              email: info.email || null,
+              full_name: info.full_name || info.email?.split('@')?.[0] || 'Usuario',
+              avatar_url: info.avatar_url || null,
+              online_at: info.online_at || new Date().toISOString(),
+            };
+          });
+          return updated;
+        });
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        setOnlineUsers(prev => {
+          const updated = { ...prev };
+          (leftPresences || []).forEach(p => {
+            const info = p?.user_info || p || {};
+            const id = p?.user_id || info.id || key;
+            if (id) delete updated[id];
+          });
+          return updated;
+        });
+      })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           const { data: profileRows } = await supabase

@@ -140,6 +140,11 @@ const AdminBilling = () => {
 
   useEffect(() => { fetchInvoices(); fetchOrders(); fetchProducts(); }, []);
 
+  // Refrescar productos cada vez que se abre el modal de nueva factura
+  useEffect(() => {
+    if (showNew) fetchProducts();
+  }, [showNew]);
+
   // Pre-fill from order
   useEffect(() => {
     if (!selectedOrder) return;

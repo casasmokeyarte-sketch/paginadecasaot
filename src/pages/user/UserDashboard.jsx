@@ -1,8 +1,21 @@
 import React from 'react';
 import { useUserPanel } from '@/hooks/useUserPanel';
 import { Link } from 'react-router-dom';
-import { Calendar, ShoppingBag, ArrowRight, UserCircle, Phone, MessageCircle, Heart, FileText, CheckCircle2, Clock } from 'lucide-react';
+import {
+  Calendar, ShoppingBag, ArrowRight, UserCircle, Phone, MessageCircle,
+  Heart, FileText, CheckCircle2, Clock,
+  Utensils, PenTool, Palette, Pill, Heart as HeartIcon, Zap
+} from 'lucide-react';
 import { motion } from 'framer-motion';
+
+const SERVICES = [
+  { title: 'Sazón Relleno',    subtitle: 'Comida y Bebida',       icon: Utensils,  gradient: 'from-[#ff6b6b] to-[#ee5253]', path: '/shop' },
+  { title: 'Tattoo Studio',    subtitle: 'Arte Corporal',          icon: PenTool,   gradient: 'from-[#00d2d3] to-[#2e86de]', path: '/booking' },
+  { title: 'Smoke Set',        subtitle: 'Tienda Especializada',   icon: ShoppingBag, gradient: 'from-[#5f27cd] to-[#9b59b6]', path: '/shop' },
+  { title: 'Zona Art',         subtitle: 'Galería y Creación',     icon: Palette,   gradient: 'from-[#feca57] to-[#ff9f43]', path: '/portfolio' },
+  { title: 'Dulce Farma',      subtitle: 'Bienestar y Novedades',  image: '/dulce-farma.png', gradient: 'from-[#e040fb] to-[#7b1fa2]', path: '/shop' },
+  { title: 'Smoke Sex OT',     subtitle: 'Intimidad y Placer',     icon: HeartIcon, gradient: 'from-[#fd79a8] to-[#e84393]', path: '/shop' },
+];
 
 const UserDashboard = () => {
   const { profile, myBookings, myOrders, wishlist, myPqrs, loadingProfile } = useUserPanel();
@@ -190,6 +203,32 @@ const UserDashboard = () => {
                  </Link>
              </div>
           </div>
+      </div>
+
+      {/* Nuestras Zonas / Servicios — mismas tarjetas que en la página principal */}
+      <div>
+        <h2 className="text-xl font-bold text-white mb-4">Nuestras Zonas</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {SERVICES.map((svc) => (
+            <Link key={svc.title} to={svc.path}>
+              <motion.div
+                whileHover={{ y: -4, scale: 1.02 }}
+                className={`relative rounded-2xl overflow-hidden bg-gradient-to-br ${svc.gradient} p-4 flex flex-col gap-2 cursor-pointer shadow-lg h-[100px]`}
+              >
+                {svc.image ? (
+                  <img src={svc.image} alt={svc.title} className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                ) : null}
+                <div className="relative z-10 flex items-center gap-2">
+                  {svc.icon && <svc.icon size={18} className="text-white/90" />}
+                  <div>
+                    <p className="font-bold text-white text-sm leading-tight">{svc.title}</p>
+                    <p className="text-white/70 text-xs">{svc.subtitle}</p>
+                  </div>
+                </div>
+              </motion.div>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

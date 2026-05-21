@@ -32,6 +32,28 @@ const FloatingAnnounce = () => {
         notes:         form.notes || null,
         status:        'pendiente',
       }]);
+
+      // Notificar al asesor por WhatsApp
+      const arrivalLabel = new Date(form.arrival_time).toLocaleString('es-CO', {
+        weekday: 'short', day: 'numeric', month: 'short',
+        hour: '2-digit', minute: '2-digit',
+      });
+      const REASONS = {
+        productos: 'Comprar productos', tatuaje: 'Consulta de tatuaje',
+        'dulce-farma': 'Dulce Farma', 'ver-tienda': 'Conocer la tienda', otro: 'Otro',
+      };
+      const waMsg = [
+        '🔔 *NUEVO ANUNCIO DE VISITA - Casa OT*',
+        `👤 *Nombre:* ${form.name}`,
+        `🕐 *Llegada:* ${arrivalLabel}`,
+        `👥 *Personas:* ${form.people_count}`,
+        form.phone     ? `📞 *Teléfono:* ${form.phone}` : null,
+        form.visit_reason ? `🎯 *Motivo:* ${REASONS[form.visit_reason] || form.visit_reason}` : null,
+        form.notes     ? `📝 *Notas:* ${form.notes}` : null,
+      ].filter(Boolean).join('\n');
+
+      window.open(`https://wa.me/573023007193?text=${encodeURIComponent(waMsg)}`, '_blank');
+
       setSent(true);
       setTimeout(() => {
         setSent(false);
@@ -39,7 +61,7 @@ const FloatingAnnounce = () => {
         setForm({ name: '', phone: '', arrival_time: '', people_count: 1, visit_reason: '', notes: '' });
       }, 3000);
     } catch {
-      // Fallo silencioso — el formulario se cierra igual
+      // Aunque falle la BD, el WhatsApp ya fue abierto
       setSent(true);
       setTimeout(() => { setSent(false); setIsOpen(false); }, 3000);
     } finally {
