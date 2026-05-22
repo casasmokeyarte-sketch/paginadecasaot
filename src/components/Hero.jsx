@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import HomeGallery from '@/components/HomeGallery';
+import LoNuevo from '@/components/LoNuevo';
 
 const Hero = () => {
   return (
@@ -68,6 +69,7 @@ const Hero = () => {
       </section>
       
       {/* Gallery Showcase Section */}
+      <LoNuevo />
       <HomeGallery />
     </>
   );
