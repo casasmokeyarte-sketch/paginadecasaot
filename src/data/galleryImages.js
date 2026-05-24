@@ -1,7 +1,7 @@
 export const galleryImages = [
   {
     id: "dulce-farma",
-    src: null,
+    src: "/zona-dulcefarma.png",
     gradient: "from-pink-600 via-pink-800 to-purple-900",
     icon: "💊",
     alt: "Dulce Farma - Farmacia",

@@ -187,6 +187,20 @@ export const useAdminData = () => {
     }
   };
 
+  const savePqrReply = async (id, replyText) => {
+    try {
+      const { error } = await supabase
+        .from('pqr')
+        .update({ reply_text: replyText, status: 'replied', replied_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+      toast({ title: 'Respuesta guardada', description: 'La respuesta ha sido registrada.' });
+      fetchPqr();
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo guardar la respuesta', variant: 'destructive' });
+    }
+  };
+
   const fetchOrders = async () => {
     setLoading(true);
     try {
@@ -332,6 +346,7 @@ export const useAdminData = () => {
     deleteEpisode,
     fetchPqr,
     updatePqrStatus,
+    savePqrReply,
     fetchOrders,
     updateOrderStatus,
     fetchBookings,

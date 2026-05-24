@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { Utensils, PenTool, ShoppingBag, Palette, Heart, Pill } from 'lucide-react'; // Added Pill icon
+import { Utensils, ShoppingBag, Heart, Pill } from 'lucide-react';
 
 const Services = () => {
   const ref = useRef(null);
@@ -14,18 +14,9 @@ const Services = () => {
     description: 'El sabor que te llena el alma.',
     features: ['Hamburguesas', 'Papas Fritas', 'Almuerzos', 'Hot Dog', 'Bebidas Frías', 'Y Algo Más...'],
     icon: Utensils,
+    image: '/zona-sazon.png',
     gradient: 'from-[#ff6b6b] to-[#ee5253]',
-    // Red/Orange for food
     price: 'Delicioso'
-  }, {
-    title: 'TATTOO STUDIO ZONA AK',
-    subtitle: 'Arte Corporal',
-    description: 'Los cuadros que no te imaginas lo hacemos.',
-    features: ['Professional Artist', 'Reserva Ahora', 'Agenda Abierta', 'Diseños Personalizados'],
-    icon: PenTool,
-    gradient: 'from-[#00d2d3] to-[#2e86de]',
-    // Cyan/Blue for tattoo/art
-    price: 'Profesional'
   }, {
     title: 'SMOKE SET',
     subtitle: 'Tienda Especializada',
@@ -33,24 +24,14 @@ const Services = () => {
     features: ['Accesorios', 'Estupendos y Mas', 'Bono', 'Haga de Contar', 'Herramientas', 'Bongs'],
     icon: ShoppingBag,
     gradient: 'from-[#5f27cd] to-[#9b59b6]',
-    // Purple for smoke shop
     price: 'Variedad'
-  }, {
-    title: 'ZONA ART',
-    subtitle: 'Galería y Creación',
-    description: 'Los cuadros que no te imaginas, lo verás o te lo hacemos.',
-    features: ['Obras Originales', 'Encargos', 'Exhibiciones', 'Arte Urbano'],
-    icon: Palette,
-    gradient: 'from-[#feca57] to-[#ff9f43]',
-    // Yellow/Orange for art
-    price: 'Creatividad'
   }, {
     title: 'DULCE FARMA',
     subtitle: 'Bienestar y Novedades',
     description: 'TODO LO QUE NECESITAS EN TU MOMENTÓ EUFÓRICO',
     features: ['Cuidado Personal', 'Productos Exclusivos', 'Novedades', 'Para tu Bienestar'],
     icon: Pill,
-    image: '/dulce-farma.png',
+    image: '/zona-dulcefarma.png',
     gradient: 'from-[#e040fb] to-[#7b1fa2]',
     price: 'Vitalidad'
   }, {
@@ -59,9 +40,8 @@ const Services = () => {
     description: 'SEX-SHOP ACCESORIOS ROPA ESTIMULADORES Y MAS...',
     features: ['Accesorios Íntimos', 'Ropa Sensual', 'Estimuladores', 'Y Mucho Más...'],
     icon: Heart,
-    // Using Heart icon for intimacy
+    image: '/zona-smokesex.png',
     gradient: 'from-[#ff007f] to-[#ff80ab]',
-    // Pink/Light Pink for sex shop
     price: 'Pasión'
   }];
   return <section id="services" className="py-20 bg-[#050510]">
@@ -84,7 +64,7 @@ const Services = () => {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8"> {/* Adjusted grid for 6 items */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {services.map((service, index) => <motion.div key={index} initial={{
           opacity: 0,
           y: 50

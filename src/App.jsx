@@ -59,6 +59,7 @@ import Podcast from '@/pages/Podcast';
 import AdminLiveActivity from '@/pages/admin/AdminLiveActivity';
 import BoldCheckout from '@/pages/BoldCheckout';
 import BoldSuccess from '@/pages/BoldSuccess';
+import StoreProductDetail from '@/pages/StoreProductDetail';
 import { trackPageView } from '@/lib/analytics';
 
 
@@ -104,6 +105,7 @@ function App() {
             <Route path="/" element={<Hero />} />
             <Route path="/about" element={<div className="pt-16"><About /></div>} />
             <Route path="/store" element={<Shop />} />
+            <Route path="/store/:productId" element={<StoreProductDetail />} />
             <Route path="/photos" element={<Photos />} />
             <Route path="/product/:id" element={<ProductDetailPage />} />
             <Route path="/success" element={<SuccessPage />} />

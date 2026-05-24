@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ShoppingBag, User } from 'lucide-react';
+import { Menu, X, ShoppingBag, User, LogOut, ChevronDown } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -10,10 +10,12 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { cartItems } = useCart();
-  const { user } = useAuth();
+  const { user, profile, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +23,16 @@ const Header = () => {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const navItems = [
@@ -98,56 +110,82 @@ const Header = () => {
             </div>
 
             <div className="flex items-center gap-4 relative z-50 flex-shrink-0">
-               {/* User Account Button with Registration Prompt */}
-               <div className="relative flex items-center">
-                  {!user && (
-                    <>
-                      {/* Animated Rotating Rings */}
-                      <div className="absolute inset-0 -m-1 pointer-events-none">
-                         <motion.div 
-                            className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#ff2df0] border-r-[#ff2df0]/50"
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                         />
-                         <motion.div 
-                            className="absolute inset-0 rounded-full border-2 border-transparent border-b-[#00e5ff] border-l-[#00e5ff]/50"
-                            animate={{ rotate: -360 }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                         />
-                      </div>
-                      
-                      {/* "Inscríbete aquí" Floating Text */}
+              {/* User Account Button */}
+              {user ? (
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 hover:border-[#00e5ff]/40 transition-all"
+                  >
+                    <div className="w-7 h-7 bg-gradient-to-br from-[#ff2df0] to-[#00e5ff] rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                      {(profile?.full_name || user.email || '?').slice(0, 2).toUpperCase()}
+                    </div>
+                    <span className="text-white text-sm font-medium hidden md:block max-w-[80px] truncate">
+                      {profile?.full_name ? profile.full_name.split(' ')[0] : user.email?.split('@')[0]}
+                    </span>
+                    <ChevronDown size={14} className={`text-white/60 hidden md:block transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {isUserMenuOpen && (
                       <motion.div
-                        className="absolute right-full top-1/2 -translate-y-1/2 mr-3 pointer-events-none hidden md:block"
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.5 }}
+                        initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-full mt-2 w-48 bg-[#111322] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50"
                       >
-                         <motion.div 
-                            animate={{ 
-                               scale: [1, 1.05, 1],
-                               x: [0, -3, 0]
-                            }}
-                            transition={{ duration: 2, repeat: Infinity }}
-                            className="relative"
-                         >
-                            <div className="bg-gradient-to-r from-[#ff2df0] to-[#d91cb8] text-white text-[10px] font-bold px-3 py-1.5 rounded-l-full rounded-tr-full shadow-[0_0_15px_rgba(255,45,240,0.5)] whitespace-nowrap flex items-center border border-white/20">
-                              <span>¡Inscríbete aquí!</span>
-                              <span className="ml-1 text-xs">✨</span>
-                            </div>
-                            {/* Connector Line/Arrow */}
-                            <div className="absolute top-1/2 -right-1 w-2 h-0.5 bg-[#ff2df0] translate-y-[-50%]"></div>
-                         </motion.div>
+                        <Link to="/user" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition-colors">
+                          <User size={15} className="text-[#00e5ff]" /> Mi Perfil
+                        </Link>
+                        <button
+                          onClick={() => { signOut(); setIsUserMenuOpen(false); }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors border-t border-white/5"
+                        >
+                          <LogOut size={15} /> Cerrar Sesión
+                        </button>
                       </motion.div>
-                    </>
-                  )}
-
-                  <Link to={user ? "/user" : "/login"} className="relative z-10">
-                      <button className="relative p-2 text-white hover:text-[#00e5ff] transition-colors bg-white/5 rounded-full hover:bg-white/10">
-                        <User size={20} className={user ? "text-[#00e5ff]" : ""} />
-                      </button>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="relative flex items-center">
+                  <div className="absolute inset-0 -m-1 pointer-events-none">
+                    <motion.div
+                      className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#ff2df0] border-r-[#ff2df0]/50"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                    />
+                    <motion.div
+                      className="absolute inset-0 rounded-full border-2 border-transparent border-b-[#00e5ff] border-l-[#00e5ff]/50"
+                      animate={{ rotate: -360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    />
+                  </div>
+                  <motion.div
+                    className="absolute right-full top-1/2 -translate-y-1/2 mr-3 pointer-events-none hidden md:block"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 }}
+                  >
+                    <motion.div
+                      animate={{ scale: [1, 1.05, 1], x: [0, -3, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="relative"
+                    >
+                      <div className="bg-gradient-to-r from-[#ff2df0] to-[#d91cb8] text-white text-[10px] font-bold px-3 py-1.5 rounded-l-full rounded-tr-full shadow-[0_0_15px_rgba(255,45,240,0.5)] whitespace-nowrap flex items-center border border-white/20">
+                        <span>¡Inscríbete aquí!</span>
+                        <span className="ml-1 text-xs">✨</span>
+                      </div>
+                      <div className="absolute top-1/2 -right-1 w-2 h-0.5 bg-[#ff2df0] translate-y-[-50%]"></div>
+                    </motion.div>
+                  </motion.div>
+                  <Link to="/login" className="relative z-10">
+                    <button className="relative p-2 text-white hover:text-[#00e5ff] transition-colors bg-white/5 rounded-full hover:bg-white/10">
+                      <User size={20} />
+                    </button>
                   </Link>
-               </div>
+                </div>
+              )}
 
               {/* Cart Button */}
               <button
@@ -203,11 +241,28 @@ const Header = () => {
                       {item.label}
                     </button>
                   ))}
-                  <Link to={user ? "/user" : "/login"} className="w-full">
-                     <button className="w-full text-left py-3 px-4 rounded-xl text-[#00e5ff] hover:bg-[#15162a]">
-                        {user ? 'Mi Cuenta' : 'Iniciar Sesión / Inscríbete'}
-                     </button>
-                  </Link>
+                  {user ? (
+                    <>
+                      <Link to="/user" onClick={() => setIsMobileMenuOpen(false)} className="w-full">
+                        <button className="w-full text-left py-3 px-4 rounded-xl text-[#00e5ff] hover:bg-[#15162a] flex items-center gap-2">
+                          <User size={16} />
+                          {profile?.full_name ? profile.full_name.split(' ')[0] : 'Mi Cuenta'}
+                        </button>
+                      </Link>
+                      <button
+                        onClick={() => { signOut(); setIsMobileMenuOpen(false); }}
+                        className="w-full text-left py-3 px-4 rounded-xl text-red-400 hover:bg-red-500/10 flex items-center gap-2"
+                      >
+                        <LogOut size={16} /> Cerrar Sesión
+                      </button>
+                    </>
+                  ) : (
+                    <Link to="/login" className="w-full">
+                      <button className="w-full text-left py-3 px-4 rounded-xl text-[#00e5ff] hover:bg-[#15162a]">
+                        Iniciar Sesión / Inscríbete
+                      </button>
+                    </Link>
+                  )}
                   <Link to="/booking" className="w-full mt-4">
                     <button className="w-full py-3 bg-[#ff2df0] text-white rounded-xl font-bold">
                       Agendar Cita

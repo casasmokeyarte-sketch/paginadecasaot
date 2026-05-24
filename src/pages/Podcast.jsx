@@ -181,7 +181,7 @@ const Podcast = () => {
       <div className="min-h-screen bg-[#050510] pt-16 pb-20">
         {/* Hero Section */}
         <section className="relative py-20 px-4 overflow-hidden">
-          <div className="absolute inset-0 bg-[url('https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/0ef7ed36c6b1c49cb01156be6ed6a697.png')] bg-cover bg-center opacity-20 z-0 blur-sm"></div>
+          <div className="absolute inset-0 bg-[url('/espacio-seguro-bg.jpg')] bg-cover bg-center opacity-25 z-0 blur-sm"></div>
           <div className="absolute inset-0 bg-gradient-to-b from-[#050510]/80 via-[#050510]/90 to-[#050510] z-0"></div>
           
           <div className="container mx-auto relative z-10 text-center">
@@ -385,7 +385,7 @@ const Podcast = () => {
               </div>
               
               <div className="hidden md:block relative h-full min-h-[300px] rounded-2xl overflow-hidden group">
-                 <img alt="Estudio de grabación de podcast profesional con iluminación cálida" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://horizons-cdn.hostinger.com/9c34d6a0-7f3d-4ce5-a2cd-77bc39639101/sabias-que-aHzuX.png" />
+                 <img alt="OT Te EscuchA - Estudio de grabación podcast" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="/podcast-flamingo.png" />
                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
                  
                  {/* Floating Badge */}

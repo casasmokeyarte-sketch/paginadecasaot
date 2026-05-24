@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart, Search, SlidersHorizontal, X } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
@@ -63,29 +64,33 @@ const ProductCard = ({ product, index }) => {
       transition={{ duration: 0.5, delay: index * 0.05 }}
     >
       <div className="h-full rounded-2xl border border-white/10 bg-[#111322] overflow-hidden group hover:border-[#ff2df0]/50 transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,45,240,0.15)] flex flex-col">
-        <div className="relative aspect-square overflow-hidden bg-black/20">
-          <img
-            src={product.image}
-            alt={product.name}
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
-            }}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#050510] to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-300" />
-          
-          <div className="absolute top-3 left-3 bg-[#ff2df0] text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg uppercase">
-            {product.category}
+        <Link to={`/store/${product.id}`} className="block">
+          <div className="relative aspect-square overflow-hidden bg-black/20">
+            <img
+              src={product.image}
+              alt={product.name}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
+              }}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050510] to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-300" />
+            
+            <div className="absolute top-3 left-3 bg-[#ff2df0] text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg uppercase">
+              {product.category}
+            </div>
+            
+            <div className="absolute top-3 right-3 bg-[#00e5ff]/90 text-[#050510] text-xs font-bold px-3 py-1 rounded-full shadow-[0_0_10px_rgba(0,229,255,0.4)]">
+              {formattedPrice}
+            </div>
           </div>
-          
-          <div className="absolute top-3 right-3 bg-[#00e5ff]/90 text-[#050510] text-xs font-bold px-3 py-1 rounded-full shadow-[0_0_10px_rgba(0,229,255,0.4)]">
-            {formattedPrice}
-          </div>
-        </div>
+        </Link>
         
         <div className="p-5 flex flex-col flex-grow">
-          <h3 className="text-lg font-bold text-white mb-2 line-clamp-1 group-hover:text-[#ff2df0] transition-colors">{product.name}</h3>
+          <Link to={`/store/${product.id}`} className="block mb-2">
+            <h3 className="text-lg font-bold text-white line-clamp-1 group-hover:text-[#ff2df0] transition-colors">{product.name}</h3>
+          </Link>
           
           <div className="mt-auto">
             <Button 

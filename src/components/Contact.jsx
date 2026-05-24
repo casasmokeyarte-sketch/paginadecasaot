@@ -101,8 +101,10 @@ const Contact = () => {
         <title>Contacto - Casa Smoke y Arte</title>
         <meta name="description" content="Contáctanos para tatuajes, productos de arte y cultura urbana. Consulta nuestros teléfonos, email, dirección y redes sociales." />
       </Helmet>
-      <section id="contact" className="py-20 bg-[#050510] border-t border-white/5">
-        <div className="container mx-auto px-4">
+      <section id="contact" className="py-20 border-t border-white/5 relative bg-[#050510]">
+        <div className="absolute inset-0 bg-[url('/contact-bg.png')] bg-cover bg-center opacity-15 z-0"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#050510]/80 via-[#050510]/70 to-[#050510]/90 z-0"></div>
+        <div className="container mx-auto px-4 relative z-10">
           <motion.div ref={ref} initial={{
           opacity: 0,
           y: 50
