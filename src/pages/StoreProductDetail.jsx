@@ -30,6 +30,9 @@ export default function StoreProductDetail() {
     [products, productId]
   );
 
+  const stock = product?.stock ?? 0;
+  const isOutOfStock = stock === 0;
+
   const relatedProducts = useMemo(() => {
     if (!product) return [];
     return products
@@ -38,7 +41,7 @@ export default function StoreProductDetail() {
   }, [products, product, productId]);
 
   const handleAddToCart = () => {
-    if (!product) return;
+    if (!product || isOutOfStock) return;
     const cartProduct = {
       id: product.id,
       title: product.name,
@@ -48,11 +51,11 @@ export default function StoreProductDetail() {
         title: 'Estándar',
         price_in_cents: product.price * 100,
         price_formatted: formatCOP(product.price),
-        inventory_quantity: 99,
-        manage_inventory: false,
+        inventory_quantity: stock,
+        manage_inventory: true,
       }],
     };
-    addToCart(cartProduct, cartProduct.variants[0], quantity, 99);
+    addToCart(cartProduct, cartProduct.variants[0], quantity, stock);
     toast({
       title: '¡Agregado al carrito! 🛒',
       description: `${quantity} × ${product.name} agregado.`,
@@ -137,9 +140,15 @@ export default function StoreProductDetail() {
                   <span className="inline-flex items-center gap-1 text-xs font-semibold bg-[#111322] border border-white/10 text-[#a7a8c7] px-3 py-1 rounded-full">
                     <Tag size={12} /> {product.category}
                   </span>
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold bg-[#111322] border border-white/10 text-[#00e5ff] px-3 py-1 rounded-full">
-                    <Package size={12} /> Disponible
-                  </span>
+                  {isOutOfStock ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold bg-red-500/10 border border-red-500/30 text-red-400 px-3 py-1 rounded-full">
+                      <Package size={12} /> Agotado
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold bg-[#111322] border border-white/10 text-[#00e5ff] px-3 py-1 rounded-full">
+                      <Package size={12} /> {stock} en stock
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -190,8 +199,9 @@ export default function StoreProductDetail() {
                   </button>
                   <span className="w-10 text-center text-xl font-bold text-white">{quantity}</span>
                   <button
-                    onClick={() => setQuantity(q => q + 1)}
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white hover:bg-[#ff2df0] transition-colors"
+                    onClick={() => setQuantity(q => Math.min(stock || 1, q + 1))}
+                    disabled={isOutOfStock}
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white hover:bg-[#ff2df0] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <Plus size={16} />
                   </button>
@@ -199,11 +209,19 @@ export default function StoreProductDetail() {
 
                 <Button
                   onClick={handleAddToCart}
+                  disabled={isOutOfStock}
                   size="lg"
-                  className="flex-grow h-14 bg-gradient-to-r from-[#ff2df0] to-[#d91cb8] hover:shadow-[0_0_25px_rgba(255,45,240,0.45)] text-white font-bold text-lg rounded-full transition-all"
+                  className={`flex-grow h-14 text-white font-bold text-lg rounded-full transition-all ${
+                    isOutOfStock
+                      ? 'bg-white/10 cursor-not-allowed opacity-60'
+                      : 'bg-gradient-to-r from-[#ff2df0] to-[#d91cb8] hover:shadow-[0_0_25px_rgba(255,45,240,0.45)]'
+                  }`}
                 >
-                  <ShoppingCart className="mr-2 h-5 w-5" />
-                  Agregar al Carrito
+                  {isOutOfStock ? (
+                    'Sin existencias'
+                  ) : (
+                    <><ShoppingCart className="mr-2 h-5 w-5" /> Agregar al Carrito</>
+                  )}
                 </Button>
               </div>
 

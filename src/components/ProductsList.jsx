@@ -20,9 +20,13 @@ const ProductCard = ({ product, index }) => {
     maximumFractionDigits: 0
   }).format(product.price);
 
+  const stock = product.stock ?? 0;
+  const isOutOfStock = stock === 0;
+
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isOutOfStock) return;
 
     const cartProduct = {
       id: product.id,
@@ -33,15 +37,15 @@ const ProductCard = ({ product, index }) => {
         title: 'Estándar',
         price_in_cents: product.price * 100,
         price_formatted: formattedPrice,
-        inventory_quantity: 99,
-        manage_inventory: false
+        inventory_quantity: stock,
+        manage_inventory: true
       }]
     };
     
     const defaultVariant = cartProduct.variants[0];
 
     try {
-      addToCart(cartProduct, defaultVariant, 1, 99);
+      addToCart(cartProduct, defaultVariant, 1, stock);
       toast({
         title: "¡Agregado al carrito! 🛒",
         description: `${product.name} se ha agregado a tu carrito.`,
@@ -73,13 +77,21 @@ const ProductCard = ({ product, index }) => {
                 e.currentTarget.onerror = null;
                 e.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
               }}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${isOutOfStock ? 'opacity-50' : ''}`}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#050510] to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-300" />
             
-            <div className="absolute top-3 left-3 bg-[#ff2df0] text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg uppercase">
-              {product.category}
-            </div>
+            {isOutOfStock ? (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                <span className="bg-red-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
+                  Agotado
+                </span>
+              </div>
+            ) : (
+              <div className="absolute top-3 left-3 bg-[#ff2df0] text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg uppercase">
+                {product.category}
+              </div>
+            )}
             
             <div className="absolute top-3 right-3 bg-[#00e5ff]/90 text-[#050510] text-xs font-bold px-3 py-1 rounded-full shadow-[0_0_10px_rgba(0,229,255,0.4)]">
               {formattedPrice}
@@ -94,10 +106,17 @@ const ProductCard = ({ product, index }) => {
           
           <div className="mt-auto">
             <Button 
-              onClick={handleAddToCart} 
-              className="w-full bg-white/5 hover:bg-[#ff2df0] hover:text-white text-white border border-white/10 hover:border-transparent transition-all duration-300"
+              onClick={handleAddToCart}
+              disabled={isOutOfStock}
+              className={`w-full transition-all duration-300 ${
+                isOutOfStock
+                  ? 'bg-white/5 text-[#a7a8c7] border border-white/10 cursor-not-allowed opacity-60'
+                  : 'bg-white/5 hover:bg-[#ff2df0] hover:text-white text-white border border-white/10 hover:border-transparent'
+              }`}
             >
-              <ShoppingCart className="mr-2 h-4 w-4" /> Agregar
+              {isOutOfStock
+                ? 'Sin existencias'
+                : <><ShoppingCart className="mr-2 h-4 w-4" /> Agregar</>}
             </Button>
           </div>
         </div>

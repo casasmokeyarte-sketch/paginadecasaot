@@ -251,17 +251,15 @@ const About = () => {
             <p className="text-lg text-[#a7a8c7] max-w-3xl mx-auto mb-8">
               Te invitamos a ser parte de esta aventura, donde la creatividad no tiene límites y cada idea encuentra su lienzo. Síguenos en nuestras redes sociales, visita nuestro estudio y descubre un universo de posibilidades.
             </p>
+            <a href="/#contact">
             <Button 
               size="lg" 
               className="mt-6 bg-gradient-to-r from-[#ff2df0] via-[#d91cb8] to-[#ff2df0] bg-[length:200%_auto] animate-gradient hover:shadow-[0_0_30px_rgba(255,45,240,0.6)] text-white font-bold text-xl rounded-full transition-all duration-300 group"
-              onClick={() => {
-                /* Placeholder for social media link */
-                alert("🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀");
-              }}
             >
               <Link2 className="mr-3 h-6 w-6 group-hover:animate-pulse" />
               Explora y Conéctate
             </Button>
+            </a>
           </motion.div>
         </div>
       </section>
