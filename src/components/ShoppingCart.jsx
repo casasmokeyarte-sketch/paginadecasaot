@@ -15,7 +15,7 @@ const SHIPPING_OPTIONS = [
     badge: null,
     details: [
       { icon: MapPin, text: 'Calle 63B #22-16, Barrio Muequeta, Bogotá' },
-      { icon: Clock, text: 'Lun – Sáb · 10 am – 6 pm' },
+      { icon: Clock, text: 'Abierto 24/7' },
       { icon: Phone, text: 'Te contactamos para coordinar la entrega' },
     ],
     note: 'Una vez confirmado el pago, nuestro equipo se comunicará contigo en un máximo de 24 h para coordinar el día y hora de recogida.',
@@ -30,6 +30,7 @@ const SHIPPING_OPTIONS = [
       { icon: Clock, text: 'Bogotá: 1 – 2 días hábiles' },
       { icon: Truck, text: 'Resto del país: 3 – 7 días hábiles' },
       { icon: Phone, text: 'Coordinamos el envío por WhatsApp' },
+      { icon: MapPin, text: 'Costo aprox. $15.000 – $35.000 según distancia y horario' },
     ],
     note: 'El valor del flete se acuerda contigo antes del despacho. Te escribimos por WhatsApp con la cotización en menos de 24 h.',
   },
