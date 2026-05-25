@@ -1,15 +1,45 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart as ShoppingCartIcon, X, Trash2, Plus, Minus } from 'lucide-react';
+import { ShoppingCart as ShoppingCartIcon, X, Trash2, Plus, Minus, Truck, Store, Clock, MapPin, Phone } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 
+const SHIPPING_OPTIONS = [
+  {
+    id: 'pickup',
+    label: 'Retiro en tienda',
+    icon: Store,
+    price: 'Gratis',
+    badge: null,
+    details: [
+      { icon: MapPin, text: 'Calle 63B #22-16, Barrio Muequeta, Bogotá' },
+      { icon: Clock, text: 'Lun – Sáb · 10 am – 6 pm' },
+      { icon: Phone, text: 'Te contactamos para coordinar la entrega' },
+    ],
+    note: 'Una vez confirmado el pago, nuestro equipo se comunicará contigo en un máximo de 24 h para coordinar el día y hora de recogida.',
+  },
+  {
+    id: 'delivery',
+    label: 'Envío a domicilio',
+    icon: Truck,
+    price: 'A convenir',
+    badge: 'Popular',
+    details: [
+      { icon: Clock, text: 'Bogotá: 1 – 2 días hábiles' },
+      { icon: Truck, text: 'Resto del país: 3 – 7 días hábiles' },
+      { icon: Phone, text: 'Coordinamos el envío por WhatsApp' },
+    ],
+    note: 'El valor del flete se acuerda contigo antes del despacho. Te escribimos por WhatsApp con la cotización en menos de 24 h.',
+  },
+];
+
 const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
   const { toast } = useToast();
   const navigate  = useNavigate();
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
+  const [shippingMethod, setShippingMethod] = useState(null);
 
   const handleCheckout = useCallback(() => {
     if (cartItems.length === 0) {
@@ -20,11 +50,19 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
       });
       return;
     }
-    // Guardar carrito en sessionStorage para que BoldCheckout lo recupere
-    sessionStorage.setItem('bold_cart', JSON.stringify({ cartItems }));
+    if (!shippingMethod) {
+      toast({
+        title: 'Elige cómo recibir tu pedido',
+        description: 'Selecciona un método de envío para continuar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    // Guardar carrito + envío en sessionStorage para que BoldCheckout lo recupere
+    sessionStorage.setItem('bold_cart', JSON.stringify({ cartItems, shippingMethod }));
     setIsCartOpen(false);
     navigate('/checkout');
-  }, [cartItems, navigate, setIsCartOpen, toast]);
+  }, [cartItems, shippingMethod, navigate, setIsCartOpen, toast]);
 
   return (
     <AnimatePresence>
@@ -128,15 +166,72 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
 
             {cartItems.length > 0 && (
               <div className="p-6 bg-[#050510] border-t border-white/10 space-y-4">
+
+                {/* ── Método de envío ── */}
+                <div>
+                  <p className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                    <Truck size={15} className="text-[#ff2df0]" />
+                    ¿Cómo quieres recibir tu pedido?
+                  </p>
+                  <div className="space-y-2">
+                    {SHIPPING_OPTIONS.map(opt => {
+                      const Icon = opt.icon;
+                      const selected = shippingMethod === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          onClick={() => setShippingMethod(opt.id)}
+                          className={`w-full text-left rounded-xl border p-3 transition-all ${
+                            selected
+                              ? 'border-[#ff2df0] bg-[#ff2df0]/10'
+                              : 'border-white/10 bg-white/5 hover:border-white/25'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="flex items-center gap-2 text-sm font-semibold text-white">
+                              <Icon size={15} className={selected ? 'text-[#ff2df0]' : 'text-[#a7a8c7]'} />
+                              {opt.label}
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              {opt.badge && (
+                                <span className="text-[10px] bg-[#00e5ff]/15 text-[#00e5ff] px-1.5 py-0.5 rounded-full font-medium">{opt.badge}</span>
+                              )}
+                              <span className={`text-xs font-bold ${selected ? 'text-[#ff2df0]' : 'text-[#a7a8c7]'}`}>{opt.price}</span>
+                            </span>
+                          </div>
+                          <ul className="space-y-0.5">
+                            {opt.details.map((d, i) => {
+                              const DIcon = d.icon;
+                              return (
+                                <li key={i} className="flex items-start gap-1.5 text-[11px] text-[#a7a8c7]">
+                                  <DIcon size={11} className="mt-0.5 flex-shrink-0" />
+                                  {d.text}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                          {selected && (
+                            <p className="mt-2 text-[11px] text-[#00e5ff] border-t border-white/10 pt-2">
+                              {opt.note}
+                            </p>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ── Total + botón pago ── */}
                 <div className="flex justify-between items-end">
                   <span className="text-gray-400">Total</span>
                   <span className="text-3xl font-bold text-white">{getCartTotal()}</span>
                 </div>
                 <Button 
-                  onClick={handleCheckout} 
-                  className="w-full bg-gradient-to-r from-[#ff2df0] to-[#d91cb8] hover:shadow-[0_0_20px_rgba(255,45,240,0.4)] text-white font-bold py-6 text-lg rounded-xl transition-all"
+                  onClick={handleCheckout}
+                  disabled={!shippingMethod}
+                  className="w-full bg-gradient-to-r from-[#ff2df0] to-[#d91cb8] hover:shadow-[0_0_20px_rgba(255,45,240,0.4)] text-white font-bold py-6 text-lg rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
                 >
-                  Pagar con Bold
+                  {shippingMethod ? 'Pagar con Bold' : 'Selecciona el envío primero'}
                 </Button>
               </div>
             )}
