@@ -7,17 +7,6 @@ import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/components/ui/use-toast';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 
-// Fondos especiales por categoría (la clave debe coincidir exactamente con el nombre en Supabase)
-const CATEGORY_BACKGROUNDS = {
-  'Smoke Sex':    '/images/bg-smoke-sex.png',
-  'Dulce Farma':  '/images/bg-dulce-farma.png',
-};
-// Overlay oscuro por categoría (ajusta la opacidad según el brillo de cada imagen)
-const CATEGORY_OVERLAY = {
-  'Smoke Sex':   'bg-[#050510]/50',
-  'Dulce Farma': 'bg-[#050510]/45',
-};
-
 const FALLBACK_PRODUCT_IMAGE = 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&q=80&w=1200';
 
 const ProductCard = ({ product, index }) => {
@@ -144,8 +133,10 @@ const PRICE_RANGES = [
   { label: 'Más de $100.000',   min: 100000, max: Infinity },
 ];
 
-const ProductsList = () => {
-  const [activeCategory, setActiveCategory] = useState('Todos');
+const ProductsList = ({ activeCategory: propCategory, setActiveCategory: propSetCategory }) => {
+  const [internalCategory, setInternalCategory] = useState('Todos');
+  const activeCategory    = propCategory     !== undefined ? propCategory     : internalCategory;
+  const setActiveCategory = propSetCategory  !== undefined ? propSetCategory  : setInternalCategory;
   const [searchTerm, setSearchTerm]         = useState('');
   const [priceRange, setPriceRange]         = useState(0);   // index into PRICE_RANGES
   const [showFilters, setShowFilters]       = useState(false);
@@ -182,36 +173,12 @@ const ProductsList = () => {
 
   const hasActiveFilters = searchTerm || priceRange !== 0 || activeCategory !== 'Todos';
 
-  const categoryBg      = CATEGORY_BACKGROUNDS[activeCategory] || null;
-  const categoryOverlay = CATEGORY_OVERLAY[activeCategory]     || 'bg-[#050510]/0';
-
   if (loadingProducts) {
     return <div className="text-center py-20 text-[#a7a8c7]">Cargando catálogo...</div>;
   }
 
   return (
-    <div className="relative">
-
-      {/* ── Fondo especial por categoría ── */}
-      <AnimatePresence>
-        {categoryBg && (
-          <motion.div
-            key={categoryBg}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.7 }}
-            className="fixed inset-0 pointer-events-none"
-            style={{ zIndex: -1 }}
-          >
-            <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-              style={{ backgroundImage: `url(${categoryBg})` }}
-            />
-            <div className={`absolute inset-0 ${categoryOverlay}`} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div>
       {/* ── Barra de búsqueda + botón filtros ── */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
