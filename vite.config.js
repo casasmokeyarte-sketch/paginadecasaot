@@ -1,4 +1,5 @@
 import path from 'node:path';
+import crypto from 'node:crypto';
 import react from '@vitejs/plugin-react';
 import { createLogger, defineConfig } from 'vite';
 import inlineEditPlugin from './plugins/visual-editor/vite-plugin-react-inline-editor.js';
@@ -283,6 +284,63 @@ const addTransformIndexHtml = {
 	},
 };
 
+// ── API local para desarrollo (replica /api/bold-checkout en Vite) ──
+const localApiPlugin = {
+	name: 'local-api',
+	configureServer(server) {
+		server.middlewares.use('/api/bold-checkout', (req, res) => {
+			if (req.method !== 'POST') {
+				res.statusCode = 405;
+				res.setHeader('Content-Type', 'application/json');
+				res.end(JSON.stringify({ error: 'Método no permitido' }));
+				return;
+			}
+			let raw = '';
+			req.on('data', d => (raw += d));
+			req.on('end', () => {
+				try {
+					const { cartItems } = JSON.parse(raw);
+					const apiKey    = process.env.BOLD_API_KEY    || '';
+					const secretKey = process.env.BOLD_SECRET_KEY || '';
+					if (!apiKey || !secretKey) {
+						res.statusCode = 500;
+						res.setHeader('Content-Type', 'application/json');
+						res.end(JSON.stringify({ error: 'Pasarela Bold no configurada. Agrega BOLD_API_KEY y BOLD_SECRET_KEY en .env.local' }));
+						return;
+					}
+					if (!cartItems?.length) {
+						res.statusCode = 400;
+						res.setHeader('Content-Type', 'application/json');
+						res.end(JSON.stringify({ error: 'El carrito está vacío' }));
+						return;
+					}
+					const amount = cartItems.reduce((t, item) => {
+						const priceCents = item.variant.sale_price_in_cents ?? item.variant.price_in_cents ?? 0;
+						return t + Math.round(priceCents / 100) * item.quantity;
+					}, 0);
+					if (amount < 1000) {
+						res.statusCode = 400;
+						res.setHeader('Content-Type', 'application/json');
+						res.end(JSON.stringify({ error: 'El monto mínimo de pago es $1.000 COP' }));
+						return;
+					}
+					const orderId = `CSA-${Date.now()}`;
+					const hash    = crypto.createHash('sha256')
+						.update(`${orderId}${amount}COP${secretKey}`, 'utf8')
+						.digest('hex');
+					res.statusCode = 200;
+					res.setHeader('Content-Type', 'application/json');
+					res.end(JSON.stringify({ orderId, amount, hash, apiKey }));
+				} catch (e) {
+					res.statusCode = 500;
+					res.setHeader('Content-Type', 'application/json');
+					res.end(JSON.stringify({ error: e.message }));
+				}
+			});
+		});
+	},
+};
+
 console.warn = () => {};
 
 const logger = createLogger()
@@ -299,7 +357,7 @@ logger.error = (msg, options) => {
 export default defineConfig({
 	customLogger: logger,
 	plugins: [
-		...(isDev ? [inlineEditPlugin(), editModeDevPlugin(), iframeRouteRestorationPlugin(), selectionModePlugin()] : []),
+		...(isDev ? [inlineEditPlugin(), editModeDevPlugin(), iframeRouteRestorationPlugin(), selectionModePlugin(), localApiPlugin] : []),
 		react(),
 		addTransformIndexHtml
 	],
