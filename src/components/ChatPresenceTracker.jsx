@@ -42,8 +42,16 @@ const extractPresenceUsers = (state) => {
 export const ChatPresenceProvider = ({ children }) => {
   const { user } = useAuth();
   const channelRef = useRef(null);
+  const syncIntervalRef = useRef(null);
   const [onlineUsers, setOnlineUsers] = useState({});
   const [presenceStatus, setPresenceStatus] = useState('CLOSED');
+
+  const syncPresenceState = () => {
+    const nextState = channelRef.current?.presenceState?.() || {};
+    const extractedUsers = extractPresenceUsers(nextState);
+    console.log('[chat-presence] sync state', extractedUsers);
+    setOnlineUsers(extractedUsers);
+  };
 
   useEffect(() => {
     if (!user?.id) {
@@ -62,7 +70,7 @@ export const ChatPresenceProvider = ({ children }) => {
 
     channel
       .on('presence', { event: 'sync' }, () => {
-        setOnlineUsers(extractPresenceUsers(channel.presenceState()));
+        syncPresenceState();
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         setOnlineUsers((prev) => {
@@ -128,6 +136,15 @@ export const ChatPresenceProvider = ({ children }) => {
           ...userInfo,
         });
         console.log('[chat-presence] track result', trackResult, userInfo);
+        syncPresenceState();
+
+        if (syncIntervalRef.current) {
+          clearInterval(syncIntervalRef.current);
+        }
+
+        syncIntervalRef.current = setInterval(() => {
+          syncPresenceState();
+        }, 5000);
       } catch (error) {
         console.error('Presence track error:', error);
       }
@@ -137,6 +154,10 @@ export const ChatPresenceProvider = ({ children }) => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
+      }
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+        syncIntervalRef.current = null;
       }
       setOnlineUsers({});
     };

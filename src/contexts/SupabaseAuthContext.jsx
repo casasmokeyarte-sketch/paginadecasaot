@@ -8,6 +8,16 @@ const ADMIN_ROLES = new Set(['admin', 'administrador']);
 const normalizeRole = (role) => (typeof role === 'string' ? role.trim().toLowerCase() : '');
 const PROFILE_SELECT = 'id, full_name, avatar_url, phone, address, role, updated_at';
 
+const buildFallbackProfile = (userId, email) => ({
+  id: userId,
+  full_name: email?.split('@')?.[0] || 'Usuario',
+  avatar_url: null,
+  phone: null,
+  address: null,
+  role: 'user',
+  updated_at: new Date().toISOString(),
+});
+
 export const AuthProvider = ({ children }) => {
   const { toast } = useToast();
   const [user, setUser] = useState(null);
@@ -46,18 +56,33 @@ export const AuthProvider = ({ children }) => {
     }
 
     if (!data) {
-      const message = `No se encontro fila en profiles para el usuario autenticado (${userId}).`;
-      console.warn(message);
-      setProfile(null);
-      setProfileError(message);
-      return null;
+      const sessionEmail = session?.user?.id === userId ? session.user.email : user?.id === userId ? user.email : null;
+      const fallbackProfile = buildFallbackProfile(userId, sessionEmail);
+
+      const { data: insertedProfile, error: insertError } = await supabase
+        .from('profiles')
+        .upsert(fallbackProfile, { onConflict: 'id' })
+        .select(PROFILE_SELECT)
+        .single();
+
+      if (insertError) {
+        const message = `No se encontro fila en profiles para el usuario autenticado (${userId}).`;
+        console.warn(message, insertError);
+        setProfile(null);
+        setProfileError(message);
+        return null;
+      }
+
+      setProfile(insertedProfile || fallbackProfile);
+      setProfileError(null);
+      return insertedProfile || fallbackProfile;
     }
 
     const nextProfile = data;
     setProfile(nextProfile);
     setProfileError(null);
     return nextProfile;
-  }, []);
+  }, [session, user]);
 
   const handleSession = useCallback(async (session) => {
     setLoading(true);

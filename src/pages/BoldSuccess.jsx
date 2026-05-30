@@ -4,7 +4,6 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, Clock, ShoppingBag, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -123,26 +122,28 @@ const BoldSuccess = () => {
       setOrderSaveError('');
 
       try {
-        const payload = {
-          user_id: user?.id || null,
-          items,
-          total_amount: totalAmount,
-          status: 'paid',
-        };
+        const response = await fetch('/api/bold-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user?.id || null,
+            items,
+            totalAmount,
+            paymentStatus: 'approved',
+          }),
+        });
 
-        const { data, error } = await supabase
-          .from('orders')
-          .insert(payload)
-          .select('id')
-          .single();
+        const result = await response.json().catch(() => ({}));
 
-        if (error) throw error;
+        if (!response.ok) {
+          throw new Error(result?.error || 'No se pudo registrar el pedido en el backend.');
+        }
 
         writeJsonStorage(localStorage, BOLD_PROCESSED_KEY, [...processedOrders, orderId]);
         sessionStorage.removeItem(BOLD_CART_KEY);
         sessionStorage.removeItem(BOLD_CONTEXT_KEY);
         localStorage.removeItem('e-commerce-cart');
-        setSavedOrderId(data?.id || '');
+        setSavedOrderId(result?.id || '');
         setOrderSaveStatus('saved');
         toast({
           title: 'Pedido registrado',
