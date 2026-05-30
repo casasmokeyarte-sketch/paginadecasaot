@@ -19,12 +19,9 @@ export const useChat = () => {
   
   const [rooms, setRooms] = useState([]);
   const [activeRoom, setActiveRoom] = useState(null);
-  const [onlineUsers, setOnlineUsers] = useState({});
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [blockedUsers, setBlockedUsers] = useState([]);
-  const presenceChannel = useRef(null);
-  }, [user]);
 
   // Fetch Blocked Users
   const fetchBlockedUsers = useCallback(async () => {
