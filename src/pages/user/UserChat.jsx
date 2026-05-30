@@ -10,6 +10,7 @@ import { uploadFileToBucket } from '@/lib/storageUpload';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -153,6 +154,9 @@ const UserChat = () => {
             <DialogContent className="bg-[#1a1c2e] border-white/10 text-white">
               <DialogHeader>
                 <DialogTitle>Crear Nuevo Grupo</DialogTitle>
+                <DialogDescription className="text-[#a7a8c7]">
+                  Define un nombre e invita usuarios conectados para abrir un chat grupal.
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">

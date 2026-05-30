@@ -22,6 +22,7 @@ import { AuthProvider } from '@/contexts/SupabaseAuthContext';
 // Components
 import FloatingChat from '@/components/FloatingChat';
 import FloatingAnnounce from '@/components/FloatingAnnounce';
+import ChatPresenceProvider from '@/components/ChatPresenceTracker';
 
 // Page Imports
 import Policies from '@/pages/Policies';
@@ -96,8 +97,9 @@ function App() {
       {/* Age Verification Modal only for public site */}
       {!isAdminRoute && <AgeVerificationModal />}
       
-      <div className={`min-h-screen bg-[#050510] text-[#f5f5f5] flex flex-col`}>
-        {!isAdminRoute && <Header />}
+      <ChatPresenceProvider>
+        <div className={`min-h-screen bg-[#050510] text-[#f5f5f5] flex flex-col`}>
+          {!isAdminRoute && <Header />}
         
         <main className={isAdminRoute ? 'flex-grow' : 'flex-grow'}>
           <Routes>
@@ -159,8 +161,9 @@ function App() {
         {!isAdminRoute && !isUserRoute && <FloatingChat />}
         {!isAdminRoute && !isUserRoute && <FloatingAnnounce />}
         {!isAdminRoute && <Footer />}
-        <Toaster />
-      </div>
+          <Toaster />
+        </div>
+      </ChatPresenceProvider>
     </CartProvider>
    </AuthProvider>
   );

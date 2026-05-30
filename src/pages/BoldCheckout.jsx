@@ -31,6 +31,11 @@ const BoldCheckout = () => {
       .then(res => res.json().then(data => ({ ok: res.ok, data })))
       .then(({ ok, data }) => {
         if (!ok) throw new Error(data.error || 'Error preparando el pago');
+        sessionStorage.setItem('bold_checkout_context', JSON.stringify({
+          orderId: data.orderId,
+          amount: data.amount,
+          createdAt: new Date().toISOString(),
+        }));
         setBoldData(data);    // ← guarda; dispara efecto 2
         setStatus('ready');   // ← renderiza el contenedor primero
       })

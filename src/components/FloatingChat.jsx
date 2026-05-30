@@ -13,6 +13,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -355,6 +356,9 @@ const FloatingChat = () => {
         <DialogContent className="border-white/10 bg-[#1a1c2e] text-white">
           <DialogHeader>
             <DialogTitle>Reportar usuario</DialogTitle>
+            <DialogDescription className="text-[#a7a8c7]">
+              Cuentanos que sucedio para que el equipo pueda revisar el caso.
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <label className="mb-2 block text-sm font-medium text-[#a7a8c7]">Motivo del reporte</label>

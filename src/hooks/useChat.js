@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useChatPresence } from '@/components/ChatPresenceTracker';
 import { useToast } from '@/components/ui/use-toast';
 
 const CHAT_PROFILE_SELECT = 'id, full_name, avatar_url';
@@ -11,120 +12,18 @@ const normalizeChatProfile = (profile, fallbackId = null) => ({
   avatar_url: profile?.avatar_url ?? null,
 });
 
-const extractPresenceUsers = (state) => {
-  const users = {};
-
-  Object.entries(state || {}).forEach(([key, presences]) => {
-    (presences || []).forEach((presence) => {
-      const trackedUser = presence?.user_info || presence || {};
-      const trackedUserId = presence?.user_id || trackedUser.id || key;
-
-      if (!trackedUserId) return;
-
-      users[trackedUserId] = {
-        id: trackedUserId,
-        email: trackedUser.email || null,
-        full_name: trackedUser.full_name || trackedUser.email?.split?.('@')?.[0] || 'Usuario',
-        avatar_url: trackedUser.avatar_url || null,
-        online_at: trackedUser.online_at || new Date().toISOString(),
-      };
-    });
-  });
-
-  return users;
-};
-
 export const useChat = () => {
   const { user } = useAuth();
+  const { onlineUsers } = useChatPresence();
   const { toast } = useToast();
   
   const [rooms, setRooms] = useState([]);
   const [activeRoom, setActiveRoom] = useState(null);
-  const [messages, setMessages] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState({});
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [blockedUsers, setBlockedUsers] = useState([]);
-
   const presenceChannel = useRef(null);
-  const messageSubscription = useRef(null);
-
-  // 1. Setup Presence (Online Status)
-  useEffect(() => {
-    if (!user) return;
-
-    presenceChannel.current = supabase.channel('global_presence', {
-      config: {
-        presence: { key: user.id },
-      },
-    })
-      .on('presence', { event: 'sync' }, () => {
-        const state = presenceChannel.current.presenceState();
-        setOnlineUsers(extractPresenceUsers(state));
-      })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        setOnlineUsers(prev => {
-          const updated = { ...prev };
-          (newPresences || []).forEach(p => {
-            const info = p?.user_info || p || {};
-            const id = p?.user_id || info.id || key;
-            if (!id) return;
-            updated[id] = {
-              id,
-              email: info.email || null,
-              full_name: info.full_name || info.email?.split('@')?.[0] || 'Usuario',
-              avatar_url: info.avatar_url || null,
-              online_at: info.online_at || new Date().toISOString(),
-            };
-          });
-          return updated;
-        });
-      })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        setOnlineUsers(prev => {
-          const updated = { ...prev };
-          (leftPresences || []).forEach(p => {
-            const info = p?.user_info || p || {};
-            const id = p?.user_id || info.id || key;
-            if (id) delete updated[id];
-          });
-          return updated;
-        });
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          const { data: profileRows } = await supabase
-            .from('profiles')
-            .select(CHAT_PROFILE_SELECT)
-            .eq('id', user.id)
-            .limit(1);
-          const profile = normalizeChatProfile(profileRows?.[0], user.id);
-
-          const userInfo = {
-            id: user.id,
-            email: user.email,
-            full_name: profile?.full_name || user.email.split('@')[0],
-            avatar_url: profile.avatar_url,
-            online_at: new Date().toISOString(),
-          };
-
-          try {
-            await presenceChannel.current.track({
-              user_id: user.id,
-              user_info: userInfo,
-              ...userInfo,
-            });
-          } catch (trackError) {
-            console.error('Presence track error:', trackError);
-          }
-        }
-      });
-
-    return () => {
-      if (presenceChannel.current) {
-        supabase.removeChannel(presenceChannel.current);
-      }
-    };
   }, [user]);
 
   // Fetch Blocked Users
