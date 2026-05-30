@@ -19,9 +19,11 @@ export const useChat = () => {
   
   const [rooms, setRooms] = useState([]);
   const [activeRoom, setActiveRoom] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [blockedUsers, setBlockedUsers] = useState([]);
+  const messageSubscription = useRef(null);
 
   // Fetch Blocked Users
   const fetchBlockedUsers = useCallback(async () => {
