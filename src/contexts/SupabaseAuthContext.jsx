@@ -14,7 +14,6 @@ const buildFallbackProfile = (userId, email) => ({
   avatar_url: null,
   phone: null,
   address: null,
-  role: 'user',
   updated_at: new Date().toISOString(),
 });
 
@@ -26,7 +25,7 @@ export const AuthProvider = ({ children }) => {
   const [profileError, setProfileError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (userId) => {
+  const fetchProfile = useCallback(async (userId, fallbackEmail = null) => {
     if (!userId) {
       console.log('[auth] fetchProfile skipped: missing userId', { userId });
       setProfile(null);
@@ -56,8 +55,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     if (!data) {
-      const sessionEmail = session?.user?.id === userId ? session.user.email : user?.id === userId ? user.email : null;
-      const fallbackProfile = buildFallbackProfile(userId, sessionEmail);
+      const fallbackProfile = buildFallbackProfile(userId, fallbackEmail);
 
       const { data: insertedProfile, error: insertError } = await supabase
         .from('profiles')
@@ -82,7 +80,7 @@ export const AuthProvider = ({ children }) => {
     setProfile(nextProfile);
     setProfileError(null);
     return nextProfile;
-  }, [session, user]);
+  }, []);
 
   const handleSession = useCallback(async (session) => {
     setLoading(true);
@@ -93,7 +91,7 @@ export const AuthProvider = ({ children }) => {
       sessionEmail: session?.user?.email ?? null,
     });
     setUser(nextUser);
-    await fetchProfile(nextUser?.id);
+    await fetchProfile(nextUser?.id, nextUser?.email || null);
     setLoading(false);
   }, [fetchProfile]);
 
@@ -156,7 +154,7 @@ export const AuthProvider = ({ children }) => {
       });
     }
 
-    const nextProfile = data?.user ? await fetchProfile(data.user.id) : null;
+    const nextProfile = data?.user ? await fetchProfile(data.user.id, data.user.email || null) : null;
 
     return { error, data, profile: nextProfile };
   }, [fetchProfile, toast]);
