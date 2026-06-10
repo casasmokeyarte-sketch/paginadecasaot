@@ -36,14 +36,28 @@ const Hero = () => {
         <title>Casa Smoke y Arte SSOT S.A.S - Pride Month Especial 🏳️‍🌈</title>
       </Helmet>
 
-      <div className="container mx-auto px-4 pt-8 pb-16 font-sans">
+      <div className="container mx-auto px-4 pt-8 pb-16 font-sans flex flex-col items-center relative overflow-visible">
+        {/* Background logo2 watermark (Original cover image preserved) */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.06] z-0">
+          <img src="/logo2.png" alt="Logo Watermark" className="w-[80%] max-w-xl h-auto object-contain" />
+        </div>
         
+        {/* Main Brand Logo */}
+        <motion.img 
+          initial={{ scale: 0.8, opacity: 0 }} 
+          animate={{ scale: 1, opacity: 1 }} 
+          transition={{ duration: 0.8 }} 
+          src="/logo.png" 
+          alt="Casa Smoke y Arte Logo" 
+          className="w-32 md:w-44 h-auto mb-2 drop-shadow-md select-none pointer-events-none relative z-10" 
+        />
+
         {/* Top Header cursive title */}
         <motion.h1 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center font-normal text-5xl md:text-7xl pt-6 pb-8 text-[#4a248c] tracking-wide"
+          transition={{ duration: 0.8, delay: 0.15 }}
+          className="text-center font-normal text-5xl md:text-7xl pb-8 text-[#4a248c] tracking-wide relative z-10"
           style={{ fontFamily: "'Playball', cursive" }}
         >
           Casa Smoke y Arte OT SSOT S.A.S

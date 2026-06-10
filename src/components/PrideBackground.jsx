@@ -2,7 +2,10 @@ import React from 'react';
 
 const PrideBackground = ({ children }) => {
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-[#ffe4e6] via-[#f3e8ff] to-[#e0f2fe] text-[#4a248c] transition-colors duration-500">
+    <div 
+      className="relative min-h-screen w-full overflow-hidden text-[#4a248c] bg-cover bg-center bg-no-repeat bg-fixed transition-all duration-500"
+      style={{ backgroundImage: "url('/pride_bg.png')" }}
+    >
       {/* Animated Sparkles & Twinkles in Background */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         {/* Sparkle 1 */}
@@ -29,13 +32,6 @@ const PrideBackground = ({ children }) => {
             <path d="M12 0L14.6 9.4L24 12L14.6 14.6L12 24L9.4 14.6L0 12L9.4 9.4Z" />
           </svg>
         </div>
-
-        {/* Slow Drifting Cloud 1 */}
-        <div className="absolute top-[8%] -left-[10%] w-72 h-36 opacity-30 blur-sm pointer-events-none animate-drift-slow bg-white rounded-full"></div>
-        {/* Slow Drifting Cloud 2 */}
-        <div className="absolute top-[45%] -right-[15%] w-96 h-48 opacity-25 blur-md pointer-events-none animate-drift-slower bg-[#ffdcf0] rounded-full"></div>
-        {/* Slow Drifting Cloud 3 */}
-        <div className="absolute bottom-[10%] -left-[5%] w-80 h-40 opacity-40 blur-sm pointer-events-none animate-drift-slow-reverse bg-white rounded-full"></div>
       </div>
 
       <style>{`
