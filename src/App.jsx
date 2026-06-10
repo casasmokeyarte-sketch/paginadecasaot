@@ -26,6 +26,8 @@ import ChatPresenceProvider from '@/components/ChatPresenceTracker';
 
 // Page Imports
 import Policies from '@/pages/Policies';
+import PrideBackground from '@/components/PrideBackground';
+import PrideAudioPlayer from '@/components/PrideAudioPlayer';
 
 // Admin Imports
 import AdminLayout from '@/pages/admin/AdminLayout';
@@ -98,71 +100,83 @@ function App() {
       {!isAdminRoute && <AgeVerificationModal />}
       
       <ChatPresenceProvider>
-        <div className={`min-h-screen bg-[#050510] text-[#f5f5f5] flex flex-col`}>
-          {!isAdminRoute && <Header />}
-        
-        <main className={isAdminRoute ? 'flex-grow' : 'flex-grow'}>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Hero />} />
-            <Route path="/about" element={<div className="pt-16"><About /></div>} />
-            <Route path="/store" element={<Shop />} />
-            <Route path="/store/:productId" element={<StoreProductDetail />} />
-            <Route path="/photos" element={<Photos />} />
-            <Route path="/product/:id" element={<ProductDetailPage />} />
-            <Route path="/success" element={<SuccessPage />} />
-            <Route path="/checkout" element={<BoldCheckout />} />
-            <Route path="/pago/resultado" element={<BoldSuccess />} />
-            <Route path="/styles" element={<div className="pt-16"><TattooStyles /></div>} />
-            <Route path="/services" element={<div className="pt-16"><Services /></div>} />
-            <Route path="/delivery-calculator" element={<div className="pt-16"><DeliveryCalculator /></div>} />
-            <Route path="/booking" element={<div className="pt-16"><Booking /></div>} />
-            <Route path="/contact" element={<div className="pt-16"><Contact /></div>} />
-            <Route path="/pqr" element={<div className="pt-16"><PublicPQR /></div>} />
-            <Route path="/did-you-know" element={<div className="pt-16"><DidYouKnow /></div>} />
-            <Route path="/podcast" element={<div className="pt-16"><Podcast /></div>} />
-            <Route path="/policies" element={<div className="pt-16"><Policies /></div>} />
+        {isAdminRoute ? (
+          <div className="min-h-screen bg-[#050510] text-[#f5f5f5] flex flex-col">
+            <main className="flex-grow">
+              <Routes>
+                {/* Admin Routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="products" element={<AdminProducts />} />
+                  <Route path="orders" element={<AdminOrders />} />
+                  <Route path="billing" element={<AdminBilling />} />
+                  <Route path="bookings" element={<AdminBookings />} />
+                  <Route path="gallery" element={<AdminGallery />} />
+                  <Route path="education" element={<AdminEducation />} />
+                  <Route path="podcast" element={<AdminPodcast />} />
+                  <Route path="pqr" element={<AdminPQR />} />
+                  <Route path="activity" element={<AdminLiveActivity />} />
+                </Route>
+              </Routes>
+            </main>
+            <Toaster />
+          </div>
+        ) : (
+          <PrideBackground>
+            <div className={`min-h-screen flex flex-col`}>
+              <Header />
+            
+            <main className="flex-grow pt-16">
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Hero />} />
+                <Route path="/about" element={<div className="pt-16"><About /></div>} />
+                <Route path="/store" element={<Shop />} />
+                <Route path="/store/:productId" element={<StoreProductDetail />} />
+                <Route path="/photos" element={<Photos />} />
+                <Route path="/product/:id" element={<ProductDetailPage />} />
+                <Route path="/success" element={<SuccessPage />} />
+                <Route path="/checkout" element={<BoldCheckout />} />
+                <Route path="/pago/resultado" element={<BoldSuccess />} />
+                <Route path="/styles" element={<div className="pt-16"><TattooStyles /></div>} />
+                <Route path="/services" element={<div className="pt-16"><Services /></div>} />
+                <Route path="/delivery-calculator" element={<div className="pt-16"><DeliveryCalculator /></div>} />
+                <Route path="/booking" element={<div className="pt-16"><Booking /></div>} />
+                <Route path="/contact" element={<div className="pt-16"><Contact /></div>} />
+                <Route path="/pqr" element={<div className="pt-16"><PublicPQR /></div>} />
+                <Route path="/did-you-know" element={<div className="pt-16"><DidYouKnow /></div>} />
+                <Route path="/podcast" element={<div className="pt-16"><Podcast /></div>} />
+                <Route path="/policies" element={<div className="pt-16"><Policies /></div>} />
 
-            {/* Auth Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
+                {/* Auth Routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* User Panel Routes */}
-            <Route path="/user" element={<UserLayout />}>
-              <Route index element={<UserDashboard />} />
-              <Route path="profile" element={<UserProfile />} />
-              <Route path="bookings" element={<UserBookings />} />
-              <Route path="orders" element={<UserOrders />} />
-              <Route path="wishlist" element={<UserWishlist />} />
-              <Route path="pqr" element={<UserPQR />} />
-              <Route path="chat" element={<UserChat />} />
-            </Route>
-
-            {/* Admin Routes */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="products" element={<AdminProducts />} />
-              <Route path="orders" element={<AdminOrders />} />
-              <Route path="billing" element={<AdminBilling />} />
-              <Route path="bookings" element={<AdminBookings />} />
-              <Route path="gallery" element={<AdminGallery />} />
-              <Route path="education" element={<AdminEducation />} />
-              <Route path="podcast" element={<AdminPodcast />} />
-              <Route path="pqr" element={<AdminPQR />} />
-              <Route path="activity" element={<AdminLiveActivity />} />
-            </Route>
-          </Routes>
-        </main>
-        
-        {!isAdminRoute && !isUserRoute && <FloatingChat />}
-        {!isAdminRoute && !isUserRoute && <FloatingAnnounce />}
-        {!isAdminRoute && <Footer />}
-          <Toaster />
-        </div>
+                {/* User Panel Routes */}
+                <Route path="/user" element={<UserLayout />}>
+                  <Route index element={<UserDashboard />} />
+                  <Route path="profile" element={<UserProfile />} />
+                  <Route path="bookings" element={<UserBookings />} />
+                  <Route path="orders" element={<UserOrders />} />
+                  <Route path="wishlist" element={<UserWishlist />} />
+                  <Route path="pqr" element={<UserPQR />} />
+                  <Route path="chat" element={<UserChat />} />
+                </Route>
+              </Routes>
+            </main>
+            
+            {!isUserRoute && <FloatingChat />}
+            {!isUserRoute && <FloatingAnnounce />}
+            <Footer />
+            <PrideAudioPlayer />
+            <Toaster />
+            </div>
+          </PrideBackground>
+        )}
       </ChatPresenceProvider>
     </CartProvider>
    </AuthProvider>

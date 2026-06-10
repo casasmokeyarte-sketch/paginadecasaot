@@ -65,7 +65,7 @@ const Header = () => {
         animate={{ y: 0 }}
         transition={{ duration: 0.5 }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled || isMobileMenuOpen ? 'bg-[#050510]/95 backdrop-blur-md shadow-lg border-b border-white/10' : 'bg-transparent'
+          isScrolled || isMobileMenuOpen ? 'bg-white/40 backdrop-blur-md shadow-md border-b border-[#ff66cc]/20' : 'bg-transparent'
         }`}
       >
         <nav className="container mx-auto px-4 py-4">
@@ -93,15 +93,15 @@ const Header = () => {
                   <motion.span
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
-                    className={`text-sm font-medium transition-colors relative px-2 py-1 whitespace-nowrap ${
-                      isActive(item.path) ? 'text-[#ff2df0]' : 'text-[#f5f5f5] hover:text-[#ff2df0]'
+                    className={`text-sm font-semibold transition-colors relative px-2 py-1 whitespace-nowrap ${
+                      isActive(item.path) ? 'text-[#ff007f]' : 'text-[#4a248c] hover:text-[#ff007f]'
                     }`}
                   >
                     {item.label}
                     {isActive(item.path) && (
                       <motion.div
                         layoutId="underline"
-                        className="absolute left-0 right-0 -bottom-1 h-0.5 bg-[#ff2df0]"
+                        className="absolute left-0 right-0 -bottom-1 h-0.5 bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500"
                       />
                     )}
                   </motion.span>
@@ -115,15 +115,15 @@ const Header = () => {
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 hover:border-[#00e5ff]/40 transition-all"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-[#4a248c]/10 hover:bg-[#4a248c]/20 rounded-full border border-[#ff66cc]/20 transition-all text-[#4a248c]"
                   >
-                    <div className="w-7 h-7 bg-gradient-to-br from-[#ff2df0] to-[#00e5ff] rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                    <div className="w-7 h-7 bg-gradient-to-br from-[#ff007f] to-[#00e5ff] rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
                       {(profile?.full_name || user.email || '?').slice(0, 2).toUpperCase()}
                     </div>
-                    <span className="text-white text-sm font-medium hidden md:block max-w-[80px] truncate">
+                    <span className="text-[#4a248c] text-sm font-medium hidden md:block max-w-[80px] truncate">
                       {profile?.full_name ? profile.full_name.split(' ')[0] : user.email?.split('@')[0]}
                     </span>
-                    <ChevronDown size={14} className={`text-white/60 hidden md:block transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={14} className={`text-[#4a248c]/60 hidden md:block transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
                   <AnimatePresence>
                     {isUserMenuOpen && (
@@ -132,14 +132,14 @@ const Header = () => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -8, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-full mt-2 w-48 bg-[#111322] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50"
+                        className="absolute right-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-md border border-[#ff66cc]/20 rounded-xl shadow-2xl overflow-hidden z-50 text-[#4a248c]"
                       >
-                        <Link to="/user" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition-colors">
-                          <User size={15} className="text-[#00e5ff]" /> Mi Perfil
+                        <Link to="/user" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-[#4a248c] hover:bg-pink-50 transition-colors">
+                          <User size={15} className="text-[#ff007f]" /> Mi Perfil
                         </Link>
                         <button
                           onClick={() => { signOut(); setIsUserMenuOpen(false); }}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors border-t border-white/5"
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors border-t border-[#ff66cc]/10"
                         >
                           <LogOut size={15} /> Cerrar Sesión
                         </button>
@@ -151,7 +151,7 @@ const Header = () => {
                 <div className="relative flex items-center">
                   <div className="absolute inset-0 -m-1 pointer-events-none">
                     <motion.div
-                      className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#ff2df0] border-r-[#ff2df0]/50"
+                      className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#ff007f] border-r-[#ff007f]/50"
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
                     />
@@ -172,15 +172,15 @@ const Header = () => {
                       transition={{ duration: 2, repeat: Infinity }}
                       className="relative"
                     >
-                      <div className="bg-gradient-to-r from-[#ff2df0] to-[#d91cb8] text-white text-[10px] font-bold px-3 py-1.5 rounded-l-full rounded-tr-full shadow-[0_0_15px_rgba(255,45,240,0.5)] whitespace-nowrap flex items-center border border-white/20">
+                      <div className="bg-gradient-to-r from-[#ff007f] to-[#ff00ff] text-white text-[10px] font-bold px-3 py-1.5 rounded-l-full rounded-tr-full shadow-[0_0_15px_rgba(255,0,127,0.4)] whitespace-nowrap flex items-center border border-white/20">
                         <span>¡Inscríbete aquí!</span>
                         <span className="ml-1 text-xs">✨</span>
                       </div>
-                      <div className="absolute top-1/2 -right-1 w-2 h-0.5 bg-[#ff2df0] translate-y-[-50%]"></div>
+                      <div className="absolute top-1/2 -right-1 w-2 h-0.5 bg-[#ff007f] translate-y-[-50%]"></div>
                     </motion.div>
                   </motion.div>
                   <Link to="/login" className="relative z-10">
-                    <button className="relative p-2 text-white hover:text-[#00e5ff] transition-colors bg-white/5 rounded-full hover:bg-white/10">
+                    <button className="relative p-2 text-[#4a248c] hover:text-[#ff007f] transition-colors bg-[#4a248c]/10 rounded-full hover:bg-[#4a248c]/20">
                       <User size={20} />
                     </button>
                   </Link>
@@ -190,14 +190,14 @@ const Header = () => {
               {/* Cart Button */}
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="relative p-2 text-white hover:text-[#ff2df0] transition-colors"
+                className="relative p-2 text-[#4a248c] hover:text-[#ff007f] transition-colors"
               >
                 <ShoppingBag size={24} />
                 {cartCount > 0 && (
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 bg-[#ff2df0] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#050510]"
+                    className="absolute -top-1 -right-1 bg-[#ff007f] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#ffe4e6]"
                   >
                     {cartCount}
                   </motion.span>
@@ -210,9 +210,9 @@ const Header = () => {
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
                 {isMobileMenuOpen ? (
-                  <X className="text-white" size={24} />
+                  <X className="text-[#4a248c]" size={24} />
                 ) : (
-                  <Menu className="text-white" size={24} />
+                  <Menu className="text-[#4a248c]" size={24} />
                 )}
               </button>
             </div>
@@ -225,7 +225,7 @@ const Header = () => {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="lg:hidden overflow-hidden bg-[#111322] rounded-b-2xl border-t border-white/10 mt-4"
+                className="lg:hidden overflow-hidden bg-white/95 backdrop-blur-md rounded-b-2xl border-t border-[#ff66cc]/20 mt-4 shadow-lg"
               >
                 <div className="flex flex-col p-4 space-y-2">
                   {navItems.map((item) => (
@@ -234,8 +234,8 @@ const Header = () => {
                       onClick={() => handleMobileNav(item.path)}
                       className={`block w-full text-left py-3 px-4 rounded-xl transition-colors ${
                         isActive(item.path) 
-                          ? 'text-[#ff2df0] bg-[#15162a] font-semibold' 
-                          : 'text-[#f5f5f5] hover:text-[#ff2df0] hover:bg-[#15162a]'
+                          ? 'text-[#ff007f] bg-pink-100/50 font-bold' 
+                          : 'text-[#4a248c] hover:text-[#ff007f] hover:bg-pink-50'
                       }`}
                     >
                       {item.label}
@@ -244,27 +244,27 @@ const Header = () => {
                   {user ? (
                     <>
                       <Link to="/user" onClick={() => setIsMobileMenuOpen(false)} className="w-full">
-                        <button className="w-full text-left py-3 px-4 rounded-xl text-[#00e5ff] hover:bg-[#15162a] flex items-center gap-2">
+                        <button className="w-full text-left py-3 px-4 rounded-xl text-[#ff007f] hover:bg-pink-50 flex items-center gap-2">
                           <User size={16} />
                           {profile?.full_name ? profile.full_name.split(' ')[0] : 'Mi Cuenta'}
                         </button>
                       </Link>
                       <button
                         onClick={() => { signOut(); setIsMobileMenuOpen(false); }}
-                        className="w-full text-left py-3 px-4 rounded-xl text-red-400 hover:bg-red-500/10 flex items-center gap-2"
+                        className="w-full text-left py-3 px-4 rounded-xl text-red-500 hover:bg-red-50 flex items-center gap-2"
                       >
                         <LogOut size={16} /> Cerrar Sesión
                       </button>
                     </>
                   ) : (
                     <Link to="/login" className="w-full">
-                      <button className="w-full text-left py-3 px-4 rounded-xl text-[#00e5ff] hover:bg-[#15162a]">
+                      <button className="w-full text-left py-3 px-4 rounded-xl text-[#ff007f] hover:bg-pink-50">
                         Iniciar Sesión / Inscríbete
                       </button>
                     </Link>
                   )}
                   <Link to="/booking" className="w-full mt-4">
-                    <button className="w-full py-3 bg-[#ff2df0] text-white rounded-xl font-bold">
+                    <button className="w-full py-3 bg-gradient-to-r from-[#ff007f] to-[#ff00ff] text-white rounded-xl font-bold">
                       Agendar Cita
                     </button>
                   </Link>
