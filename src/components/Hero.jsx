@@ -144,12 +144,12 @@ const Hero = () => {
             initial={{ opacity: 0, x: 50, rotate: 10 }}
             animate={{ opacity: 1, x: 0, rotate: 0 }}
             transition={{ type: 'spring', stiffness: 80, delay: 0.5 }}
-            className="absolute -right-4 md:-right-12 -top-12 md:-top-20 w-44 sm:w-56 md:w-80 h-[115%] md:h-[130%] pointer-events-none select-none z-20"
+            className="absolute -right-6 sm:-right-10 md:-right-16 lg:-right-24 -top-16 sm:-top-24 md:-top-36 lg:-top-44 w-48 sm:w-64 md:w-[24rem] lg:w-[29rem] xl:w-[32rem] h-[125%] sm:h-[135%] md:h-[155%] lg:h-[170%] pointer-events-auto select-none z-20"
           >
             <img 
               src="/pride_flamingo.png" 
               alt="Pride Flamingo" 
-              className="w-full h-full object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.2)]"
+              className="w-full h-full object-contain drop-shadow-[0_25px_25px_rgba(0,0,0,0.35)] hover:scale-105 active:scale-98 transition-transform duration-300 cursor-pointer"
             />
           </motion.div>
         </motion.div>
