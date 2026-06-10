@@ -5,8 +5,15 @@ import { Link } from 'react-router-dom';
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   return (
-    <footer className="bg-white/40 backdrop-blur-md text-[#4a248c] py-8 border-t border-[#ff66cc]/20">
-      <div className="container mx-auto px-4">
+    <footer className="relative bg-white/40 backdrop-blur-md text-[#4a248c] py-8 border-t border-[#ff66cc]/20 overflow-hidden">
+      {/* Subtle white clouds decorative overlay */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.08] z-0">
+        <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 100" preserveAspectRatio="none">
+          <path d="M-50 90 C 20 90, 40 50, 90 50 C 140 50, 160 80, 210 80 C 260 80, 280 60, 330 60 C 380 60, 400 90, 470 90 C 540 90, 560 70, 610 70 C 660 70, 680 95, 730 95 C 780 95, 800 90, 850 90 L850 100 L-50 100 Z" fill="currentColor" />
+        </svg>
+      </div>
+      
+      <div className="container mx-auto px-4 relative z-10">
         <div className="flex flex-col md:flex-row items-center justify-between">
           <div className="flex items-center space-x-2 mb-4 md:mb-0">
             <img src="/logo.png" alt="Casa Smoke y Arte Logo" className="h-12 w-auto" />

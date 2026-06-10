@@ -12,7 +12,7 @@ const Shop = () => {
   const categoryBg = CATEGORY_BACKGROUNDS[activeCategory] || null;
 
   return (
-    <section className="min-h-screen pt-32 pb-20 bg-[#050510] relative overflow-hidden">
+    <section className="min-h-screen pt-32 pb-20 bg-transparent relative overflow-hidden">
 
       {/* ── Fondo de categoría animado ── */}
       <AnimatePresence>
@@ -27,10 +27,10 @@ const Shop = () => {
             style={{ zIndex: 0 }}
           >
             <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
               style={{ backgroundImage: `url(${categoryBg})` }}
             />
-            <div className="absolute inset-0 bg-[#050510]/50" />
+            <div className="absolute inset-0 bg-white/40 backdrop-blur-sm" />
           </motion.div>
         )}
       </AnimatePresence>
@@ -42,13 +42,13 @@ const Shop = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h1 className="text-4xl md:text-6xl font-bold text-[#f5f5f5] mb-4">
-            Catálogo y <span className="text-[#ff2df0]">Tienda</span>
+          <h1 className="text-4xl md:text-6xl font-bold text-[#4a248c] mb-4">
+            Catálogo y <span className="text-[#ff007f]">Tienda</span>
           </h1>
-          <p className="text-xl text-[#a7a8c7] max-w-2xl mx-auto">
+          <p className="text-xl text-[#4a248c]/80 max-w-2xl mx-auto">
             Explora todos nuestros productos, insumos y accesorios en un solo lugar.
           </p>
-          <div className="w-24 h-1 bg-gradient-to-r from-[#00e5ff] to-[#ff2df0] mx-auto mt-6" />
+          <div className="w-24 h-1 bg-gradient-to-r from-red-500 via-green-500 to-blue-500 mx-auto mt-6 rounded-full" />
         </motion.div>
 
         <ProductsList

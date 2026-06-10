@@ -92,8 +92,8 @@ function App() {
    <AuthProvider>
     <CartProvider>
       <Helmet>
-        <title>Casa Smoke y Arte SSOT S.A.S - Cultura, Tattoo y Experiencia</title>
-        <meta name="description" content="Casa Smoke y Arte SSOT S.A.S es tu estudio de tatuajes y arte en Colombia. Ofrecemos diseños únicos, artistas profesionales y una experiencia cultural incomparable." />
+        <title>Casa Smoke y Arte OT SSOT S.A.S - Cultura, Tattoo y Experiencia 🏳️‍🌈</title>
+        <meta name="description" content="Casa Smoke y Arte OT SSOT S.A.S es tu estudio de tatuajes y arte en Colombia. Ofrecemos diseños únicos, artistas profesionales y una experiencia cultural incomparable." />
       </Helmet>
       
       {/* Age Verification Modal only for public site */}

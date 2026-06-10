@@ -46,7 +46,7 @@ const Hero = () => {
           className="text-center font-normal text-5xl md:text-7xl pt-6 pb-8 text-[#4a248c] tracking-wide"
           style={{ fontFamily: "'Playball', cursive" }}
         >
-          Casa Smoke y Arte
+          Casa Smoke y Arte OT SSOT S.A.S
         </motion.h1>
 
         {/* Pride Banner Section */}
