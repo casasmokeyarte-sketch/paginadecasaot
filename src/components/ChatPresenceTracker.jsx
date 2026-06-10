@@ -2,8 +2,6 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
-const CHAT_PROFILE_SELECT = 'id, full_name, avatar_url';
-
 const ChatPresenceContext = createContext({
   onlineUsers: {},
   presenceStatus: 'CLOSED',
@@ -40,7 +38,11 @@ const extractPresenceUsers = (state) => {
 };
 
 export const ChatPresenceProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const userId = user?.id || null;
+  const userEmail = user?.email || null;
+  const profileName = profile?.full_name || null;
+  const profileAvatar = profile?.avatar_url || null;
   const channelRef = useRef(null);
   const syncIntervalRef = useRef(null);
   const [onlineUsers, setOnlineUsers] = useState({});
@@ -49,12 +51,11 @@ export const ChatPresenceProvider = ({ children }) => {
   const syncPresenceState = () => {
     const nextState = channelRef.current?.presenceState?.() || {};
     const extractedUsers = extractPresenceUsers(nextState);
-    console.log('[chat-presence] sync state', extractedUsers);
     setOnlineUsers(extractedUsers);
   };
 
   useEffect(() => {
-    if (!user?.id) {
+    if (!userId) {
       setOnlineUsers({});
       setPresenceStatus('CLOSED');
       return;
@@ -62,7 +63,7 @@ export const ChatPresenceProvider = ({ children }) => {
 
     const channel = supabase.channel('global_presence', {
       config: {
-        presence: { key: user.id },
+        presence: { key: userId },
       },
     });
 
@@ -107,35 +108,22 @@ export const ChatPresenceProvider = ({ children }) => {
 
     channel.subscribe(async (status) => {
       setPresenceStatus(status);
-      console.log('[chat-presence] status', status, { userId: user.id });
       if (status !== 'SUBSCRIBED') return;
 
-      const { data: profileRows, error: profileError } = await supabase
-        .from('profiles')
-        .select(CHAT_PROFILE_SELECT)
-        .eq('id', user.id)
-        .limit(1);
-
-      if (profileError) {
-        console.warn('[chat-presence] profile lookup failed, using auth fallback', profileError);
-      }
-
-      const profile = profileRows?.[0] || null;
       const userInfo = {
-        id: user.id,
-        email: user.email || null,
-        full_name: profile?.full_name || user.email?.split('@')?.[0] || 'Usuario',
-        avatar_url: profile?.avatar_url || null,
+        id: userId,
+        email: userEmail,
+        full_name: profileName || userEmail?.split('@')?.[0] || 'Usuario',
+        avatar_url: profileAvatar,
         online_at: new Date().toISOString(),
       };
 
       try {
-        const trackResult = await channel.track({
-          user_id: user.id,
+        await channel.track({
+          user_id: userId,
           user_info: userInfo,
           ...userInfo,
         });
-        console.log('[chat-presence] track result', trackResult, userInfo);
         syncPresenceState();
 
         if (syncIntervalRef.current) {
@@ -143,8 +131,9 @@ export const ChatPresenceProvider = ({ children }) => {
         }
 
         syncIntervalRef.current = setInterval(() => {
+          if (!navigator.onLine) return;
           syncPresenceState();
-        }, 5000);
+        }, 15000);
       } catch (error) {
         console.error('Presence track error:', error);
       }
@@ -161,7 +150,7 @@ export const ChatPresenceProvider = ({ children }) => {
       }
       setOnlineUsers({});
     };
-  }, [user]);
+  }, [userId, userEmail, profileName, profileAvatar]);
 
   return (
     <ChatPresenceContext.Provider value={{ onlineUsers, presenceStatus }}>

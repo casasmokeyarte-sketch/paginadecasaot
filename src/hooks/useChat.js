@@ -5,6 +5,15 @@ import { useChatPresence } from '@/components/ChatPresenceTracker';
 import { useToast } from '@/components/ui/use-toast';
 
 const CHAT_PROFILE_SELECT = 'id, full_name, avatar_url';
+const CHAT_REQUEST_COOLDOWN_MS = 10000;
+
+const isTransientChatError = (error) => {
+  const message = `${error?.message || ''} ${error?.details || ''}`.toLowerCase();
+  return message.includes('failed to fetch')
+    || message.includes('network')
+    || message.includes('insufficient_resources')
+    || message.includes('timeout');
+};
 
 const normalizeChatProfile = (profile, fallbackId = null) => ({
   id: profile?.id ?? fallbackId,
@@ -16,6 +25,7 @@ export const useChat = () => {
   const { user } = useAuth();
   const { onlineUsers } = useChatPresence();
   const { toast } = useToast();
+  const userId = user?.id || null;
   
   const [rooms, setRooms] = useState([]);
   const [activeRoom, setActiveRoom] = useState(null);
@@ -24,19 +34,51 @@ export const useChat = () => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [blockedUsers, setBlockedUsers] = useState([]);
   const messageSubscription = useRef(null);
+  const toastRef = useRef(toast);
+  const roomsRetryAfterRef = useRef(0);
+  const blockedRetryAfterRef = useRef(0);
+  const lastErrorKeyRef = useRef({ key: '', at: 0 });
+
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
+
+  const logChatErrorOnce = useCallback((scope, error) => {
+    const message = error?.message || 'chat_error';
+    const key = `${scope}:${message}`;
+    const now = Date.now();
+
+    if (lastErrorKeyRef.current.key === key && now - lastErrorKeyRef.current.at < 10000) {
+      return;
+    }
+
+    lastErrorKeyRef.current = { key, at: now };
+    console.error(scope, error);
+  }, []);
 
   // Fetch Blocked Users
   const fetchBlockedUsers = useCallback(async () => {
-    if (!user) return;
-    const { data, error } = await supabase.from('user_blocks').select('blocked_id').eq('blocker_id', user.id);
-    if (error) {
-      console.error('Error fetching blocked users:', error);
+    if (!userId) return;
+
+    const now = Date.now();
+    if (blockedRetryAfterRef.current > now) {
       return;
     }
+
+    const { data, error } = await supabase.from('user_blocks').select('blocked_id').eq('blocker_id', userId);
+    if (error) {
+      logChatErrorOnce('Error fetching blocked users:', error);
+      if (isTransientChatError(error)) {
+        blockedRetryAfterRef.current = Date.now() + CHAT_REQUEST_COOLDOWN_MS;
+      }
+      return;
+    }
+
+    blockedRetryAfterRef.current = 0;
     if (data) {
       setBlockedUsers(data.map(b => b.blocked_id));
     }
-  }, [user]);
+  }, [userId, logChatErrorOnce]);
 
   useEffect(() => {
     fetchBlockedUsers();
@@ -44,14 +86,25 @@ export const useChat = () => {
 
   // 2. Fetch User's Rooms
   const fetchRooms = useCallback(async () => {
-    if (!user) return;
+    if (!userId) {
+      setRooms([]);
+      setLoadingRooms(false);
+      return;
+    }
+
+    const now = Date.now();
+    if (roomsRetryAfterRef.current > now) {
+      setLoadingRooms(false);
+      return;
+    }
+
     setLoadingRooms(true);
     
     try {
       const { data: participantData, error: partError } = await supabase
         .from('chat_participants')
         .select('room_id')
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
 
       if (partError) throw partError;
 
@@ -109,7 +162,7 @@ export const useChat = () => {
         let otherParticipant = null;
 
         if (!room.is_group) {
-          otherParticipant = parts.find((p) => p.id !== user.id) || null;
+          otherParticipant = parts.find((p) => p.id !== userId) || null;
           displayName = otherParticipant?.full_name || 'Chat Privado';
           displayImage = otherParticipant?.avatar_url || null;
         }
@@ -124,19 +177,24 @@ export const useChat = () => {
       });
 
       // Filter out conversations where the other user is blocked (optional, keeping visible but maybe disabled is better, but let's just keep them for now)
+      roomsRetryAfterRef.current = 0;
       setRooms(formattedRooms);
     } catch (error) {
-      console.error('Error fetching rooms:', error);
-      toast({
+      logChatErrorOnce('Error fetching rooms:', error);
+      if (isTransientChatError(error)) {
+        roomsRetryAfterRef.current = Date.now() + CHAT_REQUEST_COOLDOWN_MS;
+      }
+
+      toastRef.current({
         title: 'Error en chat',
-        description: `No se pudieron cargar las conversaciones: ${error?.message || 'error desconocido'}`,
-        variant: 'destructive'
+        description: 'No se pudieron cargar las conversaciones. Reintentando en unos segundos.',
+        variant: 'destructive',
       });
       setRooms([]);
     } finally {
       setLoadingRooms(false);
     }
-  }, [user, toast]);
+  }, [userId, logChatErrorOnce]);
 
   useEffect(() => {
     fetchRooms();
@@ -178,7 +236,7 @@ export const useChat = () => {
 
       setMessages(messagesWithProfiles);
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      logChatErrorOnce('Error fetching messages:', error);
     } finally {
       setLoadingMessages(false);
     }
@@ -225,14 +283,14 @@ export const useChat = () => {
 
   // Actions
   const sendMessage = async (content) => {
-    if (!activeRoom || !content.trim()) return;
+    if (!activeRoom || !content.trim() || !userId) return;
 
     try {
       const { error } = await supabase
         .from('chat_messages')
         .insert({
           room_id: activeRoom.id,
-          sender_id: user.id,
+            sender_id: userId,
           content: content.trim()
         });
 
@@ -245,10 +303,10 @@ export const useChat = () => {
 
   const createPrivateChat = async (targetUserId) => {
     try {
-      if (!user || !targetUserId || targetUserId === user.id) return null;
+      if (!userId || !targetUserId || targetUserId === userId) return null;
 
       const [{ data: mine, error: myErr }, { data: target, error: targetErr }] = await Promise.all([
-        supabase.from('chat_participants').select('room_id').eq('user_id', user.id),
+        supabase.from('chat_participants').select('room_id').eq('user_id', userId),
         supabase.from('chat_participants').select('room_id').eq('user_id', targetUserId)
       ]);
 
@@ -277,7 +335,7 @@ export const useChat = () => {
 
       const { data: room, error: roomError } = await supabase
         .from('chat_rooms')
-        .insert({ is_group: false, created_by: user.id })
+        .insert({ is_group: false, created_by: userId })
         .select()
         .single();
         
@@ -286,7 +344,7 @@ export const useChat = () => {
       const { error: partError } = await supabase
         .from('chat_participants')
         .insert([
-          { room_id: room.id, user_id: user.id },
+          { room_id: room.id, user_id: userId },
           { room_id: room.id, user_id: targetUserId }
         ]);
 
@@ -302,15 +360,17 @@ export const useChat = () => {
 
   const createGroupChat = async (name, participantIds) => {
     try {
+      if (!userId) return null;
+
       const { data: room, error: roomError } = await supabase
         .from('chat_rooms')
-        .insert({ name, is_group: true, created_by: user.id })
+        .insert({ name, is_group: true, created_by: userId })
         .select()
         .single();
         
       if (roomError) throw roomError;
 
-      const participants = [user.id, ...participantIds].map(uid => ({
+      const participants = [userId, ...participantIds].map(uid => ({
         room_id: room.id,
         user_id: uid
       }));
@@ -332,9 +392,11 @@ export const useChat = () => {
 
   const blockUser = async (targetId) => {
     try {
+      if (!userId || !targetId) return;
+
       const { error } = await supabase
         .from('user_blocks')
-        .insert({ blocker_id: user.id, blocked_id: targetId });
+        .insert({ blocker_id: userId, blocked_id: targetId });
 
       if (error) throw error;
       setBlockedUsers(prev => [...prev, targetId]);
@@ -347,9 +409,11 @@ export const useChat = () => {
 
   const reportUser = async (targetId, reason) => {
     try {
+      if (!userId || !targetId) return;
+
       const { error } = await supabase
         .from('user_reports')
-        .insert({ reporter_id: user.id, reported_id: targetId, reason });
+        .insert({ reporter_id: userId, reported_id: targetId, reason });
 
       if (error) throw error;
       toast({ title: 'Reporte enviado', description: 'El equipo de soporte revisará el caso.' });

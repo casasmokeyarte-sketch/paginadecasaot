@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
-import { productsData } from '@/data/products';
 import { galleryImages } from '@/data/galleryImages';
 
 export const useSupabaseData = () => {
@@ -23,13 +22,18 @@ export const useSupabaseData = () => {
       setLoadingProducts(true);
       const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
       if (error) throw error;
-      const resolvedProducts = data?.length ? data : productsData;
+      const resolvedProducts = data || [];
       setProducts(resolvedProducts);
       setStats((prev) => ({ ...prev, productsCount: resolvedProducts.length }));
     } catch (error) {
       console.error('Error fetching products:', error);
-      setProducts(productsData);
-      setStats((prev) => ({ ...prev, productsCount: productsData.length }));
+      setProducts([]);
+      setStats((prev) => ({ ...prev, productsCount: 0 }));
+      toast({
+        title: 'Error al cargar productos',
+        description: 'No se pudo leer el inventario real desde Supabase.',
+        variant: 'destructive'
+      });
     } finally {
       setLoadingProducts(false);
     }

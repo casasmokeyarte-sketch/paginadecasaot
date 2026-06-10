@@ -50,7 +50,7 @@ const LoNuevo = () => {
                 className="w-full h-full object-cover"
                 controls
                 playsInline
-                preload="metadata"
+                preload="none"
                 poster=""
               >
                 <source src="/lo-nuevo.mp4" type="video/mp4" />

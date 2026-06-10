@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -7,6 +7,15 @@ const ADMIN_ROLES = new Set(['admin', 'administrador']);
 
 const normalizeRole = (role) => (typeof role === 'string' ? role.trim().toLowerCase() : '');
 const PROFILE_SELECT = 'id, full_name, avatar_url, phone, address, role, updated_at';
+const PROFILE_RETRY_COOLDOWN_MS = 12000;
+
+const isTransientProfileError = (error) => {
+  const message = `${error?.message || ''} ${error?.details || ''}`.toLowerCase();
+  return message.includes('failed to fetch')
+    || message.includes('network')
+    || message.includes('insufficient_resources')
+    || message.includes('timeout');
+};
 
 const buildFallbackProfile = (userId, email) => ({
   id: userId,
@@ -24,93 +33,188 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [profileError, setProfileError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const profileRef = useRef(null);
+  const lastProfileFetchUserIdRef = useRef(null);
+  const profileFetchInFlightRef = useRef(false);
+  const profileRetryAfterRef = useRef(0);
+  const currentUserIdRef = useRef(null);
+  const lastAuthErrorRef = useRef({ key: '', at: 0 });
+
+  const logAuthErrorOnce = useCallback((scope, details) => {
+    const message = details?.message || details?.error?.message || 'auth_error';
+    const key = `${scope}:${message}`;
+    const now = Date.now();
+
+    if (lastAuthErrorRef.current.key === key && now - lastAuthErrorRef.current.at < 10000) {
+      return;
+    }
+
+    lastAuthErrorRef.current = { key, at: now };
+    console.error(scope, details);
+  }, []);
+
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
 
   const fetchProfile = useCallback(async (userId, fallbackEmail = null) => {
     if (!userId) {
-      console.log('[auth] fetchProfile skipped: missing userId', { userId });
       setProfile(null);
       setProfileError(null);
       return null;
     }
 
-    console.log('[auth] fetchProfile start', { userId });
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select(PROFILE_SELECT)
-      .eq('id', userId)
-      .maybeSingle();
-
-    console.log('[auth] fetchProfile result', {
-      userId,
-      data,
-      error,
-    });
-
-    if (error) {
-      console.error('Error loading auth profile:', { userId, error });
-      setProfile(null);
-      setProfileError(error.message || 'No se pudo cargar el perfil autenticado.');
-      return null;
-    }
-
-    if (!data) {
-      const fallbackProfile = buildFallbackProfile(userId, fallbackEmail);
-
-      const { data: insertedProfile, error: insertError } = await supabase
+    try {
+      const { data: rows, error } = await supabase
         .from('profiles')
-        .upsert(fallbackProfile, { onConflict: 'id' })
         .select(PROFILE_SELECT)
-        .single();
+        .eq('id', userId)
+        .limit(1);
+      const data = rows?.[0] || null;
 
-      if (insertError) {
-        const message = `No se encontro fila en profiles para el usuario autenticado (${userId}).`;
-        console.warn(message, insertError);
+      if (error) {
+        logAuthErrorOnce('Error loading auth profile:', { userId, error });
         setProfile(null);
-        setProfileError(message);
+        setProfileError(error.message || 'No se pudo cargar el perfil autenticado.');
         return null;
       }
 
-      setProfile(insertedProfile || fallbackProfile);
-      setProfileError(null);
-      return insertedProfile || fallbackProfile;
-    }
+      if (!data) {
+        const fallbackProfile = buildFallbackProfile(userId, fallbackEmail);
 
-    const nextProfile = data;
-    setProfile(nextProfile);
-    setProfileError(null);
-    return nextProfile;
-  }, []);
+        const { data: insertedProfile, error: insertError } = await supabase
+          .from('profiles')
+          .upsert(fallbackProfile, { onConflict: 'id' })
+          .select(PROFILE_SELECT)
+          .single();
+
+        if (insertError) {
+          const message = `No se encontro fila en profiles para el usuario autenticado (${userId}).`;
+          console.warn(message, insertError);
+          setProfile(null);
+          setProfileError(message);
+          return null;
+        }
+
+        setProfile(insertedProfile || fallbackProfile);
+        setProfileError(null);
+        return insertedProfile || fallbackProfile;
+      }
+
+      const nextProfile = data;
+      setProfile(nextProfile);
+      setProfileError(null);
+      return nextProfile;
+    } catch (error) {
+      logAuthErrorOnce('Unexpected error loading auth profile:', { userId, error });
+      setProfile(null);
+      setProfileError(error?.message || 'No se pudo cargar el perfil autenticado.');
+      return null;
+    }
+  }, [logAuthErrorOnce]);
 
   const handleSession = useCallback(async (session) => {
-    setLoading(true);
-    setSession(session);
     const nextUser = session?.user ?? null;
-    console.log('[auth] handleSession', {
-      sessionUserId: session?.user?.id ?? null,
-      sessionEmail: session?.user?.email ?? null,
+    const nextUserId = nextUser?.id || null;
+    const previousUserId = currentUserIdRef.current;
+
+    setSession((prev) => {
+      const prevToken = prev?.access_token || null;
+      const nextToken = session?.access_token || null;
+      if (prevToken === nextToken && prev?.user?.id === nextUserId) {
+        return prev;
+      }
+      return session;
     });
-    setUser(nextUser);
-    await fetchProfile(nextUser?.id, nextUser?.email || null);
-    setLoading(false);
-  }, [fetchProfile]);
+
+    setUser((prev) => {
+      if (prev?.id === nextUser?.id && prev?.email === nextUser?.email) {
+        return prev;
+      }
+      return nextUser;
+    });
+
+    currentUserIdRef.current = nextUserId;
+
+    if (!nextUser?.id) {
+      lastProfileFetchUserIdRef.current = null;
+      profileRetryAfterRef.current = 0;
+      setProfile(null);
+      setProfileError(null);
+      setLoading(false);
+      return;
+    }
+
+    if (profileFetchInFlightRef.current) {
+      return;
+    }
+
+    const now = Date.now();
+    const shouldSkipForCooldown =
+      lastProfileFetchUserIdRef.current === nextUser.id
+      && profileRetryAfterRef.current > now;
+
+    if (shouldSkipForCooldown) {
+      setLoading(false);
+      return;
+    }
+
+    const hasProfileForSameUser =
+      lastProfileFetchUserIdRef.current === nextUser.id
+      && !!profileRef.current
+      && previousUserId === nextUser.id;
+
+    if (hasProfileForSameUser) {
+      setLoading(false);
+      return;
+    }
+
+    profileFetchInFlightRef.current = true;
+    setLoading(true);
+    try {
+      const nextProfile = await fetchProfile(nextUser?.id, nextUser?.email || null);
+      if (nextProfile) {
+        lastProfileFetchUserIdRef.current = nextUser.id;
+        profileRetryAfterRef.current = 0;
+      } else {
+        profileRetryAfterRef.current = Date.now() + PROFILE_RETRY_COOLDOWN_MS;
+      }
+    } catch (error) {
+      logAuthErrorOnce('[auth] handleSession failed', { error });
+      if (isTransientProfileError(error)) {
+        profileRetryAfterRef.current = Date.now() + PROFILE_RETRY_COOLDOWN_MS;
+      }
+    } finally {
+      profileFetchInFlightRef.current = false;
+      setLoading(false);
+    }
+  }, [fetchProfile, logAuthErrorOnce]);
 
   useEffect(() => {
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      handleSession(session);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        await handleSession(session);
+      } catch (error) {
+        logAuthErrorOnce('[auth] getSession failed', error);
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setProfileError(error?.message || 'No se pudo inicializar la sesion autenticada.');
+        setLoading(false);
+      }
     };
 
     getSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        handleSession(session);
+        await handleSession(session);
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [handleSession]);
+  }, [handleSession, logAuthErrorOnce]);
 
   const signUp = useCallback(async (email, password, options) => {
     const { data, error } = await supabase.auth.signUp({
@@ -161,6 +265,9 @@ export const AuthProvider = ({ children }) => {
 
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
+
+    lastProfileFetchUserIdRef.current = null;
+    profileRetryAfterRef.current = 0;
 
     if (error) {
       toast({
@@ -234,13 +341,6 @@ export const AuthProvider = ({ children }) => {
 
   const role = profile?.role ?? null;
   const isAdmin = ADMIN_ROLES.has(normalizeRole(role));
-
-  console.log('[auth] role check', {
-    profileId: profile?.id ?? null,
-    role,
-    isAdmin,
-    profileError,
-  });
 
   const value = useMemo(() => ({
     user,

@@ -2,6 +2,9 @@ begin;
 
 alter table public.profiles enable row level security;
 
+grant select, insert, update, delete on public.profiles to authenticated;
+grant execute on function public.is_admin_user() to authenticated;
+
 create or replace function public.is_admin_user()
 returns boolean
 language sql
