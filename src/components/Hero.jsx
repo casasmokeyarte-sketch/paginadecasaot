@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet';
+import HomeGallery from '@/components/HomeGallery';
 
 // Programmatic helper to generate perfect starburst seal points
 const getStarburstPoints = (cx, cy, spikes, outerRadius, innerRadius) => {
@@ -110,8 +111,8 @@ const Hero = () => {
               </motion.div>
             </div>
 
-            {/* Middle: Day Pride text */}
-            <div className="col-span-1 md:col-span-5 text-center md:text-left flex flex-col justify-center select-none pt-2 md:pt-0">
+            {/* Middle: Mes Pride text */}
+            <div className="col-span-1 md:col-span-5 text-center md:text-left flex flex-col justify-center items-center md:items-start select-none pt-2 md:pt-0">
               <motion.span 
                 initial={{ opacity: 0, x: -25 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -119,20 +120,44 @@ const Hero = () => {
                 className="text-4xl md:text-5xl font-normal text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-yellow-500 via-blue-500 to-purple-600 block mb-1 drop-shadow-sm"
                 style={{ fontFamily: "'Playball', cursive" }}
               >
-                Day
+                Mes
               </motion.span>
-              <motion.h2 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.6 }}
-                className="text-6xl md:text-8xl font-black tracking-wider text-white select-none leading-none"
-                style={{ 
-                  fontFamily: "'Montserrat', sans-serif",
-                  textShadow: '-3px -3px 0 #4a248c, 3px -3px 0 #4a248c, -3px 3px 0 #4a248c, 3px 3px 0 #4a248c, 0 8px 25px rgba(74,36,140,0.3)'
-                }}
+                className="w-full flex justify-center md:justify-start overflow-visible h-[90px] md:h-[110px]"
               >
-                Pride
-              </motion.h2>
+                <svg viewBox="0 0 240 100" className="w-[200px] md:w-[260px] overflow-visible select-none">
+                  <defs>
+                    <linearGradient id="pride-rainbow-stroke" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#ff3333" />
+                      <stop offset="20%" stopColor="#ff8c00" />
+                      <stop offset="40%" stopColor="#ffd700" />
+                      <stop offset="60%" stopColor="#32cd32" />
+                      <stop offset="80%" stopColor="#1e90ff" />
+                      <stop offset="100%" stopColor="#8a2be2" />
+                    </linearGradient>
+                    <filter id="pride-blue-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="3" dy="5" stdDeviation="0" floodColor="#1a237e" floodOpacity="0.9" />
+                    </filter>
+                  </defs>
+                  <text
+                    x="50%"
+                    y="76"
+                    textAnchor="middle"
+                    fill="white"
+                    stroke="url(#pride-rainbow-stroke)"
+                    strokeWidth="9"
+                    paintOrder="stroke fill"
+                    filter="url(#pride-blue-shadow)"
+                    fontSize="78"
+                    style={{ fontFamily: "'Pacifico', cursive" }}
+                  >
+                    Pride
+                  </text>
+                </svg>
+              </motion.div>
             </div>
 
             {/* Spacing for overlapping flamingo */}
@@ -154,82 +179,8 @@ const Hero = () => {
           </motion.div>
         </motion.div>
 
-        {/* Local Navigation Bar */}
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 py-4 max-w-2xl mx-auto border-y border-[#4a248c]/15 text-[#4a248c] mb-12 select-none">
-          <Link to="/" className="text-base font-bold uppercase hover:text-[#ff007f] transition-colors">Inicio</Link>
-          <Link to="/store" className="text-base font-bold uppercase hover:text-[#ff007f] transition-colors">Arte</Link>
-          <Link to="/store" className="text-base font-bold uppercase hover:text-[#ff007f] transition-colors">Smoke</Link>
-          <Link to="/booking" className="text-base font-bold uppercase hover:text-[#ff007f] transition-colors">Eventos</Link>
-          <Link to="/about" className="text-base font-bold uppercase hover:text-[#ff007f] transition-colors">Sobre Nosotros</Link>
-          <Link to="/contact" className="text-base font-bold uppercase hover:text-[#ff007f] transition-colors">Contacto</Link>
-        </div>
-
-        {/* Featured Products Heading */}
-        <div className="text-center mb-10 select-none">
-          <h3 
-            className="text-3xl md:text-4xl font-extrabold tracking-widest text-[#4a248c] uppercase"
-            style={{ fontFamily: "'Montserrat', sans-serif" }}
-          >
-            Featured Products
-          </h3>
-          <div className="w-16 h-1 bg-gradient-to-r from-red-500 via-green-500 to-blue-500 mx-auto mt-3 rounded-full"></div>
-        </div>
-
-        {/* Polaroid Product Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-5xl mx-auto mb-20 px-4">
-          {[
-            { title: "The Creative Spark", img: "/creative_spark.png", link: "/store" },
-            { title: "Smoke in the Rainbow", img: "/smoke_rainbow.png", link: "/store" },
-            { title: "OT SSOT SAS Collection", img: "/ot_ssot_collection.png", link: "/store" }
-          ].map((prod, index) => (
-            <motion.div
-              key={prod.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.15 }}
-              whileHover={{ y: -8, scale: 1.02 }}
-              className="relative bg-white p-4 pb-8 shadow-[0_12px_24px_rgba(0,0,0,0.06)] border border-gray-100/80 rounded-sm"
-            >
-              {/* Product Image Wrapper */}
-              <Link to={prod.link} className="block overflow-hidden bg-gray-50 border border-gray-200/40 rounded-sm">
-                <img 
-                  src={prod.img} 
-                  alt={prod.title}
-                  className="w-full aspect-square object-cover transition-transform duration-500 hover:scale-105"
-                />
-              </Link>
-              {/* Polaroid Product Title */}
-              <p 
-                className="text-center text-[#4a248c] text-xl mt-5 font-bold tracking-wide"
-                style={{ fontFamily: "'Playball', cursive" }}
-              >
-                {prod.title}
-              </p>
-
-              {/* Overlapping Rainbow Feather */}
-              <div className="absolute -bottom-4 -right-4 w-12 h-12 pointer-events-none select-none z-10 drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
-                <svg viewBox="0 0 24 24" fill="none" className="w-full h-full transform rotate-12">
-                  <defs>
-                    <linearGradient id={`rainbow-feather-grad-${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#ff4b5c" />
-                      <stop offset="20%" stopColor="#ff8f56" />
-                      <stop offset="40%" stopColor="#ffdf6d" />
-                      <stop offset="60%" stopColor="#48e285" />
-                      <stop offset="80%" stopColor="#3b82f6" />
-                      <stop offset="100%" stopColor="#a855f7" />
-                    </linearGradient>
-                  </defs>
-                  <path 
-                    d="M2 22C2 22 5 18 11 16.5C17 15 21 11.5 21 7.5C21 3.5 18.5 1.5 16.5 1.5C14.5 1.5 11 5 10 10.5C9 16 2 22 2 22Z" 
-                    fill={`url(#rainbow-feather-grad-${index})`} 
-                  />
-                  <path d="M10 16.5C10 16.5 12.5 13.5 15.5 10.5C18.5 7.5 21 7.5 21 7.5" stroke="white" strokeWidth="0.8" strokeLinecap="round" />
-                </svg>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {/* Nuestras Zonas (HomeGallery) */}
+        <HomeGallery />
 
         {/* Nuestros Valores Section */}
         <div className="max-w-4xl mx-auto rounded-3xl bg-white/40 border border-white/50 backdrop-blur-md p-8 md:p-12 shadow-[0_8px_30px_rgba(0,0,0,0.04)] select-none">

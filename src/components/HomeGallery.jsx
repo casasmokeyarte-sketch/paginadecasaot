@@ -105,7 +105,7 @@ const HomeGallery = () => {
   const isInView = useInView(ref, { once: true, margin: '-50px' });
 
   return (
-    <section className="py-20 bg-[#050510] relative z-20">
+    <section className="py-20 bg-transparent relative z-20">
       <div className="container mx-auto px-4">
         <motion.div
           ref={ref}
@@ -114,11 +114,11 @@ const HomeGallery = () => {
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-[#f5f5f5] mb-4">
-            Nuestras <span className="text-[#ff2df0]">Zonas</span>
+          <h2 className="text-4xl md:text-5xl font-extrabold text-[#4a248c] mb-4 uppercase tracking-widest" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+            Nuestras <span className="text-[#ff007f]">Zonas</span>
           </h2>
-          <div className="w-24 h-1 bg-gradient-to-r from-[#00e5ff] to-[#ff2df0] mx-auto mb-6"></div>
-          <p className="text-lg text-[#a7a8c7] max-w-3xl mx-auto">
+          <div className="w-24 h-1 bg-gradient-to-r from-red-500 via-green-500 to-blue-500 mx-auto mb-6 rounded-full"></div>
+          <p className="text-lg text-[#4a248c]/80 max-w-3xl mx-auto font-medium">
             Explora cada rincón de nuestra casa. Haz clic en tu zona favorita.
           </p>
         </motion.div>
