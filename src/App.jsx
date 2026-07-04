@@ -26,8 +26,8 @@ import ChatPresenceProvider from '@/components/ChatPresenceTracker';
 
 // Page Imports
 import Policies from '@/pages/Policies';
-import PrideBackground from '@/components/PrideBackground';
-import PrideAudioPlayer from '@/components/PrideAudioPlayer';
+import FifaBackground from '@/components/FifaBackground';
+import BillboardModal from '@/components/BillboardModal';
 
 // Admin Imports
 import AdminLayout from '@/pages/admin/AdminLayout';
@@ -71,6 +71,20 @@ function App() {
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isUserRoute = location.pathname.startsWith('/user');
 
+  // Stadium Night/Day Mode State
+  const [isNight, setIsNight] = React.useState(() => {
+    const saved = localStorage.getItem('stadium_is_night');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  const toggleNight = () => {
+    setIsNight(prev => {
+      const next = !prev;
+      localStorage.setItem('stadium_is_night', String(next));
+      return next;
+    });
+  };
+
   // Scroll to top whenever the route changes
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -92,7 +106,7 @@ function App() {
    <AuthProvider>
     <CartProvider>
       <Helmet>
-        <title>Casa Smoke y Arte OT SSOT S.A.S - Cultura, Tattoo y Experiencia 🏳️‍🌈</title>
+        <title>Casa Smoke y Arte OT SSOT S.A.S - Cultura, Tattoo y Experiencia FIFA 2026 ⚽</title>
         <meta name="description" content="Casa Smoke y Arte OT SSOT S.A.S es tu estudio de tatuajes y arte en Colombia. Ofrecemos diseños únicos, artistas profesionales y una experiencia cultural incomparable." />
       </Helmet>
       
@@ -124,9 +138,9 @@ function App() {
             <Toaster />
           </div>
         ) : (
-          <PrideBackground>
+          <FifaBackground isNight={isNight}>
             <div className={`min-h-screen flex flex-col`}>
-              <Header />
+              <Header isNight={isNight} toggleNight={toggleNight} />
             
             <main className="flex-grow pt-16">
               <Routes>
@@ -172,10 +186,10 @@ function App() {
             {!isUserRoute && <FloatingChat />}
             {!isUserRoute && <FloatingAnnounce />}
             <Footer />
-            <PrideAudioPlayer />
+            <BillboardModal />
             <Toaster />
             </div>
-          </PrideBackground>
+          </FifaBackground>
         )}
       </ChatPresenceProvider>
     </CartProvider>

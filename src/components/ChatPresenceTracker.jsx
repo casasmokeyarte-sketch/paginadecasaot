@@ -106,37 +106,8 @@ export const ChatPresenceProvider = ({ children }) => {
         });
       });
 
-    channel.subscribe(async (status) => {
+    channel.subscribe((status) => {
       setPresenceStatus(status);
-      if (status !== 'SUBSCRIBED') return;
-
-      const userInfo = {
-        id: userId,
-        email: userEmail,
-        full_name: profileName || userEmail?.split('@')?.[0] || 'Usuario',
-        avatar_url: profileAvatar,
-        online_at: new Date().toISOString(),
-      };
-
-      try {
-        await channel.track({
-          user_id: userId,
-          user_info: userInfo,
-          ...userInfo,
-        });
-        syncPresenceState();
-
-        if (syncIntervalRef.current) {
-          clearInterval(syncIntervalRef.current);
-        }
-
-        syncIntervalRef.current = setInterval(() => {
-          if (!navigator.onLine) return;
-          syncPresenceState();
-        }, 15000);
-      } catch (error) {
-        console.error('Presence track error:', error);
-      }
     });
 
     return () => {
@@ -144,13 +115,53 @@ export const ChatPresenceProvider = ({ children }) => {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
+      setOnlineUsers({});
+    };
+  }, [userId]);
+
+  // Separate Effect to handle actual user tracking and info updates
+  useEffect(() => {
+    if (presenceStatus !== 'SUBSCRIBED' || !userId || !channelRef.current) return;
+
+    const userInfo = {
+      id: userId,
+      email: userEmail,
+      full_name: profileName || userEmail?.split('@')?.[0] || 'Usuario',
+      avatar_url: profileAvatar,
+      online_at: new Date().toISOString(),
+    };
+
+    const trackPresence = async () => {
+      try {
+        await channelRef.current.track({
+          user_id: userId,
+          user_info: userInfo,
+          ...userInfo,
+        });
+        syncPresenceState();
+      } catch (error) {
+        console.error('Presence track error:', error);
+      }
+    };
+
+    trackPresence();
+
+    if (syncIntervalRef.current) {
+      clearInterval(syncIntervalRef.current);
+    }
+
+    syncIntervalRef.current = setInterval(() => {
+      if (!navigator.onLine) return;
+      syncPresenceState();
+    }, 15000);
+
+    return () => {
       if (syncIntervalRef.current) {
         clearInterval(syncIntervalRef.current);
         syncIntervalRef.current = null;
       }
-      setOnlineUsers({});
     };
-  }, [userId, userEmail, profileName, profileAvatar]);
+  }, [presenceStatus, userId, userEmail, profileName, profileAvatar]);
 
   return (
     <ChatPresenceContext.Provider value={{ onlineUsers, presenceStatus }}>

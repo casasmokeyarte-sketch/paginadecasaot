@@ -1,10 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ff2df0"/>
-      <stop offset="100%" stop-color="#00e5ff"/>
+    <linearGradient id="rainbow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff4b5c" />
+      <stop offset="20%" stop-color="#ff8f56" />
+      <stop offset="40%" stop-color="#ffdf6d" />
+      <stop offset="60%" stop-color="#48e285" />
+      <stop offset="80%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#a855f7" />
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="14" fill="#050510"/>
-  <path d="M18 44c0-9 6-14 14-14h8v6h-8c-5 0-8 3-8 8h-6zm6-18c0-7 5-12 12-12h10v6H36c-3 0-6 3-6 6h-6z" fill="url(#g)"/>
+  <path d="M5 55C5 55 12 45 27 41C42 37.5 53 29 53 19C53 9 47 4 42 4C37 4 28 12.5 25 26.5C22.5 40.5 5 55 5 55Z" fill="url(#rainbow)" />
+  <path d="M25 41C25 41 31.5 34 39 26.5C46.5 19 53 19 53 19" stroke="white" stroke-width="2" stroke-linecap="round" />
 </svg>

@@ -113,17 +113,17 @@ const FloatingChat = () => {
               initial={{ opacity: 0, y: 20, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.96 }}
-              className="h-[520px] w-[360px] overflow-hidden rounded-[28px] border border-white/10 bg-[#111322] shadow-[0_24px_80px_rgba(0,0,0,0.45)] pointer-events-auto"
+              className="h-[520px] w-[360px] overflow-hidden rounded-[28px] border border-yellow-500/20 bg-[#0c1322] shadow-[0_24px_80px_rgba(0,0,0,0.55)] pointer-events-auto"
             >
               {view === 'list' && (
                 <div className="flex h-full flex-col">
-                  <div className="flex items-center justify-between border-b border-white/10 bg-[#0b0c15] px-4 py-4">
+                  <div className="flex items-center justify-between border-b border-white/10 bg-[#050510] px-4 py-4">
                     <div>
-                      <h3 className="flex items-center gap-2 font-bold text-white">
-                        <MessageCircle className="text-[#ff2df0]" size={20} />
+                      <h3 className="flex items-center gap-2 font-black text-white uppercase tracking-wider text-sm">
+                        <MessageCircle className="text-yellow-400" size={20} />
                         Chat directo
                       </h3>
-                      <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[#8f98bf]">Otros usuarios online: {onlineList.length}</p>
+                      <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.18em] text-[#8f98bf]">Usuarios online: {onlineList.length}</p>
                     </div>
                     <button onClick={() => setIsOpen(false)} className="rounded-xl p-2 text-[#a7a8c7] transition hover:bg-white/5 hover:text-white">
                       <Minimize2 size={18} />
@@ -132,11 +132,11 @@ const FloatingChat = () => {
 
                   <div className="flex-1 overflow-y-auto p-3">
                     <div className="mb-5 space-y-1">
-                      <p className="px-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#70789f]">Conversaciones</p>
+                      <p className="px-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#70789f]">Conversaciones</p>
                       {loadingRooms ? (
                         <div className="p-4 text-xs text-[#a7a8c7]">Cargando conversaciones...</div>
                       ) : rooms.length === 0 ? (
-                        <div className="rounded-2xl border border-white/10 bg-[#0c0f1c] p-4 text-xs text-[#a7a8c7]">
+                        <div className="rounded-2xl border border-white/5 bg-[#080d19] p-4 text-xs text-[#a7a8c7]">
                           No tienes conversaciones activas.
                         </div>
                       ) : (
@@ -149,7 +149,7 @@ const FloatingChat = () => {
                             {room.displayImage ? (
                               <img src={room.displayImage} alt={room.displayName} className="h-10 w-10 rounded-2xl object-cover" />
                             ) : (
-                              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#1f2235] font-bold text-[#ff2df0]">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#1f2235] font-bold text-yellow-400">
                                 {room.displayName?.charAt(0)?.toUpperCase?.() || 'C'}
                               </div>
                             )}
@@ -164,7 +164,7 @@ const FloatingChat = () => {
 
                     {onlineList.length > 0 && (
                       <div className="border-t border-white/5 pt-3">
-                        <p className="px-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#70789f]">Disponibles ahora</p>
+                        <p className="px-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#70789f]">Disponibles ahora</p>
                         <div className="mt-2 space-y-1">
                           {onlineList.map((entry) => (
                             <button
@@ -196,7 +196,7 @@ const FloatingChat = () => {
 
               {view === 'chat' && activeRoom && (
                 <div className="flex h-full flex-col">
-                  <div className="flex items-center justify-between border-b border-white/10 bg-[#0b0c15] px-3 py-3">
+                  <div className="flex items-center justify-between border-b border-white/10 bg-[#050510] px-3 py-3">
                     <div className="flex items-center gap-2">
                       <button onClick={handleBackToList} className="rounded-xl p-2 text-[#a7a8c7] transition hover:bg-white/5 hover:text-white">
                         <ChevronLeft size={18} />
@@ -205,13 +205,13 @@ const FloatingChat = () => {
                         {activeRoom.displayImage ? (
                           <img src={activeRoom.displayImage} alt={activeRoom.displayName} className="h-8 w-8 rounded-2xl object-cover" />
                         ) : (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-[#1f2235] text-xs font-bold text-[#ff2df0]">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-[#1f2235] text-xs font-bold text-yellow-400">
                             {activeRoom.displayName?.charAt(0)?.toUpperCase?.() || 'C'}
                           </div>
                         )}
                         <div className="min-w-0">
                           <p className="max-w-[170px] truncate text-sm font-bold text-white">{activeRoom.displayName}</p>
-                          {!activeRoom.is_group && <p className="text-[10px] uppercase tracking-[0.18em] text-green-500">Activo</p>}
+                          {!activeRoom.is_group && <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-green-500">Activo</p>}
                         </div>
                       </button>
                     </div>
@@ -222,7 +222,7 @@ const FloatingChat = () => {
                           <MoreVertical size={18} />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent className="mr-4 border-white/10 bg-[#1a1c2e] text-white">
+                      <DropdownMenuContent className="mr-4 border-white/10 bg-[#141926] text-white">
                         <DropdownMenuItem onClick={handleOpenProfile} className="cursor-pointer hover:bg-white/10">
                           <User className="mr-2 h-4 w-4" />
                           Ver usuario
@@ -235,7 +235,7 @@ const FloatingChat = () => {
                     </DropdownMenu>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto bg-[#111322] p-4">
+                  <div className="flex-1 overflow-y-auto bg-[#0c1322] p-4">
                     {loadingMessages ? (
                       <div className="py-4 text-center text-xs text-[#a7a8c7]">Cargando mensajes...</div>
                     ) : (
@@ -246,9 +246,9 @@ const FloatingChat = () => {
                             <div key={message.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                               <div
                                 className={cn(
-                                  'max-w-[82%] rounded-2xl px-3 py-2 text-sm break-words',
+                                  'max-w-[82%] rounded-2xl px-3.5 py-2 text-sm break-words',
                                   isMe
-                                    ? 'bg-[#ff2df0] text-white rounded-br-md'
+                                    ? 'bg-yellow-400 text-slate-950 rounded-br-md font-medium'
                                     : 'border border-white/5 bg-[#1f2235] text-[#e0e0e0] rounded-bl-md'
                                 )}
                               >
@@ -262,18 +262,18 @@ const FloatingChat = () => {
                     )}
                   </div>
 
-                  <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-white/10 bg-[#0b0c15] p-3">
+                  <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-white/10 bg-[#050510] p-3">
                     <input
                       type="text"
                       value={messageInput}
                       onChange={(event) => setMessageInput(event.target.value)}
                       placeholder="Escribe un mensaje..."
-                      className="flex-1 rounded-full border border-white/10 bg-[#111322] px-4 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-[#ff2df0]"
+                      className="flex-1 rounded-full border border-white/10 bg-[#0c1322] px-4 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-yellow-400"
                     />
                     <button
                       type="submit"
                       disabled={!messageInput.trim()}
-                      className="rounded-full bg-[#ff2df0] p-2 text-white transition hover:bg-[#d91cb8] disabled:opacity-50"
+                      className="rounded-full bg-yellow-400 p-2 text-slate-950 transition hover:bg-yellow-300 disabled:opacity-50"
                     >
                       <Send size={16} />
                     </button>
@@ -282,8 +282,8 @@ const FloatingChat = () => {
               )}
 
               {view === 'profile' && profileTarget && (
-                <div className="flex h-full flex-col bg-[#111322]">
-                  <div className="flex items-center gap-2 border-b border-white/10 bg-[#0b0c15] px-3 py-3">
+                <div className="flex h-full flex-col bg-[#0c1322]">
+                  <div className="flex items-center gap-2 border-b border-white/10 bg-[#050510] px-3 py-3">
                     <button onClick={() => setView('chat')} className="rounded-xl p-2 text-[#a7a8c7] transition hover:bg-white/5 hover:text-white">
                       <ChevronLeft size={18} />
                     </button>
@@ -292,7 +292,7 @@ const FloatingChat = () => {
 
                   <div className="flex-1 overflow-y-auto p-6">
                     <div className="flex flex-col items-center">
-                      <div className="mb-4 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-[#ff2df0] shadow-[0_0_20px_rgba(255,45,240,0.3)]">
+                      <div className="mb-4 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.3)]">
                         {profileTarget.avatar_url ? (
                           <img src={profileTarget.avatar_url} alt={profileTarget.full_name} className="h-full w-full object-cover" />
                         ) : (
@@ -307,7 +307,7 @@ const FloatingChat = () => {
                     </div>
 
                     <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <h4 className="text-xs font-bold uppercase tracking-[0.22em] text-[#8f98bf]">Informacion visible</h4>
+                      <h4 className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#8f98bf]">Información visible</h4>
                       <p className="mt-3 text-sm text-white">{profileTarget.full_name || 'Usuario sin nombre'}</p>
                       <p className="mt-2 text-sm text-[#a7a8c7]">{profileTarget.email || 'Sin correo visible'}</p>
                     </div>
@@ -341,8 +341,8 @@ const FloatingChat = () => {
           whileTap={{ scale: 0.92 }}
           onClick={handleToggle}
           className={cn(
-            'relative z-50 flex h-14 w-14 items-center justify-center rounded-full border text-white shadow-lg transition-all pointer-events-auto',
-            isOpen ? 'border-[#ff2df0] bg-[#ff2df0]' : 'border-[#ff2df0] bg-[#111322] text-[#ff2df0]'
+            'relative z-50 flex h-14 w-14 items-center justify-center rounded-full border text-slate-950 shadow-lg transition-all pointer-events-auto',
+            isOpen ? 'border-yellow-400 bg-yellow-400' : 'border-yellow-400 bg-[#0c1322] text-yellow-400 hover:bg-[#111a2f]'
           )}
         >
           {isOpen ? <X size={24} /> : <MessageCircle size={28} />}
@@ -353,11 +353,11 @@ const FloatingChat = () => {
       </div>
 
       <Dialog open={reportOpen} onOpenChange={setReportOpen}>
-        <DialogContent className="border-white/10 bg-[#1a1c2e] text-white">
+        <DialogContent className="border-white/10 bg-[#141926] text-white">
           <DialogHeader>
             <DialogTitle>Reportar usuario</DialogTitle>
             <DialogDescription className="text-[#a7a8c7]">
-              Cuentanos que sucedio para que el equipo pueda revisar el caso.
+              Cuéntanos qué sucedió para que el equipo pueda revisar el caso.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -365,7 +365,7 @@ const FloatingChat = () => {
             <textarea
               value={reportReason}
               onChange={(event) => setReportReason(event.target.value)}
-              className="h-32 w-full resize-none rounded-lg border border-white/10 bg-[#050510] p-3 text-white outline-none focus:border-[#ff2df0]"
+              className="h-32 w-full resize-none rounded-lg border border-white/10 bg-[#050510] p-3 text-white outline-none focus:border-yellow-400"
               placeholder="Describe el comportamiento inapropiado..."
             />
           </div>
@@ -373,7 +373,7 @@ const FloatingChat = () => {
             <Button onClick={() => setReportOpen(false)} variant="ghost" className="text-[#a7a8c7]">
               Cancelar
             </Button>
-            <Button onClick={handleReport} className="bg-[#ff2df0] hover:bg-[#d91cb8]">
+            <Button onClick={handleReport} className="bg-yellow-400 hover:bg-yellow-300 text-slate-950">
               Enviar reporte
             </Button>
           </DialogFooter>

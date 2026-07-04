@@ -6,8 +6,40 @@ import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import ShoppingCart from '@/components/ShoppingCart';
 
-const Header = () => {
+const Header = ({ isNight, toggleNight }) => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [particles, setParticles] = useState([]);
+
+  const triggerClickAnimation = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const container = e.currentTarget.parentElement;
+    const containerRect = container.getBoundingClientRect();
+    
+    const x = rect.left - containerRect.left + rect.width / 2;
+    const y = rect.top - containerRect.top + rect.height / 2;
+    
+    const newParticles = Array.from({ length: 6 }).map((_, i) => ({
+      id: Math.random() + '-' + Date.now(),
+      x,
+      y,
+      vx: (Math.random() - 0.5) * 8,
+      vy: (Math.random() - 0.5) * 8 - 4,
+      char: i % 2 === 0 ? '⚽' : '⭐',
+      scale: 0.6 + Math.random() * 0.6
+    }));
+    
+    setParticles(prev => [...prev, ...newParticles]);
+  };
+
+  useEffect(() => {
+    if (particles.length > 0) {
+      const timer = setTimeout(() => {
+        setParticles(prev => prev.filter(p => (Date.now() - parseFloat(p.id.split('-')[1])) < 800));
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [particles]);
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -64,66 +96,187 @@ const Header = () => {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.5 }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled || isMobileMenuOpen ? 'bg-white/40 backdrop-blur-md shadow-md border-b border-[#ff66cc]/20' : 'bg-transparent'
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled || isMobileMenuOpen ? 'bg-[#050510]/95 backdrop-blur-md shadow-md border-b border-yellow-500/10' : 'bg-transparent'
+          }`}
       >
         <nav className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
+            {/* Logo and Brand Title next to it */}
             <motion.div
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.02 }}
               className="flex items-center space-x-2 cursor-pointer relative z-50 flex-shrink-0"
             >
-              <Link to="/">
-                <img 
-                  src="/logo.png" 
-                  alt="Casa Smoke y Arte Logo" 
+              <Link to="/" className="flex items-center">
+                <img
+                  src="/logo.png"
+                  alt="Casa Smoke y Arte Logo"
                   className="h-10 w-auto md:h-12"
                 />
+                <div className="flex flex-col border-l border-white/20 pl-3 ml-2.5">
+                  <div className="text-[11px] md:text-[12px] font-black leading-none text-white tracking-widest uppercase">
+                    FIFA 2026 <span className="text-[#CE1126]">//</span>
+                  </div>
+                  <div className="text-[14px] md:text-[15px] font-black leading-none text-white tracking-wider uppercase mt-0.5">
+                    COLOMBIA
+                  </div>
+                  <div className="text-[7.5px] md:text-[8px] font-semibold text-yellow-400 tracking-widest uppercase mt-0.5 whitespace-nowrap">
+
+                  </div>
+                </div>
               </Link>
             </motion.div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center space-x-4 xl:space-x-6">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                >
-                  <motion.span
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`text-sm font-semibold transition-colors relative px-2 py-1 whitespace-nowrap ${
-                      isActive(item.path) ? 'text-[#ff007f]' : 'text-[#4a248c] hover:text-[#ff007f]'
-                    }`}
+            {/* Desktop Navigation Column Container */}
+            <div className="hidden lg:flex flex-col items-center gap-2">
+              {/* Main Soccer Menu Pill */}
+              <div className="flex items-center bg-[#090d16]/80 backdrop-blur-md border border-white/10 rounded-full px-5 py-1.5 shadow-lg shadow-[#020617]/50 gap-4 xl:gap-6">
+                {[
+                  { label: 'MASCOTAS FIFA', path: '#mascotas' },
+                  { label: 'RESULTADOS EN VIVO', path: '#resultados' },
+                  { label: 'CENTRO DE APUESTAS', path: '#apuestas' }
+                ].map((item) => (
+                  <button
+                    key={item.path}
+                    onClick={() => {
+                      if (location.pathname !== '/') {
+                        navigate('/');
+                        setTimeout(() => {
+                          document.querySelector(item.path)?.scrollIntoView({ behavior: 'smooth' });
+                        }, 200);
+                      } else {
+                        document.querySelector(item.path)?.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
+                    className="text-[11px] font-black tracking-widest text-slate-300 hover:text-yellow-400 transition-colors py-1.5 px-3 uppercase"
                   >
                     {item.label}
-                    {isActive(item.path) && (
-                      <motion.div
-                        layoutId="underline"
-                        className="absolute left-0 right-0 -bottom-1 h-0.5 bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500"
-                      />
-                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Sub-menu (Original Menu) Pill - Interactive & Fun */}
+              <div className="flex items-center bg-[#050914]/60 backdrop-blur-md border border-white/5 rounded-full px-4 py-1 shadow-md gap-1 xl:gap-2 relative overflow-visible">
+                {particles.map(p => (
+                  <motion.span
+                    key={p.id}
+                    initial={{ x: p.x, y: p.y, scale: p.scale, opacity: 1 }}
+                    animate={{ 
+                      x: p.x + p.vx * 15, 
+                      y: p.y + p.vy * 15, 
+                      scale: 0,
+                      opacity: 0 
+                    }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="absolute pointer-events-none select-none text-sm z-20"
+                  >
+                    {p.char}
                   </motion.span>
-                </Link>
-              ))}
+                ))}
+                
+                {navItems.map((item) => {
+                  const active = isActive(item.path);
+                  return (
+                    <motion.button
+                      key={item.path}
+                      onClick={(e) => {
+                        triggerClickAnimation(e);
+                        navigate(item.path);
+                      }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className={`relative px-3 py-1 text-[9px] font-black uppercase tracking-wider transition-colors z-10 ${
+                        active ? 'text-yellow-400' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {active && (
+                        <motion.span
+                          layoutId="activeSubMenu"
+                          className="absolute inset-0 bg-yellow-500/10 border border-yellow-500/30 rounded-full z-[-1]"
+                          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                        />
+                      )}
+                      {item.label}
+                    </motion.button>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="flex items-center gap-4 relative z-50 flex-shrink-0">
+            {/* Right Buttons Container */}
+            <div className="flex items-center gap-3 md:gap-4 relative z-50 flex-shrink-0">
+
+              {/* ESTADIO NOCTURNO / DE DIA */}
+              <button
+                onClick={toggleNight}
+                className={`hidden xl:flex items-center gap-1.5 text-[9px] font-black border rounded-full px-3 py-1.5 transition-all duration-300 uppercase tracking-wider shadow-sm hover:scale-105 active:scale-95 ${
+                  isNight 
+                    ? 'text-slate-300 hover:text-yellow-400 border-white/10 hover:border-yellow-400/50 bg-[#090d16]/40' 
+                    : 'text-slate-800 hover:text-slate-950 border-yellow-400/40 hover:border-yellow-400 bg-yellow-400'
+                }`}
+              >
+                {isNight ? (
+                  <>
+                    <span className="text-yellow-400 animate-pulse">🌙</span> ESTADIO NOCTURNO
+                  </>
+                ) : (
+                  <>
+                    <span className="text-amber-600 animate-bounce">☀️</span> ESTADIO DE DÍA
+                  </>
+                )}
+              </button>
+
+              {/* APUESTAS DEPORTIVAS */}
+              <button
+                onClick={() => {
+                  if (location.pathname !== '/') {
+                    navigate('/');
+                    setTimeout(() => {
+                      document.querySelector('#apuestas')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 200);
+                  } else {
+                    document.querySelector('#apuestas')?.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="hidden sm:block text-[10px] font-black text-slate-900 bg-yellow-400 hover:bg-yellow-300 rounded-full px-4 py-2 transition-colors uppercase tracking-widest"
+              >
+                APOSTAR AHORA
+              </button>
+
+              {/* Trophy icon */}
+              <button
+                onClick={() => {
+                  if (location.pathname !== '/') {
+                    navigate('/');
+                    setTimeout(() => {
+                      document.querySelector('#resultados')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 200);
+                  } else {
+                    document.querySelector('#resultados')?.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="p-2 text-yellow-400 border border-yellow-400/30 rounded-full hover:bg-yellow-400/10 transition-colors flex items-center justify-center"
+                title="Tablero de Resultados"
+              >
+                {/* SVG Trophy Cup */}
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 4H17.5C17.5 2.9 16.6 2 15.5 2H8.5C7.4 2 6.5 2.9 6.5 4H5C3.3 4 2 5.3 2 7V9C2 11.2 3.5 13.1 5.6 13.7C6.3 15.6 7.9 17 9.8 17.3C10 18.9 11.3 20.1 13 20.2V22H9V24H15V22H11V20.2C12.7 20.1 14 18.9 14.2 17.3C16.1 17 17.7 15.6 18.4 13.7C20.5 13.1 22 11.2 22 9V7C22 5.3 20.7 4 19 4ZM4 9V7C4 6.4 4.4 6 5 6H6.5V11.2C5.1 10.9 4 10.1 4 9ZM20 9C20 10.1 18.9 10.9 17.5 11.2V6H19C19.6 6 20 6.4 20 7V9Z" />
+                </svg>
+              </button>
+
               {/* User Account Button */}
               {user ? (
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-[#4a248c]/10 hover:bg-[#4a248c]/20 rounded-full border border-[#ff66cc]/20 transition-all text-[#4a248c]"
+                    className="flex items-center gap-2 px-2.5 py-1 bg-yellow-400/10 hover:bg-yellow-400/20 rounded-full border border-yellow-400/20 transition-all text-yellow-400"
                   >
-                    <div className="w-7 h-7 bg-gradient-to-br from-[#ff007f] to-[#00e5ff] rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                    <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-[10px] font-black text-slate-900 flex-shrink-0">
                       {(profile?.full_name || user.email || '?').slice(0, 2).toUpperCase()}
                     </div>
-                    <span className="text-[#4a248c] text-sm font-medium hidden md:block max-w-[80px] truncate">
+                    <span className="text-yellow-400 text-xs font-semibold hidden md:block max-w-[80px] truncate">
                       {profile?.full_name ? profile.full_name.split(' ')[0] : user.email?.split('@')[0]}
                     </span>
-                    <ChevronDown size={14} className={`text-[#4a248c]/60 hidden md:block transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={12} className={`text-yellow-400/60 hidden md:block transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
                   <AnimatePresence>
                     {isUserMenuOpen && (
@@ -132,14 +285,14 @@ const Header = () => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -8, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-md border border-[#ff66cc]/20 rounded-xl shadow-2xl overflow-hidden z-50 text-[#4a248c]"
+                        className="absolute right-0 top-full mt-2 w-48 bg-[#090d16]/95 backdrop-blur-md border border-yellow-500/20 rounded-xl shadow-2xl overflow-hidden z-50 text-slate-200"
                       >
-                        <Link to="/user" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-[#4a248c] hover:bg-pink-50 transition-colors">
-                          <User size={15} className="text-[#ff007f]" /> Mi Perfil
+                        <Link to="/user" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-white/5 transition-colors">
+                          <User size={15} className="text-yellow-400" /> Mi Perfil
                         </Link>
                         <button
                           onClick={() => { signOut(); setIsUserMenuOpen(false); }}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors border-t border-[#ff66cc]/10"
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-white/5 transition-colors border-t border-yellow-500/10"
                         >
                           <LogOut size={15} /> Cerrar Sesión
                         </button>
@@ -148,56 +301,24 @@ const Header = () => {
                   </AnimatePresence>
                 </div>
               ) : (
-                <div className="relative flex items-center">
-                  <div className="absolute inset-0 -m-1 pointer-events-none">
-                    <motion.div
-                      className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#ff007f] border-r-[#ff007f]/50"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                    />
-                    <motion.div
-                      className="absolute inset-0 rounded-full border-2 border-transparent border-b-[#00e5ff] border-l-[#00e5ff]/50"
-                      animate={{ rotate: -360 }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                    />
-                  </div>
-                  <motion.div
-                    className="absolute right-full top-1/2 -translate-y-1/2 mr-3 pointer-events-none hidden md:block"
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 }}
-                  >
-                    <motion.div
-                      animate={{ scale: [1, 1.05, 1], x: [0, -3, 0] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="relative"
-                    >
-                      <div className="bg-gradient-to-r from-[#ff007f] to-[#ff00ff] text-white text-[10px] font-bold px-3 py-1.5 rounded-l-full rounded-tr-full shadow-[0_0_15px_rgba(255,0,127,0.4)] whitespace-nowrap flex items-center border border-white/20">
-                        <span>¡Inscríbete aquí!</span>
-                        <span className="ml-1 text-xs">✨</span>
-                      </div>
-                      <div className="absolute top-1/2 -right-1 w-2 h-0.5 bg-[#ff007f] translate-y-[-50%]"></div>
-                    </motion.div>
-                  </motion.div>
-                  <Link to="/login" className="relative z-10">
-                    <button className="relative p-2 text-[#4a248c] hover:text-[#ff007f] transition-colors bg-[#4a248c]/10 rounded-full hover:bg-[#4a248c]/20">
-                      <User size={20} />
-                    </button>
-                  </Link>
-                </div>
+                <Link to="/login">
+                  <button className="p-2 text-slate-300 hover:text-yellow-400 transition-colors bg-white/5 hover:bg-white/10 rounded-full">
+                    <User size={18} />
+                  </button>
+                </Link>
               )}
 
               {/* Cart Button */}
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="relative p-2 text-[#4a248c] hover:text-[#ff007f] transition-colors"
+                className="relative p-2 text-slate-300 hover:text-yellow-400 transition-colors"
               >
-                <ShoppingBag size={24} />
+                <ShoppingBag size={20} />
                 {cartCount > 0 && (
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 bg-[#ff007f] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#ffe4e6]"
+                    className="absolute -top-1 -right-1 bg-yellow-400 text-slate-950 text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-[#090d16]"
                   >
                     {cartCount}
                   </motion.span>
@@ -206,65 +327,92 @@ const Header = () => {
 
               {/* Mobile Menu Button */}
               <button
-                className="lg:hidden"
+                className="lg:hidden text-slate-300 hover:text-yellow-400"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
-                {isMobileMenuOpen ? (
-                  <X className="text-[#4a248c]" size={24} />
-                ) : (
-                  <Menu className="text-[#4a248c]" size={24} />
-                )}
+                {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
               </button>
             </div>
           </div>
 
-          {/* Mobile Navigation */}
+          {/* Mobile Navigation Drawer */}
           <AnimatePresence>
             {isMobileMenuOpen && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="lg:hidden overflow-hidden bg-white/95 backdrop-blur-md rounded-b-2xl border-t border-[#ff66cc]/20 mt-4 shadow-lg"
+                className="lg:hidden overflow-hidden bg-[#090d16]/95 backdrop-blur-md rounded-b-2xl border-t border-yellow-500/20 mt-4 shadow-lg text-slate-200"
               >
                 <div className="flex flex-col p-4 space-y-2">
-                  {navItems.map((item) => (
+                  {/* Soccer Menu anchor buttons first */}
+                  {[
+                    { label: 'MASCOTAS FIFA', path: '#mascotas' },
+                    { label: 'RESULTADOS EN VIVO', path: '#resultados' },
+                    { label: 'CENTRO DE APUESTAS', path: '#apuestas' }
+                  ].map((item) => (
                     <button
                       key={item.path}
-                      onClick={() => handleMobileNav(item.path)}
-                      className={`block w-full text-left py-3 px-4 rounded-xl transition-colors ${
-                        isActive(item.path) 
-                          ? 'text-[#ff007f] bg-pink-100/50 font-bold' 
-                          : 'text-[#4a248c] hover:text-[#ff007f] hover:bg-pink-50'
-                      }`}
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        if (location.pathname !== '/') {
+                          navigate('/');
+                          setTimeout(() => {
+                            document.querySelector(item.path)?.scrollIntoView({ behavior: 'smooth' });
+                          }, 200);
+                        } else {
+                          document.querySelector(item.path)?.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }}
+                      className="block w-full text-left py-3 px-4 rounded-xl text-yellow-400 bg-yellow-500/5 font-black tracking-widest text-[11px] uppercase border border-yellow-500/10"
                     >
                       {item.label}
                     </button>
                   ))}
+
+                  {/* Divider */}
+                  <div className="border-t border-white/10 my-3"></div>
+                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest px-4 mb-1">Secciones del Sitio</span>
+
+                  {/* Original nav items */}
+                  {navItems.map((item) => (
+                    <button
+                      key={item.path}
+                      onClick={() => handleMobileNav(item.path)}
+                      className={`block w-full text-left py-2.5 px-4 rounded-xl text-xs transition-colors ${isActive(item.path)
+                        ? 'text-yellow-400 bg-yellow-500/10 font-bold'
+                        : 'text-slate-300 hover:text-yellow-400 hover:bg-white/5'
+                        }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+
                   {user ? (
                     <>
                       <Link to="/user" onClick={() => setIsMobileMenuOpen(false)} className="w-full">
-                        <button className="w-full text-left py-3 px-4 rounded-xl text-[#ff007f] hover:bg-pink-50 flex items-center gap-2">
-                          <User size={16} />
+                        <button className="w-full text-left py-2.5 px-4 rounded-xl text-yellow-400 hover:bg-white/5 flex items-center gap-2 text-xs">
+                          <User size={14} />
                           {profile?.full_name ? profile.full_name.split(' ')[0] : 'Mi Cuenta'}
                         </button>
                       </Link>
                       <button
                         onClick={() => { signOut(); setIsMobileMenuOpen(false); }}
-                        className="w-full text-left py-3 px-4 rounded-xl text-red-500 hover:bg-red-50 flex items-center gap-2"
+                        className="w-full text-left py-2.5 px-4 rounded-xl text-red-400 hover:bg-white/5 flex items-center gap-2 text-xs"
                       >
-                        <LogOut size={16} /> Cerrar Sesión
+                        <LogOut size={14} /> Cerrar Sesión
                       </button>
                     </>
                   ) : (
                     <Link to="/login" className="w-full">
-                      <button className="w-full text-left py-3 px-4 rounded-xl text-[#ff007f] hover:bg-pink-50">
-                        Iniciar Sesión / Inscríbete
+                      <button className="w-full text-left py-2.5 px-4 rounded-xl text-yellow-400 hover:bg-white/5 text-xs">
+                        Iniciar Sesión
                       </button>
                     </Link>
                   )}
+
                   <Link to="/booking" className="w-full mt-4">
-                    <button className="w-full py-3 bg-gradient-to-r from-[#ff007f] to-[#ff00ff] text-white rounded-xl font-bold">
+                    <button className="w-full py-3 bg-yellow-400 text-slate-900 rounded-xl font-bold text-xs uppercase tracking-wider">
                       Agendar Cita
                     </button>
                   </Link>

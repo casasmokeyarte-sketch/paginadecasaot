@@ -79,14 +79,14 @@ const FloatingAnnounce = () => {
               initial={{ opacity: 0, y: 12, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 12, scale: 0.95 }}
-              className="w-[340px] bg-[#111322] border border-[#ff2df0]/30 rounded-[22px] shadow-[0_20px_60px_rgba(255,45,240,0.2)] overflow-hidden"
+              className="w-[340px] bg-[#0c1322] border border-yellow-400/30 rounded-[22px] shadow-[0_20px_60px_rgba(250,204,21,0.15)] overflow-hidden"
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-[#ff2df0]/20 to-[#8b5cf6]/20 border-b border-white/10">
+              <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-yellow-400/10 to-yellow-600/10 border-b border-white/10">
                 <div className="flex items-center gap-2">
-                  <MapPin className="text-[#ff2df0]" size={18} />
+                  <MapPin className="text-yellow-400" size={18} />
                   <div>
-                    <p className="font-bold text-white text-sm">Anúnciate</p>
+                    <p className="font-black text-white text-sm uppercase tracking-wide">Anúnciate</p>
                     <p className="text-xs text-[#a7a8c7]">Avísanos que vas a venir</p>
                   </div>
                 </div>
@@ -113,7 +113,7 @@ const FloatingAnnounce = () => {
                   {/* Nombre */}
                   <div>
                     <label className="flex items-center gap-1 text-xs text-[#a7a8c7] mb-1">
-                      <User size={11} /> Nombre <span className="text-[#ff2df0]">*</span>
+                      <User size={11} /> Nombre <span className="text-yellow-400">*</span>
                     </label>
                     <input
                       required
@@ -121,7 +121,7 @@ const FloatingAnnounce = () => {
                       placeholder="¿Cómo te llamas?"
                       value={form.name}
                       onChange={e => set('name', e.target.value)}
-                      className="w-full bg-[#050510] border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-[#a7a8c7]/50 outline-none focus:border-[#ff2df0]"
+                      className="w-full bg-[#050510] border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-[#a7a8c7]/50 outline-none focus:border-yellow-400"
                     />
                   </div>
 
@@ -129,14 +129,14 @@ const FloatingAnnounce = () => {
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="flex items-center gap-1 text-xs text-[#a7a8c7] mb-1">
-                        <Clock size={11} /> Hora de llegada <span className="text-[#ff2df0]">*</span>
+                        <Clock size={11} /> Hora de llegada <span className="text-yellow-400">*</span>
                       </label>
                       <input
                         required
                         type="datetime-local"
                         value={form.arrival_time}
                         onChange={e => set('arrival_time', e.target.value)}
-                        className="w-full bg-[#050510] border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#ff2df0]"
+                        className="w-full bg-[#050510] border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-yellow-400"
                       />
                     </div>
                     <div>
@@ -149,7 +149,7 @@ const FloatingAnnounce = () => {
                         max="20"
                         value={form.people_count}
                         onChange={e => set('people_count', e.target.value)}
-                        className="w-full bg-[#050510] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-[#ff2df0]"
+                        className="w-full bg-[#050510] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-yellow-400"
                       />
                     </div>
                   </div>
@@ -164,7 +164,7 @@ const FloatingAnnounce = () => {
                       placeholder="3XX XXX XXXX"
                       value={form.phone}
                       onChange={e => set('phone', e.target.value)}
-                      className="w-full bg-[#050510] border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-[#a7a8c7]/50 outline-none focus:border-[#ff2df0]"
+                      className="w-full bg-[#050510] border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-[#a7a8c7]/50 outline-none focus:border-yellow-400"
                     />
                   </div>
 
@@ -174,7 +174,7 @@ const FloatingAnnounce = () => {
                     <select
                       value={form.visit_reason}
                       onChange={e => set('visit_reason', e.target.value)}
-                      className="w-full bg-[#050510] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-[#ff2df0]"
+                      className="w-full bg-[#050510] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-yellow-400"
                     >
                       <option value="">— Selecciona —</option>
                       <option value="productos">Comprar productos</option>
@@ -193,14 +193,14 @@ const FloatingAnnounce = () => {
                       placeholder="Cuéntanos algo más..."
                       value={form.notes}
                       onChange={e => set('notes', e.target.value)}
-                      className="w-full bg-[#050510] border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-[#a7a8c7]/50 outline-none focus:border-[#ff2df0] resize-none"
+                      className="w-full bg-[#050510] border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-[#a7a8c7]/50 outline-none focus:border-yellow-400 resize-none"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={saving}
-                    className="w-full bg-gradient-to-r from-[#ff2df0] to-[#8b5cf6] hover:opacity-90 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
+                    className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:opacity-90 text-slate-950 py-2.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-60 uppercase tracking-widest"
                   >
                     <Send size={15} /> {saving ? 'Enviando...' : '¡Me anuncio!'}
                   </button>
@@ -215,7 +215,7 @@ const FloatingAnnounce = () => {
           whileHover={{ scale: 1.07 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(p => !p)}
-          className="flex items-center gap-2 bg-gradient-to-r from-[#ff2df0] to-[#8b5cf6] text-white px-4 py-2.5 rounded-full shadow-lg shadow-[#ff2df0]/30 font-bold text-sm"
+          className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-950 px-4 py-2.5 rounded-full shadow-lg shadow-yellow-500/20 font-black text-xs uppercase tracking-widest border border-yellow-400/25 pointer-events-auto"
           aria-label="Anúnciate"
         >
           <CalendarCheck size={18} />
