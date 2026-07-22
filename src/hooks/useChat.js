@@ -80,9 +80,35 @@ export const useChat = () => {
     }
   }, [userId, logChatErrorOnce]);
 
+  const [communityUsers, setCommunityUsers] = useState([]);
+
+  // Fetch Community Users (Registered Profiles)
+  const fetchCommunityUsers = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url, role')
+        .neq('id', userId)
+        .limit(50);
+
+      if (!error && data) {
+        setCommunityUsers(data.map(p => ({
+          id: p.id,
+          full_name: p.full_name || 'Usuario Casa Smoke',
+          avatar_url: p.avatar_url,
+          role: p.role,
+        })));
+      }
+    } catch (err) {
+      console.error('Error fetching community users:', err);
+    }
+  }, [userId]);
+
   useEffect(() => {
     fetchBlockedUsers();
-  }, [fetchBlockedUsers]);
+    fetchCommunityUsers();
+  }, [fetchBlockedUsers, fetchCommunityUsers]);
 
   // 2. Fetch User's Rooms
   const fetchRooms = useCallback(async () => {
@@ -434,6 +460,7 @@ export const useChat = () => {
     blockUser,
     reportUser,
     onlineUsers,
+    communityUsers,
     loadingRooms,
     loadingMessages,
     blockedUsers,

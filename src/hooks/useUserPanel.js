@@ -6,7 +6,7 @@ import { useToast } from '@/components/ui/use-toast';
 const USER_PANEL_PROFILE_SELECT = 'id, full_name, avatar_url, phone, address, role, updated_at';
 
 export const useUserPanel = () => {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const { toast } = useToast();
   
   const [profile, setProfile] = useState(null);
@@ -39,7 +39,7 @@ export const useUserPanel = () => {
         console.error('Error fetching profile:', error);
       }
       
-      setProfile(rows?.[0] || { full_name: '', phone: '', address: '' });
+      setProfile(rows?.[0] || { full_name: '', phone: '', address: '', role: 'user' });
     } catch (error) {
       console.error('Error in fetchProfile:', error);
     } finally {
@@ -47,22 +47,28 @@ export const useUserPanel = () => {
     }
   };
 
-  // Update Profile
+  // Update Profile safely
   const updateProfile = async (updates) => {
     if (!user) return;
     try {
+      // Exclude role field so users can never inadvertently alter their role
+      const { role, id, ...safeUpdates } = updates;
+      
       const { error } = await supabase
         .from('profiles')
-        .upsert({
-          id: user.id,
-          updated_at: new Date(),
-          ...updates,
-        });
+        .update({
+          ...safeUpdates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
 
       if (error) throw error;
       
       toast({ title: 'Perfil actualizado', description: 'Tus datos se han guardado correctamente.' });
-      fetchProfile();
+      await fetchProfile();
+      if (refreshProfile) {
+        await refreshProfile();
+      }
     } catch (error) {
       toast({ title: 'Error', description: 'No se pudo actualizar el perfil.', variant: 'destructive' });
       console.error(error);

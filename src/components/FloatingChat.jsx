@@ -28,6 +28,7 @@ const FloatingChat = () => {
     sendMessage,
     createPrivateChat,
     onlineUsers,
+    communityUsers,
     loadingRooms,
     loadingMessages,
     user,
@@ -113,31 +114,33 @@ const FloatingChat = () => {
               initial={{ opacity: 0, y: 20, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.96 }}
-              className="h-[520px] w-[360px] overflow-hidden rounded-[28px] border border-yellow-500/20 bg-[#0c1322] shadow-[0_24px_80px_rgba(0,0,0,0.55)] pointer-events-auto"
+              className="h-[520px] w-[360px] overflow-hidden rounded-[28px] border border-pink-500/30 bg-[#0c0814]/95 backdrop-blur-xl shadow-[0_24px_80px_rgba(0,0,0,0.7)] pointer-events-auto"
             >
               {view === 'list' && (
                 <div className="flex h-full flex-col">
-                  <div className="flex items-center justify-between border-b border-white/10 bg-[#050510] px-4 py-4">
+                  <div className="flex items-center justify-between border-b border-pink-500/20 bg-[#05030a] px-4 py-4">
                     <div>
                       <h3 className="flex items-center gap-2 font-black text-white uppercase tracking-wider text-sm">
-                        <MessageCircle className="text-yellow-400" size={20} />
-                        Chat directo
+                        <MessageCircle className="text-pink-400" size={20} />
+                        Chat & Comunidad
                       </h3>
-                      <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.18em] text-[#8f98bf]">Usuarios online: {onlineList.length}</p>
+                      <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-pink-300">
+                        {onlineList.length > 0 ? `🟢 ${onlineList.length} en línea` : 'Comunidad Casa Smoke'}
+                      </p>
                     </div>
-                    <button onClick={() => setIsOpen(false)} className="rounded-xl p-2 text-[#a7a8c7] transition hover:bg-white/5 hover:text-white">
+                    <button onClick={() => setIsOpen(false)} className="rounded-xl p-2 text-slate-400 transition hover:bg-white/5 hover:text-white">
                       <Minimize2 size={18} />
                     </button>
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-3">
                     <div className="mb-5 space-y-1">
-                      <p className="px-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#70789f]">Conversaciones</p>
+                      <p className="px-2 text-[10px] font-black uppercase tracking-[0.24em] text-pink-400">Conversaciones</p>
                       {loadingRooms ? (
-                        <div className="p-4 text-xs text-[#a7a8c7]">Cargando conversaciones...</div>
+                        <div className="p-4 text-xs text-slate-400">Cargando conversaciones...</div>
                       ) : rooms.length === 0 ? (
-                        <div className="rounded-2xl border border-white/5 bg-[#080d19] p-4 text-xs text-[#a7a8c7]">
-                          No tienes conversaciones activas.
+                        <div className="rounded-2xl border border-pink-500/10 bg-white/5 p-4 text-xs text-slate-400">
+                          No tienes conversaciones activas aún.
                         </div>
                       ) : (
                         rooms.map((room) => (
@@ -149,47 +152,64 @@ const FloatingChat = () => {
                             {room.displayImage ? (
                               <img src={room.displayImage} alt={room.displayName} className="h-10 w-10 rounded-2xl object-cover" />
                             ) : (
-                              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#1f2235] font-bold text-yellow-400">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-600/30 to-purple-600/30 border border-pink-500/30 font-bold text-pink-400">
                                 {room.displayName?.charAt(0)?.toUpperCase?.() || 'C'}
                               </div>
                             )}
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-semibold text-white">{room.displayName}</p>
-                              <p className="truncate text-xs text-[#8f98bf]">{room.is_group ? 'Grupo' : 'Mensaje privado'}</p>
+                              <p className="truncate text-xs font-semibold text-white">{room.displayName}</p>
+                              <p className="truncate text-[10px] text-slate-400">{room.is_group ? 'Grupo' : 'Mensaje privado'}</p>
                             </div>
                           </button>
                         ))
                       )}
                     </div>
 
-                    {onlineList.length > 0 && (
-                      <div className="border-t border-white/5 pt-3">
-                        <p className="px-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#70789f]">Disponibles ahora</p>
-                        <div className="mt-2 space-y-1">
-                          {onlineList.map((entry) => (
-                            <button
-                              key={entry.id}
-                              onClick={() => handleStartDM(entry.id)}
-                              className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/5"
-                            >
-                              <div className="relative">
-                                {entry.avatar_url ? (
-                                  <img src={entry.avatar_url} alt={entry.full_name} className="h-9 w-9 rounded-2xl object-cover" />
-                                ) : (
-                                  <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#1f2235] text-xs font-semibold text-white">
-                                    {entry.full_name?.charAt(0)?.toUpperCase?.() || 'U'}
-                                  </div>
-                                )}
-                                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#111322] bg-green-500" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm text-white">{entry.full_name || entry.email || 'Usuario'}</p>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
+                    <div className="border-t border-pink-500/10 pt-3">
+                      <p className="px-2 text-[10px] font-black uppercase tracking-[0.24em] text-pink-400">Comunidad & Miembros</p>
+                      <div className="mt-2 space-y-1">
+                        {(() => {
+                          const combined = [...communityUsers];
+                          onlineList.forEach(u => {
+                            if (!combined.some(c => c.id === u.id)) combined.push(u);
+                          });
+
+                          if (combined.length === 0) {
+                            return <p className="px-2 text-xs text-slate-400 italic">No hay otros miembros registrados aún.</p>;
+                          }
+
+                          return combined.map((entry) => {
+                            const isOnline = !!onlineUsers[entry.id];
+                            return (
+                              <button
+                                key={entry.id}
+                                onClick={() => handleStartDM(entry.id)}
+                                className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition hover:bg-white/5"
+                              >
+                                <div className="relative">
+                                  {entry.avatar_url ? (
+                                    <img src={entry.avatar_url} alt={entry.full_name} className="h-9 w-9 rounded-2xl object-cover" />
+                                  ) : (
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-500/20 to-purple-600/20 border border-pink-500/20 text-xs font-semibold text-white">
+                                      {entry.full_name?.charAt(0)?.toUpperCase?.() || 'U'}
+                                    </div>
+                                  )}
+                                  {isOnline && (
+                                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0c0814] bg-green-500 animate-pulse" />
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-xs font-semibold text-white">{entry.full_name}</p>
+                                  <p className="truncate text-[10px] text-pink-300">
+                                    {isOnline ? '🟢 En línea' : 'Enviar mensaje'}
+                                  </p>
+                                </div>
+                              </button>
+                            );
+                          });
+                        })()}
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -341,39 +361,41 @@ const FloatingChat = () => {
           whileTap={{ scale: 0.92 }}
           onClick={handleToggle}
           className={cn(
-            'relative z-50 flex h-14 w-14 items-center justify-center rounded-full border text-slate-950 shadow-lg transition-all pointer-events-auto',
-            isOpen ? 'border-yellow-400 bg-yellow-400' : 'border-yellow-400 bg-[#0c1322] text-yellow-400 hover:bg-[#111a2f]'
+            'relative z-50 flex h-14 w-14 items-center justify-center rounded-full border shadow-xl transition-all pointer-events-auto',
+            isOpen
+              ? 'border-pink-400 bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-pink-500/30'
+              : 'border-pink-500/50 bg-[#0c0814]/95 text-pink-400 hover:bg-[#150d26] shadow-[0_0_25px_rgba(236,72,153,0.35)]'
           )}
         >
           {isOpen ? <X size={24} /> : <MessageCircle size={28} />}
           {!isOpen && (onlineList.length > 0 || rooms.length > 0) && (
-            <span className="absolute right-0 top-0 h-4 w-4 rounded-full border-2 border-[#050510] bg-green-500" />
+            <span className="absolute right-0 top-0 h-4 w-4 rounded-full border-2 border-[#050510] bg-pink-500 animate-pulse" />
           )}
         </motion.button>
       </div>
 
       <Dialog open={reportOpen} onOpenChange={setReportOpen}>
-        <DialogContent className="border-white/10 bg-[#141926] text-white">
+        <DialogContent className="border-pink-500/30 bg-[#0c0814] text-white">
           <DialogHeader>
             <DialogTitle>Reportar usuario</DialogTitle>
-            <DialogDescription className="text-[#a7a8c7]">
+            <DialogDescription className="text-slate-400">
               Cuéntanos qué sucedió para que el equipo pueda revisar el caso.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <label className="mb-2 block text-sm font-medium text-[#a7a8c7]">Motivo del reporte</label>
+            <label className="mb-2 block text-xs font-semibold text-slate-300">Motivo del reporte</label>
             <textarea
               value={reportReason}
               onChange={(event) => setReportReason(event.target.value)}
-              className="h-32 w-full resize-none rounded-lg border border-white/10 bg-[#050510] p-3 text-white outline-none focus:border-yellow-400"
+              className="h-32 w-full resize-none rounded-xl border border-pink-500/20 bg-[#05030a] p-3 text-white text-xs outline-none focus:border-pink-400"
               placeholder="Describe el comportamiento inapropiado..."
             />
           </div>
           <DialogFooter>
-            <Button onClick={() => setReportOpen(false)} variant="ghost" className="text-[#a7a8c7]">
+            <Button onClick={() => setReportOpen(false)} variant="ghost" className="text-slate-400">
               Cancelar
             </Button>
-            <Button onClick={handleReport} className="bg-yellow-400 hover:bg-yellow-300 text-slate-950">
+            <Button onClick={handleReport} className="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-xs uppercase tracking-wider">
               Enviar reporte
             </Button>
           </DialogFooter>

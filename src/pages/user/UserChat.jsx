@@ -28,6 +28,7 @@ const UserChat = () => {
     createPrivateChat, 
     createGroupChat,
     onlineUsers, 
+    communityUsers = [],
     loadingRooms,
     loadingMessages,
     user
@@ -240,33 +241,57 @@ const UserChat = () => {
              )}
            </div>
 
-           {/* Section: Online Users */}
+           {/* Section: Community & Members */}
            <div className="p-2 border-t border-white/5 mt-2">
               <h3 className="text-xs font-bold text-[#a7a8c7] uppercase px-2 mb-2 flex items-center justify-between">
-                <span>Otros Usuarios Online</span>
-                <span className="bg-green-500/20 text-green-500 px-1.5 py-0.5 rounded text-[10px]">{onlineList.length}</span>
+                <span>Comunidad y Miembros</span>
+                <span className="bg-pink-500/20 text-pink-400 px-1.5 py-0.5 rounded text-[10px]">
+                  {communityUsers.length || onlineList.length} miembros
+                </span>
               </h3>
-              <div className="space-y-1">
-                {onlineList.map(u => (
-                  <button
-                    key={u.id}
-                    onClick={() => handleStartDM(u.id)}
-                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-all text-left"
-                  >
-                    <div className="relative">
-                       <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold text-white">
-                         {u.full_name?.charAt(0).toUpperCase()}
-                       </div>
-                       <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#0b0c15] rounded-full"></span>
-                    </div>
-                    <div className="flex-1 overflow-hidden">
-                       <p className="text-sm font-medium text-[#a7a8c7] truncate">{u.full_name}</p>
-                    </div>
-                  </button>
-                ))}
-                {onlineList.length === 0 && (
-                  <p className="px-2 text-xs text-[#a7a8c7] italic">Nadie más está conectado.</p>
-                )}
+              <div className="space-y-1 max-h-60 overflow-y-auto">
+                {/* Render combined list of community members with online status indicator */}
+                {(() => {
+                  const combinedList = [...communityUsers];
+                  // Add any online user not already in communityUsers list
+                  onlineList.forEach(u => {
+                    if (!combinedList.some(c => c.id === u.id)) {
+                      combinedList.push(u);
+                    }
+                  });
+
+                  if (combinedList.length === 0) {
+                    return <p className="px-2 text-xs text-[#a7a8c7] italic">Inicia una conversación creando un grupo.</p>;
+                  }
+
+                  return combinedList.map(u => {
+                    const isOnline = !!onlineUsers[u.id];
+                    return (
+                      <button
+                        key={u.id}
+                        onClick={() => handleStartDM(u.id)}
+                        className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-all text-left group"
+                      >
+                        <div className="relative">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500/30 to-purple-600/30 border border-pink-500/30 flex items-center justify-center text-xs font-bold text-white">
+                            {u.full_name?.charAt(0).toUpperCase() || 'U'}
+                          </div>
+                          {isOnline ? (
+                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#0b0c15] rounded-full animate-pulse" title="En línea ahora"></span>
+                          ) : (
+                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-slate-500 border-2 border-[#0b0c15] rounded-full" title="Desconectado"></span>
+                          )}
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                          <p className="text-xs font-medium text-[#a7a8c7] group-hover:text-white truncate">{u.full_name}</p>
+                          <span className="text-[9px] text-slate-500 block truncate">
+                            {isOnline ? '🟢 En línea ahora' : u.role === 'admin' ? '⭐ Asesor Casa Smoke' : 'Miembro de la comunidad'}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  });
+                })()}
               </div>
            </div>
         </div>

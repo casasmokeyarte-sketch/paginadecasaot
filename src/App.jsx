@@ -26,7 +26,7 @@ import ChatPresenceProvider from '@/components/ChatPresenceTracker';
 
 // Page Imports
 import Policies from '@/pages/Policies';
-import FifaBackground from '@/components/FifaBackground';
+import CasaSmokeBackground from '@/components/CasaSmokeBackground';
 import BillboardModal from '@/components/BillboardModal';
 
 // Admin Imports
@@ -71,7 +71,7 @@ function App() {
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isUserRoute = location.pathname.startsWith('/user');
 
-  // Stadium Night/Day Mode State
+  // Night / Ambient Mode State
   const [isNight, setIsNight] = React.useState(() => {
     const saved = localStorage.getItem('stadium_is_night');
     return saved !== null ? saved === 'true' : true;
@@ -106,8 +106,8 @@ function App() {
    <AuthProvider>
     <CartProvider>
       <Helmet>
-        <title>Casa Smoke y Arte OT SSOT S.A.S - Cultura, Tattoo y Experiencia FIFA 2026 ⚽</title>
-        <meta name="description" content="Casa Smoke y Arte OT SSOT S.A.S es tu estudio de tatuajes y arte en Colombia. Ofrecemos diseños únicos, artistas profesionales y una experiencia cultural incomparable." />
+        <title>Casa Smoke y Arte OT SSOT S.A.S - Estudio de Tatuajes, Smoke Shop & Arte Urbano 🔥✨</title>
+        <meta name="description" content="Casa Smoke y Arte OT SSOT S.A.S es tu estudio de tatuajes, smoke shop y espacio de arte en Colombia. Diseños exclusivos, vapes, accesorios y cultura urbana." />
       </Helmet>
       
       {/* Age Verification Modal only for public site */}
@@ -138,9 +138,9 @@ function App() {
             <Toaster />
           </div>
         ) : (
-          <FifaBackground isNight={isNight}>
+          <CasaSmokeBackground isNight={isNight}>
             <div className={`min-h-screen flex flex-col`}>
-              <Header isNight={isNight} toggleNight={toggleNight} />
+              <Header />
             
             <main className="flex-grow pt-16">
               <Routes>
@@ -189,7 +189,7 @@ function App() {
             <BillboardModal />
             <Toaster />
             </div>
-          </FifaBackground>
+          </CasaSmokeBackground>
         )}
       </ChatPresenceProvider>
     </CartProvider>

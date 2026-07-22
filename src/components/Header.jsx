@@ -6,7 +6,7 @@ import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import ShoppingCart from '@/components/ShoppingCart';
 
-const Header = ({ isNight, toggleNight }) => {
+const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [particles, setParticles] = useState([]);
 
@@ -24,7 +24,7 @@ const Header = ({ isNight, toggleNight }) => {
       y,
       vx: (Math.random() - 0.5) * 8,
       vy: (Math.random() - 0.5) * 8 - 4,
-      char: i % 2 === 0 ? '⚽' : '⭐',
+      char: i % 2 === 0 ? '🔥' : '✨',
       scale: 0.6 + Math.random() * 0.6
     }));
     
@@ -114,13 +114,13 @@ const Header = ({ isNight, toggleNight }) => {
                 />
                 <div className="flex flex-col border-l border-white/20 pl-3 ml-2.5">
                   <div className="text-[11px] md:text-[12px] font-black leading-none text-white tracking-widest uppercase">
-                    FIFA 2026 <span className="text-[#CE1126]">//</span>
+                    CASA SMOKE <span className="text-pink-500">//</span>
                   </div>
-                  <div className="text-[14px] md:text-[15px] font-black leading-none text-white tracking-wider uppercase mt-0.5">
-                    COLOMBIA
+                  <div className="text-[14px] md:text-[15px] font-black leading-none text-pink-400 tracking-wider uppercase mt-0.5">
+                    Y ARTE OT
                   </div>
-                  <div className="text-[7.5px] md:text-[8px] font-semibold text-yellow-400 tracking-widest uppercase mt-0.5 whitespace-nowrap">
-
+                  <div className="text-[7.5px] md:text-[8px] font-semibold text-purple-300 tracking-widest uppercase mt-0.5 whitespace-nowrap">
+                    ESTUDIO & SMOKE SHOP
                   </div>
                 </div>
               </Link>
@@ -128,17 +128,19 @@ const Header = ({ isNight, toggleNight }) => {
 
             {/* Desktop Navigation Column Container */}
             <div className="hidden lg:flex flex-col items-center gap-2">
-              {/* Main Soccer Menu Pill */}
-              <div className="flex items-center bg-[#090d16]/80 backdrop-blur-md border border-white/10 rounded-full px-5 py-1.5 shadow-lg shadow-[#020617]/50 gap-4 xl:gap-6">
+              {/* Main Casa Smoke Quick Pill */}
+              <div className="flex items-center bg-[#090d16]/80 backdrop-blur-md border border-pink-500/20 rounded-full px-5 py-1.5 shadow-lg shadow-pink-950/30 gap-4 xl:gap-6">
                 {[
-                  { label: 'MASCOTAS FIFA', path: '#mascotas' },
-                  { label: 'RESULTADOS EN VIVO', path: '#resultados' },
-                  { label: 'CENTRO DE APUESTAS', path: '#apuestas' }
+                  { label: '🔥 DESTACADOS', path: '#experiencia' },
+                  { label: '🎨 TATTOO & ARTE', path: '#servicios' },
+                  { label: '💨 SMOKE SHOP', path: '/store', isRoute: true }
                 ].map((item) => (
                   <button
                     key={item.path}
                     onClick={() => {
-                      if (location.pathname !== '/') {
+                      if (item.isRoute) {
+                        navigate(item.path);
+                      } else if (location.pathname !== '/') {
                         navigate('/');
                         setTimeout(() => {
                           document.querySelector(item.path)?.scrollIntoView({ behavior: 'smooth' });
@@ -147,7 +149,7 @@ const Header = ({ isNight, toggleNight }) => {
                         document.querySelector(item.path)?.scrollIntoView({ behavior: 'smooth' });
                       }
                     }}
-                    className="text-[11px] font-black tracking-widest text-slate-300 hover:text-yellow-400 transition-colors py-1.5 px-3 uppercase"
+                    className="text-[11px] font-black tracking-widest text-slate-200 hover:text-pink-400 transition-colors py-1.5 px-3 uppercase"
                   >
                     {item.label}
                   </button>
@@ -185,13 +187,13 @@ const Header = ({ isNight, toggleNight }) => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       className={`relative px-3 py-1 text-[9px] font-black uppercase tracking-wider transition-colors z-10 ${
-                        active ? 'text-yellow-400' : 'text-slate-400 hover:text-slate-200'
+                        active ? 'text-pink-400' : 'text-slate-400 hover:text-slate-200'
                       }`}
                     >
                       {active && (
                         <motion.span
                           layoutId="activeSubMenu"
-                          className="absolute inset-0 bg-yellow-500/10 border border-yellow-500/30 rounded-full z-[-1]"
+                          className="absolute inset-0 bg-pink-500/20 border border-pink-500/40 rounded-full z-[-1]"
                           transition={{ type: "spring", stiffness: 380, damping: 30 }}
                         />
                       )}
@@ -205,62 +207,12 @@ const Header = ({ isNight, toggleNight }) => {
             {/* Right Buttons Container */}
             <div className="flex items-center gap-3 md:gap-4 relative z-50 flex-shrink-0">
 
-              {/* ESTADIO NOCTURNO / DE DIA */}
+              {/* RESERVAR CITA BUTTON */}
               <button
-                onClick={toggleNight}
-                className={`hidden xl:flex items-center gap-1.5 text-[9px] font-black border rounded-full px-3 py-1.5 transition-all duration-300 uppercase tracking-wider shadow-sm hover:scale-105 active:scale-95 ${
-                  isNight 
-                    ? 'text-slate-300 hover:text-yellow-400 border-white/10 hover:border-yellow-400/50 bg-[#090d16]/40' 
-                    : 'text-slate-800 hover:text-slate-950 border-yellow-400/40 hover:border-yellow-400 bg-yellow-400'
-                }`}
+                onClick={() => navigate('/booking')}
+                className="hidden sm:block text-[10px] font-black text-white bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 rounded-full px-5 py-2 transition-all shadow-md shadow-pink-900/40 uppercase tracking-widest"
               >
-                {isNight ? (
-                  <>
-                    <span className="text-yellow-400 animate-pulse">🌙</span> ESTADIO NOCTURNO
-                  </>
-                ) : (
-                  <>
-                    <span className="text-amber-600 animate-bounce">☀️</span> ESTADIO DE DÍA
-                  </>
-                )}
-              </button>
-
-              {/* APUESTAS DEPORTIVAS */}
-              <button
-                onClick={() => {
-                  if (location.pathname !== '/') {
-                    navigate('/');
-                    setTimeout(() => {
-                      document.querySelector('#apuestas')?.scrollIntoView({ behavior: 'smooth' });
-                    }, 200);
-                  } else {
-                    document.querySelector('#apuestas')?.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-                className="hidden sm:block text-[10px] font-black text-slate-900 bg-yellow-400 hover:bg-yellow-300 rounded-full px-4 py-2 transition-colors uppercase tracking-widest"
-              >
-                APOSTAR AHORA
-              </button>
-
-              {/* Trophy icon */}
-              <button
-                onClick={() => {
-                  if (location.pathname !== '/') {
-                    navigate('/');
-                    setTimeout(() => {
-                      document.querySelector('#resultados')?.scrollIntoView({ behavior: 'smooth' });
-                    }, 200);
-                  } else {
-                    document.querySelector('#resultados')?.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-                className="p-2 text-yellow-400 border border-yellow-400/30 rounded-full hover:bg-yellow-400/10 transition-colors flex items-center justify-center"
-                title="Tablero de Resultados"
-              >
-                {/* SVG Trophy Cup */}
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19 4H17.5C17.5 2.9 16.6 2 15.5 2H8.5C7.4 2 6.5 2.9 6.5 4H5C3.3 4 2 5.3 2 7V9C2 11.2 3.5 13.1 5.6 13.7C6.3 15.6 7.9 17 9.8 17.3C10 18.9 11.3 20.1 13 20.2V22H9V24H15V22H11V20.2C12.7 20.1 14 18.9 14.2 17.3C16.1 17 17.7 15.6 18.4 13.7C20.5 13.1 22 11.2 22 9V7C22 5.3 20.7 4 19 4ZM4 9V7C4 6.4 4.4 6 5 6H6.5V11.2C5.1 10.9 4 10.1 4 9ZM20 9C20 10.1 18.9 10.9 17.5 11.2V6H19C19.6 6 20 6.4 20 7V9Z" />
-                </svg>
+                RESERVAR CITA
               </button>
 
               {/* User Account Button */}
@@ -268,15 +220,15 @@ const Header = ({ isNight, toggleNight }) => {
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center gap-2 px-2.5 py-1 bg-yellow-400/10 hover:bg-yellow-400/20 rounded-full border border-yellow-400/20 transition-all text-yellow-400"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-pink-500/10 hover:bg-pink-500/20 rounded-full border border-pink-500/30 transition-all text-pink-300"
                   >
-                    <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-[10px] font-black text-slate-900 flex-shrink-0">
+                    <div className="w-6 h-6 bg-gradient-to-tr from-pink-500 to-purple-600 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0">
                       {(profile?.full_name || user.email || '?').slice(0, 2).toUpperCase()}
                     </div>
-                    <span className="text-yellow-400 text-xs font-semibold hidden md:block max-w-[80px] truncate">
+                    <span className="text-white text-xs font-bold hidden md:block max-w-[80px] truncate">
                       {profile?.full_name ? profile.full_name.split(' ')[0] : user.email?.split('@')[0]}
                     </span>
-                    <ChevronDown size={12} className={`text-yellow-400/60 hidden md:block transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={12} className={`text-pink-400 hidden md:block transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
                   <AnimatePresence>
                     {isUserMenuOpen && (
@@ -285,14 +237,14 @@ const Header = ({ isNight, toggleNight }) => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -8, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-full mt-2 w-48 bg-[#090d16]/95 backdrop-blur-md border border-yellow-500/20 rounded-xl shadow-2xl overflow-hidden z-50 text-slate-200"
+                        className="absolute right-0 top-full mt-2 w-48 bg-[#0c0814]/95 backdrop-blur-md border border-pink-500/30 rounded-xl shadow-2xl overflow-hidden z-50 text-slate-200"
                       >
-                        <Link to="/user" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-white/5 transition-colors">
-                          <User size={15} className="text-yellow-400" /> Mi Perfil
+                        <Link to="/user" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-white/5 transition-colors font-medium">
+                          <User size={15} className="text-pink-400" /> Mi Perfil
                         </Link>
                         <button
                           onClick={() => { signOut(); setIsUserMenuOpen(false); }}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-white/5 transition-colors border-t border-yellow-500/10"
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-white/5 transition-colors border-t border-pink-500/20 font-medium"
                         >
                           <LogOut size={15} /> Cerrar Sesión
                         </button>
@@ -302,7 +254,7 @@ const Header = ({ isNight, toggleNight }) => {
                 </div>
               ) : (
                 <Link to="/login">
-                  <button className="p-2 text-slate-300 hover:text-yellow-400 transition-colors bg-white/5 hover:bg-white/10 rounded-full">
+                  <button className="p-2 text-slate-300 hover:text-pink-400 transition-colors bg-white/5 hover:bg-white/10 rounded-full border border-white/10">
                     <User size={18} />
                   </button>
                 </Link>
@@ -345,17 +297,19 @@ const Header = ({ isNight, toggleNight }) => {
                 className="lg:hidden overflow-hidden bg-[#090d16]/95 backdrop-blur-md rounded-b-2xl border-t border-yellow-500/20 mt-4 shadow-lg text-slate-200"
               >
                 <div className="flex flex-col p-4 space-y-2">
-                  {/* Soccer Menu anchor buttons first */}
+                  {/* Casa Smoke Menu anchor buttons */}
                   {[
-                    { label: 'MASCOTAS FIFA', path: '#mascotas' },
-                    { label: 'RESULTADOS EN VIVO', path: '#resultados' },
-                    { label: 'CENTRO DE APUESTAS', path: '#apuestas' }
+                    { label: '🔥 DESTACADOS', path: '#experiencia' },
+                    { label: '🎨 TATTOO & ARTE', path: '#servicios' },
+                    { label: '💨 SMOKE SHOP', path: '/store', isRoute: true }
                   ].map((item) => (
                     <button
                       key={item.path}
                       onClick={() => {
                         setIsMobileMenuOpen(false);
-                        if (location.pathname !== '/') {
+                        if (item.isRoute) {
+                          navigate(item.path);
+                        } else if (location.pathname !== '/') {
                           navigate('/');
                           setTimeout(() => {
                             document.querySelector(item.path)?.scrollIntoView({ behavior: 'smooth' });
@@ -364,7 +318,7 @@ const Header = ({ isNight, toggleNight }) => {
                           document.querySelector(item.path)?.scrollIntoView({ behavior: 'smooth' });
                         }
                       }}
-                      className="block w-full text-left py-3 px-4 rounded-xl text-yellow-400 bg-yellow-500/5 font-black tracking-widest text-[11px] uppercase border border-yellow-500/10"
+                      className="block w-full text-left py-3 px-4 rounded-xl text-pink-400 bg-pink-500/10 font-black tracking-widest text-[11px] uppercase border border-pink-500/20"
                     >
                       {item.label}
                     </button>

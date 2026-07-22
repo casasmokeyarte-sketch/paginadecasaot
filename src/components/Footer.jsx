@@ -1,46 +1,115 @@
 import React from 'react';
-import { Heart } from 'lucide-react';
+import { Heart, ArrowUp, Flame, Shield, MapPin, Phone, Instagram, Facebook } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <footer className="relative bg-[#050510]/95 text-slate-400 py-8 border-t border-yellow-500/10 overflow-hidden">
-      {/* Subtle cloud/pitch lights decorative overlay */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-0">
-        <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 100" preserveAspectRatio="none">
-          <path d="M-50 90 C 20 90, 40 50, 90 50 C 140 50, 160 80, 210 80 C 260 80, 280 60, 330 60 C 380 60, 400 90, 470 90 C 540 90, 560 70, 610 70 C 660 70, 680 95, 730 95 C 780 95, 800 90, 850 90 L850 100 L-50 100 Z" fill="currentColor" />
-        </svg>
-      </div>
-      
+    <footer className="relative bg-[#07040e]/95 text-slate-300 pt-12 pb-8 border-t border-pink-500/20 overflow-hidden select-none">
+      {/* Ambient Smoke Glow background effect */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-32 bg-gradient-to-b from-pink-500/10 to-transparent blur-3xl pointer-events-none"></div>
+
       <div className="container mx-auto px-4 relative z-10">
-        <div className="flex flex-col md:flex-row items-center justify-between">
-          <div className="flex items-center space-x-2 mb-4 md:mb-0">
-            <img src="/logo.png" alt="Casa Smoke y Arte Logo" className="h-12 w-auto" />
+        
+        {/* Top Footer Row */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-10 border-b border-white/10">
+          
+          {/* Brand Col */}
+          <div className="col-span-1 md:col-span-5 flex flex-col items-center md:items-start text-center md:text-left">
+            <Link to="/" className="flex items-center gap-3 mb-4">
+              <img src="/logo.png" alt="Casa Smoke y Arte Logo" className="h-12 w-auto filter drop-shadow-[0_0_10px_rgba(236,72,153,0.3)]" />
+              <div className="flex flex-col border-l border-white/20 pl-3">
+                <span className="text-xs font-black text-white tracking-widest uppercase">CASA SMOKE OT</span>
+                <span className="text-[10px] font-bold text-pink-400 uppercase tracking-wider">ESTUDIO & SMOKE SHOP</span>
+              </div>
+            </Link>
+
+            <p className="text-slate-400 text-xs leading-relaxed max-w-sm mb-4 font-medium">
+              Estudio profesional de tatuajes, shop con vapes y accesorios originales, y espacio de arte urbano en Colombia. Tu lugar de estilo y expresión.
+            </p>
+
+            <div className="flex items-center gap-3">
+              <a
+                href="https://wa.me/573023007193"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 rounded-full bg-pink-500/10 border border-pink-500/30 hover:border-pink-400 flex items-center justify-center text-pink-400 hover:text-white transition-all shadow-sm hover:scale-105"
+                title="WhatsApp Directo"
+              >
+                <Phone size={16} />
+              </a>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 rounded-full bg-pink-500/10 border border-pink-500/30 hover:border-pink-400 flex items-center justify-center text-pink-400 hover:text-white transition-all shadow-sm hover:scale-105"
+                title="Instagram"
+              >
+                <Instagram size={16} />
+              </a>
+            </div>
           </div>
 
-          <div className="text-center md:text-left mb-4 md:mb-0">
-            <p className="text-slate-400 text-sm font-medium">
-              © {currentYear} Casa Smoke y Arte SSOT S.A.S
-            </p>
-            <div className="flex justify-center md:justify-start items-center space-x-4 mt-2">
-              <Link to="/policies" className="text-xs text-slate-500 hover:text-yellow-400 transition-colors">
-                Nuestras Políticas
-              </Link>
-              <p className="text-yellow-400 text-xs font-semibold uppercase tracking-wider">
-                Cultura, Tattoo y Experiencia ⚽
+          {/* Navigation Links Col */}
+          <div className="col-span-1 md:col-span-4 flex flex-col items-center md:items-start text-center md:text-left">
+            <h4 className="text-white text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2">
+              <Flame size={14} className="text-pink-400" /> NAVEGACIÓN RÁPIDA
+            </h4>
+
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 text-xs">
+              <Link to="/" className="text-slate-400 hover:text-pink-400 transition-colors">Inicio</Link>
+              <Link to="/store" className="text-slate-400 hover:text-pink-400 transition-colors">Smoke Shop</Link>
+              <Link to="/booking" className="text-slate-400 hover:text-pink-400 transition-colors">Reservar Cita</Link>
+              <Link to="/about" className="text-slate-400 hover:text-pink-400 transition-colors">Nosotros</Link>
+              <Link to="/photos" className="text-slate-400 hover:text-pink-400 transition-colors">Fotos & Galería</Link>
+              <Link to="/policies" className="text-slate-400 hover:text-pink-400 transition-colors">Políticas del Sitio</Link>
+              <Link to="/pqr" className="text-slate-400 hover:text-pink-400 transition-colors">Atención PQR</Link>
+              <Link to="/contact" className="text-slate-400 hover:text-pink-400 transition-colors">Contacto</Link>
+            </div>
+          </div>
+
+          {/* Scroll to top & location */}
+          <div className="col-span-1 md:col-span-3 flex flex-col items-center md:items-end justify-between">
+            <button
+              onClick={scrollToTop}
+              className="flex items-center gap-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-wider shadow-lg shadow-pink-900/40 transition-all hover:scale-105 mb-4"
+            >
+              Volver Arriba <ArrowUp size={14} />
+            </button>
+
+            <div className="text-center md:text-right">
+              <span className="text-[10px] font-bold text-pink-400 uppercase tracking-widest block mb-1">
+                Ubicación Principal
+              </span>
+              <p className="text-xs text-slate-300 font-semibold flex items-center justify-center md:justify-end gap-1">
+                <MapPin size={13} className="text-pink-400" /> Bogotá, OT - Colombia
               </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-1 text-sm text-slate-400">
+        </div>
+
+        {/* Bottom Rights Bar */}
+        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+          <p className="font-medium text-center sm:text-left">
+            © {currentYear} <strong className="text-white font-bold">Casa Smoke y Arte OT SSOT S.A.S</strong>. Todos los derechos reservados.
+          </p>
+
+          <div className="flex items-center space-x-1.5 text-slate-400 font-semibold">
             <span>Hecho con</span>
-            <Heart className="text-yellow-400 fill-yellow-400" size={16} />
-            <span>Bogota , OT</span>
+            <Heart className="text-pink-500 fill-pink-500 animate-pulse" size={15} />
+            <span className="text-white font-bold">Cultura & Arte</span>
           </div>
         </div>
+
       </div>
     </footer>
   );
 };
+
 export default Footer;

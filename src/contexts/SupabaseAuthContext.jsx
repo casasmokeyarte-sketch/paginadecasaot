@@ -23,6 +23,7 @@ const buildFallbackProfile = (userId, email) => ({
   avatar_url: null,
   phone: null,
   address: null,
+  role: 'user',
   updated_at: new Date().toISOString(),
 });
 
