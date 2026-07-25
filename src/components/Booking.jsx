@@ -28,17 +28,17 @@ const Booking = () => {
             </div>
 
             <h1 className="text-4xl md:text-5xl font-bold text-[#f5f5f5] mb-4">
-              En Reconstrucción
+              Sala en Construcción
             </h1>
             <div className="w-24 h-1 bg-gradient-to-r from-[#ff2df0] to-[#00e5ff] mx-auto mb-6"></div>
 
             <p className="text-lg text-[#a7a8c7] mb-4">
-              Nuestra sección de citas de tatuaje está siendo renovada para ofrecerte una mejor experiencia.
+              No hay citas disponibles porque la sala se encuentra en construcción y fuera de servicio por el momento.
             </p>
 
             <div className="flex items-center justify-center gap-2 text-[#00e5ff] font-semibold">
               <Clock size={20} />
-              <span>Vuelve pronto, estará lista muy pronto.</span>
+              <span>Agradecemos tu paciencia, estaremos listos muy pronto.</span>
             </div>
           </motion.div>
         </div>

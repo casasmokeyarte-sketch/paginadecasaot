@@ -23,8 +23,8 @@ const CASA_SMOKE_PILLARS = [
       'Atención personalizada con boceto digital antes de tatuar',
       'Especialistas en coberturas (cover-up) y pigmentación duradera'
     ],
-    ctaText: 'Agendar Sesión de Tattoo',
-    ctaLink: '/booking'
+    ctaText: 'EXPERIENCIA CASA SMOKE & ARTE',
+    ctaLink: '#experiencia'
   },
   {
     id: 'smokeshop',
@@ -116,10 +116,10 @@ const Hero = () => {
             <div className="absolute top-[20%] right-[15%] w-4 h-4 bg-rose-400 rounded-full blur-[1px] animate-pulse"></div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full relative z-10">
+          <div className="flex flex-col items-center w-full relative z-10">
 
-            {/* LEFT COLUMN: Texts & Buttons */}
-            <div className="col-span-1 lg:col-span-7 flex flex-col items-center lg:items-start text-center lg:text-left">
+            {/* CENTERED COLUMN: Texts & Buttons */}
+            <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
               
               {/* Badge */}
               <motion.div
@@ -142,12 +142,12 @@ const Hero = () => {
               </h1>
 
               {/* Description */}
-              <p className="text-slate-300 text-sm md:text-base font-medium leading-relaxed max-w-xl mb-8">
+              <p className="text-slate-300 text-sm md:text-base font-medium leading-relaxed max-w-2xl mb-8">
                 Bienvenido a <strong className="text-pink-400">Casa Smoke y Arte OT</strong>. Tu estudio profesional de tatuajes, tienda de vapes y accesorios de alta gama, y galería de arte urbano. Diseños 100% personalizados y atención de primer nivel.
               </p>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto items-center justify-center">
                 <button
                   onClick={() => navigate('/store')}
                   className="flex items-center justify-center gap-2.5 text-xs font-black text-white bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 rounded-full px-7 py-4 shadow-lg shadow-pink-900/40 transition-all uppercase tracking-widest"
@@ -164,63 +164,11 @@ const Hero = () => {
               </div>
 
               {/* Highlights pills */}
-              <div className="mt-8 flex flex-wrap gap-4 items-center justify-center lg:justify-start text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              <div className="mt-8 flex flex-wrap gap-4 items-center justify-center text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 <span className="flex items-center gap-1.5 text-pink-300"><CheckCircle size={14} className="text-pink-400" /> Artistas Profesionales</span>
                 <span className="flex items-center gap-1.5 text-purple-300"><CheckCircle size={14} className="text-purple-400" /> Vapes & Pods 100% Originales</span>
                 <span className="flex items-center gap-1.5 text-rose-300"><CheckCircle size={14} className="text-rose-400" /> Envíos Seguros</span>
               </div>
-            </div>
-
-            {/* RIGHT COLUMN: Feature Display Card */}
-            <div className="col-span-1 lg:col-span-5 flex justify-center items-center">
-              <motion.div
-                initial={{ opacity: 0, y: 30, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ delay: 0.2, duration: 0.8 }}
-                className="relative w-full max-w-[420px] bg-[#0c0814]/90 border border-pink-500/30 rounded-3xl p-6 shadow-2xl overflow-hidden group"
-              >
-                {/* Glow ring */}
-                <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-tr from-pink-500/20 to-purple-600/20 blur-3xl rounded-full pointer-events-none"></div>
-
-                <div className="relative z-10 flex flex-col gap-4">
-                  <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 relative">
-                    <img
-                      src="/portada.png"
-                      alt="Casa Smoke OT Portada"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                    <div className="absolute bottom-3 left-4 right-4 flex justify-between items-center text-xs font-black text-white">
-                      <span className="bg-pink-600/90 text-white px-3 py-1 rounded-full text-[10px] uppercase tracking-widest backdrop-blur-sm">
-                        CULTURA SMOKE OT
-                      </span>
-                      <span className="text-pink-300 text-[10px] uppercase font-bold tracking-wider">
-                        ★ 4.9/5 RATING
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <h3 className="text-white font-black text-lg uppercase tracking-wide">
-                      ESTUDIO & SMOKE SHOP PREMIUM
-                    </h3>
-                    <p className="text-slate-300 text-xs leading-relaxed">
-                      Explora nuestras zonas temáticas, catálogo exclusivo y agenda tu cita con atención personalizada de nuestros artistas.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-white/10 text-center">
-                    <div className="bg-white/5 p-2.5 rounded-xl border border-white/5">
-                      <span className="block text-pink-400 font-black text-base">100%</span>
-                      <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Original & Seguro</span>
-                    </div>
-                    <div className="bg-white/5 p-2.5 rounded-xl border border-white/5">
-                      <span className="block text-purple-400 font-black text-base">+5.000</span>
-                      <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Clientes Felices</span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
             </div>
 
           </div>
@@ -307,7 +255,16 @@ const Hero = () => {
 
                   <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <button
-                      onClick={() => navigate(activeData.ctaLink)}
+                      onClick={() => {
+                        if (activeData.ctaLink.startsWith('#')) {
+                          const target = document.getElementById(activeData.ctaLink.substring(1));
+                          if (target) {
+                            target.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        } else {
+                          navigate(activeData.ctaLink);
+                        }
+                      }}
                       className="w-full sm:w-auto text-xs font-black text-white bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 rounded-full px-6 py-3.5 transition-all shadow-md shadow-pink-900/30 uppercase tracking-widest flex items-center justify-center gap-2"
                     >
                       {activeData.ctaText} <ArrowRight size={14} />

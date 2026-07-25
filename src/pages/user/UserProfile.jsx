@@ -4,8 +4,13 @@ import { useUserPanel } from '@/hooks/useUserPanel';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, User, Phone, MapPin, Mail, FileText, Calendar, ShoppingBag, Download, ExternalLink, Clock, Trash2, AlertTriangle } from 'lucide-react';
+import { 
+  Save, User, Phone, MapPin, Mail, FileText, Calendar, 
+  ShoppingBag, Download, ExternalLink, Clock, Trash2, 
+  AlertTriangle, Camera, Trash, Loader2 
+} from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { uploadFileToBucket } from '@/lib/storageUpload';
 
 const UserProfile = () => {
   const { 
@@ -24,6 +29,7 @@ const UserProfile = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showDeleteZone, setShowDeleteZone] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   
   const [formData, setFormData] = useState({
     full_name: '',
@@ -44,6 +50,57 @@ const UserProfile = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     updateProfile(formData);
+  };
+
+  const handleUploadAvatar = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const publicUrl = await uploadFileToBucket({
+        file,
+        bucket: 'avatars',
+        folder: user.id
+      });
+      
+      await updateProfile({
+        ...formData,
+        avatar_url: publicUrl
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: 'Error al subir imagen',
+        description: err.message || 'No se pudo subir la foto de perfil.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    try {
+      setIsUploading(true);
+      await updateProfile({
+        ...formData,
+        avatar_url: null
+      });
+      toast({
+        title: 'Foto eliminada',
+        description: 'Tu foto de perfil ha sido eliminada.'
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: 'Error',
+        description: 'No se pudo eliminar la foto de perfil.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleDownloadInvoice = (orderId) => {
@@ -90,6 +147,69 @@ const UserProfile = () => {
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
               <User className="text-[#ff2df0]" /> Información de Contacto
             </h2>
+
+            {/* Avatar Section */}
+            <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-white/5 mb-6">
+              <div className="relative">
+                <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-pink-500/50 bg-[#050510] flex items-center justify-center relative">
+                  {isUploading && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
+                      <Loader2 className="animate-spin text-[#ff2df0]" size={24} />
+                    </div>
+                  )}
+                  {profile?.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt="Foto de perfil" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="text-[#a7a8c7]" size={40} />
+                  )}
+                </div>
+                
+                {/* Floating camera icon */}
+                <label className="absolute bottom-0 right-0 p-2 bg-[#ff2df0] hover:bg-[#d91cb8] rounded-full cursor-pointer transition-colors shadow-lg border border-[#111322] flex items-center justify-center">
+                  <Camera size={14} className="text-white" />
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleUploadAvatar} 
+                    disabled={isUploading} 
+                    className="hidden" 
+                  />
+                </label>
+              </div>
+
+              <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
+                <h3 className="text-white font-bold text-lg">Foto de Perfil</h3>
+                <p className="text-xs text-[#a7a8c7] mt-1 mb-3">
+                  Sube una foto cuadrada de hasta 5MB. Se reflejará en tus comentarios y mensajes de chat.
+                </p>
+                <div className="flex gap-2">
+                  <label className="text-xs font-bold text-white bg-white/5 hover:bg-[#ff2df0] hover:text-white px-4 py-2 rounded-xl transition-all cursor-pointer border border-white/10 flex items-center gap-1">
+                    Cambiar foto
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleUploadAvatar} 
+                      disabled={isUploading} 
+                      className="hidden" 
+                    />
+                  </label>
+                  {profile?.avatar_url && (
+                    <button
+                      type="button"
+                      onClick={handleDeleteAvatar}
+                      disabled={isUploading}
+                      className="text-xs font-bold text-red-400 hover:text-white hover:bg-red-600 bg-red-500/10 px-4 py-2 rounded-xl transition-all border border-red-500/20 flex items-center gap-1"
+                    >
+                      <Trash size={12} /> Eliminar
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
             
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email (Read Only) */}

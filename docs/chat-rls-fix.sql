@@ -1,12 +1,11 @@
--- ============================================================================
--- Fix recursive RLS policies for chat tables
--- Execute this in the Supabase SQL editor for the active project.
--- ============================================================================
+begin;
 
+-- Enable RLS on chat tables
 alter table if exists public.chat_rooms enable row level security;
 alter table if exists public.chat_participants enable row level security;
 alter table if exists public.chat_messages enable row level security;
 
+-- Helper function to check if the user is a chat participant
 create or replace function public.is_chat_participant(target_room_id uuid)
 returns boolean
 language sql
@@ -25,6 +24,7 @@ $$;
 revoke all on function public.is_chat_participant(uuid) from public;
 grant execute on function public.is_chat_participant(uuid) to authenticated;
 
+-- Helper function to check if the user is the room creator
 create or replace function public.is_chat_room_creator(target_room_id uuid)
 returns boolean
 language sql
@@ -43,7 +43,7 @@ $$;
 revoke all on function public.is_chat_room_creator(uuid) from public;
 grant execute on function public.is_chat_room_creator(uuid) to authenticated;
 
--- chat_rooms
+-- 1. Chat Rooms: Allow SELECT for participants OR the room creator (fixes insertion returning)
 drop policy if exists "chat_rooms_select_auth" on public.chat_rooms;
 create policy "chat_rooms_select_auth"
 on public.chat_rooms
@@ -54,6 +54,7 @@ using (
   or public.is_chat_participant(id)
 );
 
+-- 2. Chat Rooms: Allow INSERT for authenticated users setting themselves as the creator
 drop policy if exists "chat_rooms_insert_auth" on public.chat_rooms;
 create policy "chat_rooms_insert_auth"
 on public.chat_rooms
@@ -63,7 +64,7 @@ with check (
   created_by = auth.uid()
 );
 
--- chat_participants
+-- 3. Chat Participants: Allow SELECT if the user is a participant of the room
 drop policy if exists "chat_participants_select_auth" on public.chat_participants;
 create policy "chat_participants_select_auth"
 on public.chat_participants
@@ -73,6 +74,7 @@ using (
   public.is_chat_participant(room_id)
 );
 
+-- 4. Chat Participants: Allow INSERT if the user is the room creator, is a participant, or is adding themselves
 drop policy if exists "chat_participants_insert_auth" on public.chat_participants;
 create policy "chat_participants_insert_auth"
 on public.chat_participants
@@ -84,7 +86,7 @@ with check (
   or user_id = auth.uid()
 );
 
--- chat_messages
+-- 5. Chat Messages: Allow SELECT if the user is a participant of the room
 drop policy if exists "chat_messages_select_auth" on public.chat_messages;
 create policy "chat_messages_select_auth"
 on public.chat_messages
@@ -94,6 +96,7 @@ using (
   public.is_chat_participant(room_id)
 );
 
+-- 6. Chat Messages: Allow INSERT if the user is the sender and is a participant of the room
 drop policy if exists "chat_messages_insert_auth" on public.chat_messages;
 create policy "chat_messages_insert_auth"
 on public.chat_messages
@@ -103,3 +106,5 @@ with check (
   sender_id = auth.uid()
   and public.is_chat_participant(room_id)
 );
+
+commit;
