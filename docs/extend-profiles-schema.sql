@@ -103,4 +103,16 @@ using (to_user_id = auth.uid());
 grant select, insert, update, delete on public.profile_reactions to authenticated;
 grant select, insert, update, delete on public.profile_notifications to authenticated;
 
+-- Enable real-time for chat tables (if publication exists)
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    alter publication supabase_realtime add table public.chat_messages;
+    alter publication supabase_realtime add table public.chat_rooms;
+    alter publication supabase_realtime add table public.chat_participants;
+  end if;
+exception when others then
+  -- Ignore if tables are already in publication
+end $$;
+
 commit;

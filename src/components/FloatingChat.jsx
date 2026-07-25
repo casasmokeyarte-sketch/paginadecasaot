@@ -36,6 +36,7 @@ const FloatingChat = () => {
     blockUser,
     reportUser,
     blockedUsers,
+    unreadRooms,
   } = useChat();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -154,7 +155,12 @@ const FloatingChat = () => {
                                 </div>
                               )}
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-xs font-semibold text-white">{room.displayName}</p>
+                                <div className="flex justify-between items-center gap-2">
+                                  <p className="truncate text-xs font-semibold text-white">{room.displayName}</p>
+                                  {unreadRooms.includes(room.id) && (
+                                    <span className="h-2 w-2 rounded-full bg-pink-500 flex-shrink-0 animate-pulse" />
+                                  )}
+                                </div>
                                 <p className="truncate text-[10px] text-slate-400">{room.is_group ? 'Grupo' : 'Mensaje privado'}</p>
                               </div>
                             </button>
@@ -280,13 +286,19 @@ const FloatingChat = () => {
                             <div key={message.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                               <div
                                 className={cn(
-                                  'max-w-[82%] rounded-2xl px-3.5 py-2 text-sm break-words',
+                                  'max-w-[82%] rounded-2xl px-3.5 py-2 text-sm break-words flex flex-col',
                                   isMe
                                     ? 'bg-yellow-400 text-slate-950 rounded-br-md font-medium'
                                     : 'border border-white/5 bg-[#1f2235] text-[#e0e0e0] rounded-bl-md'
                                 )}
                               >
-                                {message.content}
+                                <span>{message.content}</span>
+                                <span className={cn(
+                                  "text-[9px] opacity-40 self-end mt-1 block font-mono",
+                                  isMe ? "text-slate-950" : "text-[#a7a8c7]"
+                                )}>
+                                  {new Date(message.created_at).toLocaleDateString([], { day: '2-digit', month: 'short' })} - {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
                               </div>
                             </div>
                           );
@@ -327,15 +339,30 @@ const FloatingChat = () => {
             'relative z-50 flex h-14 w-14 items-center justify-center rounded-full border shadow-xl transition-all pointer-events-auto',
             isOpen
               ? 'border-pink-400 bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-pink-500/30'
-              : 'border-pink-500/50 bg-[#0c0814]/95 text-pink-400 hover:bg-[#150d26] shadow-[0_0_25px_rgba(236,72,153,0.35)]'
+              : 'border-pink-500/50 bg-[#0c0814]/95 text-pink-400 hover:bg-[#150d26] shadow-[0_0_25px_rgba(236,72,153,0.35)]',
+            !isOpen && unreadRooms.length > 0 && 'animate-chat-shake'
           )}
         >
           {isOpen ? <X size={24} /> : <MessageCircle size={28} />}
-          {!isOpen && (onlineList.length > 0 || rooms.length > 0) && (
-            <span className="absolute right-0 top-0 h-4 w-4 rounded-full border-2 border-[#050510] bg-pink-500 animate-pulse" />
+          {!isOpen && unreadRooms.length > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full border-2 border-[#0c0814] bg-pink-500 flex items-center justify-center text-[10px] font-bold text-white shadow-lg shadow-pink-500/30">
+              {unreadRooms.length}
+            </span>
           )}
         </motion.button>
       </div>
+
+      {/* Shake animation styles */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes chatShake {
+          0%, 100% { transform: scale(1) rotate(0deg); }
+          10%, 30%, 50%, 70%, 90% { transform: scale(1.05) rotate(-5deg); }
+          20%, 40%, 60%, 80% { transform: scale(1.05) rotate(5deg); }
+        }
+        .animate-chat-shake {
+          animation: chatShake 0.5s infinite;
+        }
+      `}} />
 
       {/* User Profile View Dialog */}
       <UserProfileViewModal 

@@ -15,6 +15,8 @@ const isTransientChatError = (error) => {
     || message.includes('timeout');
 };
 
+const USER_PANEL_PROFILE_SELECT = 'id, full_name, username, avatar_url, phone, address, role, city, country, gender, interests, is_city_public, is_country_public, is_gender_public, is_interests_public, is_profile_public, updated_at';
+
 const normalizeChatProfile = (profile, fallbackId = null) => ({
   id: profile?.id ?? fallbackId,
   full_name: profile?.full_name ?? null,
@@ -38,6 +40,46 @@ export const useChat = () => {
   const roomsRetryAfterRef = useRef(0);
   const blockedRetryAfterRef = useRef(0);
   const lastErrorKeyRef = useRef({ key: '', at: 0 });
+
+  // Local state for unread rooms, persisting in localStorage
+  const [unreadRooms, setUnreadRooms] = useState(() => {
+    try {
+      const stored = localStorage.getItem('chat_unread_rooms');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('chat_unread_rooms', JSON.stringify(unreadRooms));
+    } catch (err) {
+      console.error(err);
+    }
+  }, [unreadRooms]);
+
+  // Audio synthesizer beep helper using browser Web Audio API
+  const playNotificationSound = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5 note
+      gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.18);
+      
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.18);
+    } catch (err) {
+      console.log('Audio context playback failed:', err);
+    }
+  };
 
   useEffect(() => {
     toastRef.current = toast;
@@ -307,6 +349,48 @@ export const useChat = () => {
     };
   }, [activeRoom]);
 
+  // Clear unread room indicator when it becomes active
+  useEffect(() => {
+    if (activeRoom && unreadRooms.includes(activeRoom.id)) {
+      setUnreadRooms(prev => prev.filter(id => id !== activeRoom.id));
+    }
+  }, [activeRoom, unreadRooms]);
+
+  // Global subscription to all chat messages for real-time sound and unread count tracking
+  useEffect(() => {
+    if (!userId || rooms.length === 0) return;
+
+    const globalChannel = supabase.channel('global-chat-messages')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages',
+      }, async (payload) => {
+        const msg = payload.new;
+        if (msg.sender_id === userId) return;
+
+        // Verify if the room belongs to user's conversation rooms
+        const isMyRoom = rooms.some(r => r.id === msg.room_id);
+        if (!isMyRoom) return;
+
+        // If the room is not active, add to unread list
+        if (!activeRoom || activeRoom.id !== msg.room_id) {
+          setUnreadRooms(prev => {
+            if (prev.includes(msg.room_id)) return prev;
+            return [...prev, msg.room_id];
+          });
+        }
+
+        // Play alert sound for any incoming chat message
+        playNotificationSound();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(globalChannel);
+    };
+  }, [userId, rooms, activeRoom]);
+
   // Actions
   const sendMessage = async (content) => {
     if (!activeRoom || !content.trim() || !userId) return;
@@ -464,6 +548,8 @@ export const useChat = () => {
     loadingRooms,
     loadingMessages,
     blockedUsers,
-    user
+    user,
+    unreadRooms,
+    setUnreadRooms
   };
 };

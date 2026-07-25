@@ -33,7 +33,8 @@ const UserChat = () => {
     communityUsers = [],
     loadingRooms,
     loadingMessages,
-    user
+    user,
+    unreadRooms
   } = useChat();
 
   const [messageInput, setMessageInput] = useState('');
@@ -239,14 +240,19 @@ const UserChat = () => {
                      )}>
                        {room.is_group ? <Hash size={18} /> : <User size={18} />}
                      </div>
-                     <div className="flex-1 overflow-hidden">
-                       <p className={cn("font-medium truncate", activeRoom?.id === room.id ? "text-white" : "text-[#a7a8c7] group-hover:text-white")}>
-                         {room.displayName}
-                       </p>
-                       <p className="text-xs text-[#a7a8c7] truncate">
-                         {room.is_group ? `${room.participants.length} participantes` : 'Mensaje privado'}
-                       </p>
-                     </div>
+                      <div className="flex-1 overflow-hidden">
+                        <div className="flex justify-between items-center gap-2">
+                          <p className={cn("font-medium truncate", activeRoom?.id === room.id ? "text-white" : "text-[#a7a8c7] group-hover:text-white")}>
+                            {room.displayName}
+                          </p>
+                          {unreadRooms.includes(room.id) && (
+                            <span className="w-2.5 h-2.5 bg-pink-500 rounded-full flex-shrink-0 animate-pulse" />
+                          )}
+                        </div>
+                        <p className="text-xs text-[#a7a8c7] truncate">
+                          {room.is_group ? `${room.participants.length} participantes` : 'Mensaje privado'}
+                        </p>
+                      </div>
                    </button>
                  ))}
                </div>
@@ -413,8 +419,8 @@ const UserChat = () => {
                         ) : (
                           msg.content
                         )}
-                        <span className="text-[10px] opacity-50 block text-right mt-1">
-                          {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <span className="text-[10px] opacity-50 block text-right mt-1 font-mono">
+                          {new Date(msg.created_at).toLocaleDateString([], { day: '2-digit', month: 'short' })} - {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                     </motion.div>
