@@ -147,7 +147,7 @@ const BoldSuccess = () => {
           return;
         }
 
-        console.warn('Client-side order insert failed, falling back to serverless function:', directError);
+        console.warn('Client-side order insert failed:', directError?.message, directError?.details, directError);
 
         // Secondary route: Fall back to Vercel backend serverless function
         const response = await fetch('/api/bold-order', {
