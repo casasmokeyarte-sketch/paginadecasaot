@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAdminData } from '@/hooks/useAdminData';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { supabase } from '@/lib/customSupabaseClient';
 import {
   FileText, Plus, Printer, X, CheckCircle, XCircle,
   DollarSign, Search, Eye, Clock, AlertCircle, Package
@@ -150,15 +151,49 @@ const AdminBilling = () => {
     if (!selectedOrder) return;
     const order = orders.find(o => o.id === selectedOrder);
     if (!order) return;
-    setManual({
-      name: order.client_name || order.customer_name || '',
-      email: order.client_email || '',
-      phone: order.client_phone || '',
-      address: order.shipping_address || '',
-      nit: '',
-    });
+
+    const fillClientDetails = async () => {
+      let name = order.client_name || order.customer_name || '';
+      let email = order.client_email || '';
+      let phone = order.client_phone || '';
+      let address = order.shipping_address || '';
+
+      if (order.user_id) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', order.user_id)
+            .single();
+
+          if (profile) {
+            name = profile.full_name || name;
+            email = profile.email || email;
+            phone = profile.phone || phone;
+            const addressParts = [profile.address, profile.city, profile.country].filter(Boolean);
+            if (addressParts.length > 0) {
+              address = addressParts.join(', ');
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching user profile for invoice:', err);
+        }
+      }
+
+      setManual({
+        name,
+        email,
+        phone,
+        address,
+        nit: '',
+      });
+    };
+
+    fillClientDetails();
+
     if (Array.isArray(order.items)) {
       setItems(order.items.map(i => ({
+        product_id: i.product_id || i.id || null,
         name: i.name || i.title || '',
         quantity: i.quantity || 1,
         unit_price: i.price || i.unit_price || 0,
