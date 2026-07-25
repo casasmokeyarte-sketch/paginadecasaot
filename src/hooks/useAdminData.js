@@ -282,9 +282,17 @@ export const useAdminData = () => {
         invoiceNumber = fnData;
       }
 
+      // Clean up invoiceData to match the invoices table schema in Supabase
+      const { issued_at, ...cleanInvoice } = invoiceData;
+
+      // Scale tax_rate from percentage (e.g. 19) to numeric fraction (e.g. 0.19) for NUMERIC(5,4)
+      if (cleanInvoice.tax_rate > 1) {
+        cleanInvoice.tax_rate = cleanInvoice.tax_rate / 100;
+      }
+
       const { data, error } = await supabase
         .from('invoices')
-        .insert([{ ...invoiceData, invoice_number: invoiceNumber }])
+        .insert([{ ...cleanInvoice, invoice_number: invoiceNumber }])
         .select()
         .single();
       if (error) throw error;
