@@ -507,10 +507,15 @@ export const useChat = () => {
 
       const { error } = await supabase
         .from('user_blocks')
-        .insert({ blocker_id: userId, blocked_id: targetId });
+        .upsert(
+          { blocker_id: userId, blocked_id: targetId },
+          { onConflict: 'blocker_id,blocked_id' }
+        );
 
       if (error) throw error;
-      setBlockedUsers(prev => [...prev, targetId]);
+      if (!blockedUsers.includes(targetId)) {
+        setBlockedUsers(prev => [...prev, targetId]);
+      }
       toast({ title: 'Usuario bloqueado', description: 'No recibirás más mensajes de este usuario.' });
     } catch (error) {
       console.error(error);
@@ -524,7 +529,10 @@ export const useChat = () => {
 
       const { error } = await supabase
         .from('user_reports')
-        .insert({ reporter_id: userId, reported_id: targetId, reason });
+        .upsert(
+          { reporter_id: userId, reported_id: targetId, reason },
+          { onConflict: 'reporter_id,reported_id' }
+        );
 
       if (error) throw error;
       toast({ title: 'Reporte enviado', description: 'El equipo de soporte revisará el caso.' });
