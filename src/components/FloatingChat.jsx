@@ -183,7 +183,10 @@ const FloatingChat = () => {
                           }
 
                           return combined.map((entry) => {
-                            const isOnline = !!onlineUsers[entry.id];
+                            const presenceUser = onlineUsers[entry.id];
+                            const isOnline = !!presenceUser;
+                            const isIdle = presenceUser?.status === 'idle';
+                            
                             return (
                               <div
                                 key={entry.id}
@@ -205,8 +208,17 @@ const FloatingChat = () => {
                                       {entry.full_name?.charAt(0)?.toUpperCase?.() || 'U'}
                                     </div>
                                   )}
-                                  {isOnline && (
-                                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0c0814] bg-green-500 animate-pulse" />
+                                  {isOnline ? (
+                                    isIdle ? (
+                                      <>
+                                        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0c0814] bg-yellow-500 animate-ping" />
+                                        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0c0814] bg-yellow-500" />
+                                      </>
+                                    ) : (
+                                      <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0c0814] bg-green-500 animate-pulse" />
+                                    )
+                                  ) : (
+                                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0c0814] bg-red-600" />
                                   )}
                                 </div>
                                 
@@ -219,7 +231,7 @@ const FloatingChat = () => {
                                     {entry.username ? `@${entry.username}` : (entry.full_name || entry.email?.split('@')[0])}
                                   </p>
                                   <p className="truncate text-[10px] text-pink-300">
-                                    {isOnline ? '🟢 En línea' : 'Enviar mensaje'}
+                                    {isOnline ? (isIdle ? '🟡 Ausente' : '🟢 En línea') : '🔴 Desconectado'}
                                   </p>
                                 </div>
                               </div>

@@ -82,7 +82,7 @@ const UserProfile = () => {
       setLoadingNotifications(true);
       const { data, error } = await supabase
         .from('profile_notifications')
-        .select('*, from_user_id:profiles(id, full_name, username, avatar_url)')
+        .select('*, from_user_id:profiles!profile_notifications_from_user_id_fkey(id, full_name, username, avatar_url)')
         .eq('to_user_id', user.id)
         .order('created_at', { ascending: false });
       

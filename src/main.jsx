@@ -39,9 +39,16 @@ class RootErrorBoundary extends React.Component {
   }
 }
 
+const routerProps = {
+  future: {
+    v7_startTransition: true,
+    v7_relativeSplatPath: true,
+  }
+};
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <RootErrorBoundary>
-    <Router>
+    <Router {...routerProps}>
       <App />
     </Router>
   </RootErrorBoundary>

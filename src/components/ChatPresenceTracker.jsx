@@ -30,6 +30,7 @@ const extractPresenceUsers = (state) => {
         full_name: trackedUser.full_name || trackedUser.email?.split?.('@')?.[0] || 'Usuario',
         avatar_url: trackedUser.avatar_url || null,
         online_at: trackedUser.online_at || new Date().toISOString(),
+        status: trackedUser.status || 'online',
       };
     });
   });
@@ -43,10 +44,14 @@ export const ChatPresenceProvider = ({ children }) => {
   const userEmail = user?.email || null;
   const profileName = profile?.full_name || null;
   const profileAvatar = profile?.avatar_url || null;
+  
   const channelRef = useRef(null);
   const syncIntervalRef = useRef(null);
+  const activityTimeoutRef = useRef(null);
+
   const [onlineUsers, setOnlineUsers] = useState({});
   const [presenceStatus, setPresenceStatus] = useState('CLOSED');
+  const [userStatus, setUserStatus] = useState('online');
 
   const syncPresenceState = () => {
     const nextState = channelRef.current?.presenceState?.() || {};
@@ -54,6 +59,63 @@ export const ChatPresenceProvider = ({ children }) => {
     setOnlineUsers(extractedUsers);
   };
 
+  // Activity timer helper to detect idle
+  const resetIdleTimer = () => {
+    setUserStatus('online');
+    
+    if (activityTimeoutRef.current) {
+      clearTimeout(activityTimeoutRef.current);
+    }
+    
+    // Set to idle after 3 minutes (180,000 ms) of inactivity
+    activityTimeoutRef.current = setTimeout(() => {
+      setUserStatus('idle');
+    }, 180000);
+  };
+
+  // Monitor tab visibility and user activity
+  useEffect(() => {
+    if (!userId) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        setUserStatus('idle');
+      } else {
+        resetIdleTimer();
+      }
+    };
+
+    const handleActivity = () => {
+      if (document.visibilityState !== 'hidden') {
+        resetIdleTimer();
+      }
+    };
+
+    resetIdleTimer();
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleActivity);
+    window.addEventListener('blur', () => setUserStatus('idle'));
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('click', handleActivity);
+    window.addEventListener('scroll', handleActivity);
+
+    return () => {
+      if (activityTimeoutRef.current) {
+        clearTimeout(activityTimeoutRef.current);
+      }
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleActivity);
+      window.removeEventListener('blur', () => setUserStatus('idle'));
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('click', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+    };
+  }, [userId]);
+
+  // Sync state with Supabase Presence
   useEffect(() => {
     if (!userId) {
       setOnlineUsers({});
@@ -88,6 +150,7 @@ export const ChatPresenceProvider = ({ children }) => {
               full_name: trackedUser.full_name || trackedUser.email?.split?.('@')?.[0] || 'Usuario',
               avatar_url: trackedUser.avatar_url || null,
               online_at: trackedUser.online_at || new Date().toISOString(),
+              status: trackedUser.status || 'online',
             };
           });
           return updated;
@@ -119,7 +182,7 @@ export const ChatPresenceProvider = ({ children }) => {
     };
   }, [userId]);
 
-  // Separate Effect to handle actual user tracking and info updates
+  // Track status updates on Supabase when user details or activity state changes
   useEffect(() => {
     if (presenceStatus !== 'SUBSCRIBED' || !userId || !channelRef.current) return;
 
@@ -129,6 +192,7 @@ export const ChatPresenceProvider = ({ children }) => {
       full_name: profileName || userEmail?.split('@')?.[0] || 'Usuario',
       avatar_url: profileAvatar,
       online_at: new Date().toISOString(),
+      status: userStatus,
     };
 
     const trackPresence = async () => {
@@ -161,7 +225,7 @@ export const ChatPresenceProvider = ({ children }) => {
         syncIntervalRef.current = null;
       }
     };
-  }, [presenceStatus, userId, userEmail, profileName, profileAvatar]);
+  }, [presenceStatus, userId, userEmail, profileName, profileAvatar, userStatus]);
 
   return (
     <ChatPresenceContext.Provider value={{ onlineUsers, presenceStatus }}>

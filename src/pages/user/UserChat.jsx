@@ -281,7 +281,10 @@ const UserChat = () => {
                   }
 
                   return combinedList.map(u => {
-                    const isOnline = !!onlineUsers[u.id];
+                    const presenceUser = onlineUsers[u.id];
+                    const isOnline = !!presenceUser;
+                    const isIdle = presenceUser?.status === 'idle';
+                    
                     return (
                       <div
                         key={u.id}
@@ -304,9 +307,16 @@ const UserChat = () => {
                             )}
                           </div>
                           {isOnline ? (
-                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#0b0c15] rounded-full animate-pulse"></span>
+                            isIdle ? (
+                              <>
+                                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-yellow-500 border-2 border-[#0b0c15] rounded-full animate-ping" />
+                                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-yellow-500 border-2 border-[#0b0c15] rounded-full" />
+                              </>
+                            ) : (
+                              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#0b0c15] rounded-full animate-pulse" />
+                            )
                           ) : (
-                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-slate-500 border-2 border-[#0b0c15] rounded-full"></span>
+                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-red-600 border-2 border-[#0b0c15] rounded-full" />
                           )}
                         </div>
                         
@@ -319,7 +329,7 @@ const UserChat = () => {
                             {u.username ? `@${u.username}` : (u.full_name || u.email?.split('@')[0])}
                           </p>
                           <span className="text-[9px] text-slate-500 block truncate">
-                            {isOnline ? '🟢 En línea ahora' : u.role === 'admin' ? '⭐ Asesor Casa Smoke' : 'Miembro de la comunidad'}
+                            {isOnline ? (isIdle ? '🟡 Ausente / Inactivo' : '🟢 En línea ahora') : '🔴 Desconectado'}
                           </span>
                         </div>
                       </div>
