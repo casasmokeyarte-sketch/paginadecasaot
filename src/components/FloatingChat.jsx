@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { 
   MessageCircle, X, Minimize2, MoreVertical, Send, ChevronLeft, 
-  Shield, Flag, User, Mic, Square 
+  Shield, Flag, User, Mic, Square, Smile 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,22 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import UserProfileViewModal from '@/components/UserProfileViewModal';
+
+const POPULAR_EMOJIS = [
+  "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", 
+  "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", 
+  "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🥸", 
+  "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", 
+  "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", 
+  "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", 
+  "🤗", "🤔", "🫣", "🤭", "🤫", "🤥", "😶", "😶‍🌫️", "😐", "😑", 
+  "😬", "🫠", "🤥", "😌", "😴", "😷", "🤒", "🤕", "🤢", "🤮",
+  "👍", "👎", "👊", "✊", "🤛", "🤜", "🤞", "✌️", "🤟", "🤘",
+  "👌", "🤌", "🤏", "👈", "👉", "👆", "👇", "☝️", "✋", "🤚",
+  "👋", "🤚", "🖐️", "🖖", "👏", "🙌", "👐", "🤲", "🤝", "🙏",
+  "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔",
+  "🔥", "✨", "🌟", "⭐", "💥", "🌀", "🌈", "☀️", "🌧️", "❄️"
+];
 
 const FloatingChat = () => {
   const {
@@ -55,6 +71,9 @@ const FloatingChat = () => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+
+  // Emoji Popover states
+  const [emojiOpen, setEmojiOpen] = useState(false);
 
   const messagesEndRef = useRef(null);
 
@@ -460,7 +479,6 @@ const FloatingChat = () => {
                     )}
                   </div>
 
-                  {/* Input Form with voice recording */}
                   <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-white/10 bg-[#050510] p-3">
                     <button
                       type="button"
@@ -476,18 +494,56 @@ const FloatingChat = () => {
                     >
                       {isRecording ? <Square size={16} /> : <Mic size={16} />}
                     </button>
-                    <input
-                      type="text"
-                      value={messageInput}
-                      onChange={(event) => setMessageInput(event.target.value)}
-                      placeholder={isRecording ? "Grabando nota de voz..." : "Escribe un mensaje..."}
-                      disabled={isRecording}
-                      className="flex-1 rounded-full border border-white/10 bg-[#0c1322] px-4 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-yellow-400 disabled:opacity-50"
-                    />
+                    
+                    <div className="flex-1 relative">
+                      <input
+                        type="text"
+                        value={messageInput}
+                        onChange={(event) => setMessageInput(event.target.value)}
+                        placeholder={isRecording ? "Grabando nota de voz..." : "Escribe un mensaje..."}
+                        disabled={isRecording}
+                        className="w-full rounded-full border border-white/10 bg-[#0c1322] py-2 pl-4 pr-10 text-sm text-white outline-none focus:ring-1 focus:ring-yellow-400 disabled:opacity-50"
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => { playClickSound(); setEmojiOpen(!emojiOpen); }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a7a8c7] hover:text-white transition-colors"
+                        disabled={isRecording}
+                        title="Insertar Emoji"
+                      >
+                        <Smile size={16} />
+                      </button>
+                      
+                      {emojiOpen && (
+                        <div className="absolute bottom-10 right-0 z-30 w-56 bg-[#0c1322] border border-white/10 rounded-2xl p-2.5 shadow-2xl">
+                          <div className="flex justify-between items-center mb-1.5 border-b border-white/5 pb-1">
+                            <span className="text-[10px] font-bold text-slate-300">Emojis</span>
+                            <button type="button" onClick={() => setEmojiOpen(false)} className="text-[#a7a8c7] hover:text-white">
+                              <X size={12} />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-6 gap-1 max-h-32 overflow-y-auto pr-1 select-none scrollbar-thin">
+                            {POPULAR_EMOJIS.map((emoji, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => {
+                                  setMessageInput(prev => prev + emoji);
+                                }}
+                                className="text-base hover:scale-125 transition-transform duration-100 flex items-center justify-center p-0.5"
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     <button
                       type="submit"
                       disabled={!messageInput.trim() || isRecording}
-                      className="rounded-full bg-yellow-400 p-2 text-slate-950 transition hover:bg-yellow-300 disabled:opacity-50"
+                      className="rounded-full bg-yellow-400 p-2 text-slate-950 transition hover:bg-yellow-300 disabled:opacity-50 shrink-0"
                     >
                       <Send size={16} />
                     </button>

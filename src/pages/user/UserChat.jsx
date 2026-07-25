@@ -27,6 +27,22 @@ import {
 } from '@/components/ui/dropdown-menu';
 import UserProfileViewModal from '@/components/UserProfileViewModal';
 
+const POPULAR_EMOJIS = [
+  "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", 
+  "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", 
+  "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🥸", 
+  "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", 
+  "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", 
+  "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", 
+  "🤗", "🤔", "🫣", "🤭", "🤫", "🤥", "😶", "😶‍🌫️", "😐", "😑", 
+  "😬", "🫠", "🤥", "😌", "😴", "😷", "🤒", "🤕", "🤢", "🤮",
+  "👍", "👎", "👊", "✊", "🤛", "🤜", "🤞", "✌️", "🤟", "🤘",
+  "👌", "🤌", "🤏", "👈", "👉", "👆", "👇", "☝️", "✋", "🤚",
+  "👋", "🤚", "🖐️", "🖖", "👏", "🙌", "👐", "🤲", "🤝", "🙏",
+  "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔",
+  "🔥", "✨", "🌟", "⭐", "💥", "🌀", "🌈", "☀️", "🌧️", "❄️"
+];
+
 const UserChat = () => {
   const { 
     rooms, 
@@ -67,6 +83,9 @@ const UserChat = () => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+
+  // Emoji Popover state
+  const [emojiOpen, setEmojiOpen] = useState(false);
 
   // Report dialog in UserChat
   const [reportOpen, setReportOpen] = useState(false);
@@ -648,9 +667,47 @@ const UserChat = () => {
                     disabled={isRecording}
                     className="w-full bg-[#111322] border border-white/10 rounded-full py-3 pl-4 pr-10 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all disabled:opacity-50"
                   />
-                  <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a7a8c7] hover:text-[#ff2df0] transition-colors">
-                    <Smile size={20} />
-                  </button>
+                  
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+                    <button 
+                      type="button" 
+                      onClick={() => { playClickSound(); setEmojiOpen(!emojiOpen); }}
+                      className="text-[#a7a8c7] hover:text-[#ff2df0] transition-colors"
+                      disabled={isRecording}
+                      title="Insertar Emoji"
+                    >
+                      <Smile size={20} />
+                    </button>
+                    
+                    {emojiOpen && (
+                      <div className="absolute bottom-12 right-0 z-30 w-64 bg-[#0c1322] border border-white/10 rounded-2xl p-3 shadow-2xl">
+                        <div className="flex justify-between items-center mb-2 border-b border-white/5 pb-1.5">
+                          <span className="text-xs font-bold text-slate-300">Emojis populares</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setEmojiOpen(false)}
+                            className="text-[#a7a8c7] hover:text-white"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-8 gap-1.5 max-h-40 overflow-y-auto pr-1 select-none scrollbar-thin">
+                          {POPULAR_EMOJIS.map((emoji, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => {
+                                setMessageInput(prev => prev + emoji);
+                              }}
+                              className="text-lg hover:scale-125 transition-transform duration-100 flex items-center justify-center p-1"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <button 
