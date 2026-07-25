@@ -2,16 +2,18 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Search, SlidersHorizontal, X } from 'lucide-react';
+import { ShoppingCart, Search, SlidersHorizontal, X, Heart } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/components/ui/use-toast';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useUserPanel } from '@/hooks/useUserPanel';
 
 const FALLBACK_PRODUCT_IMAGE = 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&q=80&w=1200';
 
 const ProductCard = ({ product, index }) => {
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { addToWishlist } = useUserPanel();
 
   const formattedPrice = new Intl.NumberFormat('es-CO', {
     style: 'currency',
@@ -96,6 +98,20 @@ const ProductCard = ({ product, index }) => {
             <div className="absolute top-3 right-3 bg-white/90 text-[#4a248c] text-xs font-extrabold px-3 py-1 rounded-full shadow-md border border-[#ff66cc]/10">
               {formattedPrice}
             </div>
+
+            {/* Heart/Wishlist Button Overlay */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                addToWishlist(product.id);
+              }}
+              className="absolute bottom-3 right-3 bg-white/95 hover:bg-rose-50 border border-rose-100 p-2.5 rounded-full shadow-md hover:shadow-lg transition-all hover:scale-110 duration-200 z-10 flex items-center justify-center cursor-pointer group/wish animate-pulse"
+              title="Añadir a la lista de deseos"
+            >
+              <Heart size={16} className="text-[#ff007f] group-hover/wish:fill-[#ff007f] transition-all" />
+            </button>
           </div>
         </Link>
         

@@ -6,7 +6,8 @@ import { getProduct, getProductQuantities } from '@/api/EcommerceApi';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/components/ui/use-toast';
-import { ShoppingCart, Loader2, ArrowLeft, CheckCircle, Minus, Plus, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Loader2, ArrowLeft, CheckCircle, Minus, Plus, XCircle, ChevronLeft, ChevronRight, Heart } from 'lucide-react';
+import { useUserPanel } from '@/hooks/useUserPanel';
 
 const placeholderImage = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMjAyMDIwIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzU1NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K";
 
@@ -21,6 +22,7 @@ function ProductDetailPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { addToWishlist } = useUserPanel();
 
   const handleAddToCart = useCallback(async () => {
     if (product && selectedVariant) {
@@ -272,6 +274,17 @@ function ProductDetailPage() {
                     disabled={!canAddToCart || !product.purchasable}
                   >
                     <ShoppingCart className="mr-2 h-5 w-5" /> Agregar al Carrito
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={() => addToWishlist(product.id)}
+                    size="lg"
+                    variant="outline"
+                    className="border-white/10 text-white hover:bg-white/5 hover:text-red-400 hover:border-red-500/30 rounded-full h-14 w-14 p-0 shrink-0 flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+                    title="Añadir a lista de deseos"
+                  >
+                    <Heart size={20} className="text-[#ff2df0] hover:fill-[#ff2df0]" />
                   </Button>
                 </div>
 

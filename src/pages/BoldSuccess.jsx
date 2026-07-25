@@ -6,6 +6,7 @@ import { CheckCircle2, XCircle, Clock, ShoppingBag, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/customSupabaseClient';
 
 const BOLD_CART_KEY = 'bold_cart';
 const BOLD_CONTEXT_KEY = 'bold_checkout_context';
@@ -118,10 +119,37 @@ const BoldSuccess = () => {
       const items = toOrderItems(cartDraft.cartItems);
       const totalAmount = checkoutContext?.amount || getOrderTotal(items);
 
-      setOrderSaveStatus('saving');
-      setOrderSaveError('');
-
       try {
+        // Primary route: attempt direct client-side insert using the user's active session.
+        // This is safe, does not require a service role key, and supports guest/logged-in users.
+        const { data: directData, error: directError } = await supabase
+          .from('orders')
+          .insert([{
+            user_id: user?.id || null,
+            items,
+            total_amount: totalAmount,
+            status: 'paid'
+          }])
+          .select('id')
+          .single();
+
+        if (!directError && directData?.id) {
+          writeJsonStorage(localStorage, BOLD_PROCESSED_KEY, [...processedOrders, orderId]);
+          sessionStorage.removeItem(BOLD_CART_KEY);
+          sessionStorage.removeItem(BOLD_CONTEXT_KEY);
+          localStorage.removeItem('e-commerce-cart');
+          setSavedOrderId(directData.id);
+          setOrderSaveStatus('saved');
+          toast({
+            title: 'Pedido registrado',
+            description: 'La compra ya aparece en tu historial y en el panel de control.',
+          });
+          return;
+        }
+
+        console.warn('Client-side order insert failed, falling back to serverless function:', directError);
+
+        // Secondary route: Fall back to Vercel backend serverless function
         const response = await fetch('/api/bold-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

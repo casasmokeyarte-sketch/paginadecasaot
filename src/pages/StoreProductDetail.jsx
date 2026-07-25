@@ -2,11 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet';
-import { ArrowLeft, ShoppingCart, Minus, Plus, Tag, Package, Star, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Minus, Plus, Tag, Package, Star, ChevronRight, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/components/ui/use-toast';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useUserPanel } from '@/hooks/useUserPanel';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&q=80&w=1200';
 
@@ -18,6 +19,7 @@ export default function StoreProductDetail() {
   const { products, loadingProducts, fetchProducts } = useSupabaseData();
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { addToWishlist } = useUserPanel();
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
@@ -222,6 +224,17 @@ export default function StoreProductDetail() {
                   ) : (
                     <><ShoppingCart className="mr-2 h-5 w-5" /> Agregar al Carrito</>
                   )}
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={() => addToWishlist(product.id)}
+                  size="lg"
+                  variant="outline"
+                  className="border-white/10 text-white hover:bg-white/5 hover:text-red-400 hover:border-red-500/30 rounded-full h-14 w-14 p-0 shrink-0 flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+                  title="Añadir a lista de deseos"
+                >
+                  <Heart size={20} className="text-[#ff2df0] hover:fill-[#ff2df0]" />
                 </Button>
               </div>
 

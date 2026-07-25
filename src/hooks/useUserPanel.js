@@ -179,6 +179,44 @@ export const useUserPanel = () => {
     }
   };
 
+  const addToWishlist = async (productId) => {
+    if (!user) {
+      toast({
+        title: 'Inicia sesión',
+        description: 'Debes iniciar sesión para guardar productos en tu lista de deseos.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    try {
+      // Check if already in wishlist
+      const { data: existing, error: checkError } = await supabase
+        .from('wishlist')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('product_id', productId)
+        .limit(1);
+
+      if (checkError) throw checkError;
+
+      if (existing && existing.length > 0) {
+        toast({ title: 'Ya agregado', description: 'Este producto ya está en tu lista de deseos.' });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('wishlist')
+        .insert([{ user_id: user.id, product_id: productId }]);
+
+      if (error) throw error;
+      toast({ title: 'Agregado 💖', description: 'Producto guardado en tu lista de deseos.' });
+      fetchWishlist();
+    } catch (error) {
+      console.error(error);
+      toast({ title: 'Error', description: 'No se pudo agregar a la lista de deseos.', variant: 'destructive' });
+    }
+  };
+
   // Fetch PQR
   const fetchPqrs = async () => {
     if (!user) return;
@@ -244,6 +282,7 @@ export const useUserPanel = () => {
     wishlist,
     loadingWishlist,
     removeFromWishlist,
+    addToWishlist,
     myPqrs,
     loadingPqrs,
     submitPqr,
