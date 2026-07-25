@@ -388,12 +388,8 @@ const AdminUsers = () => {
                   <tr key={entry.id} className="transition-colors hover:bg-white/5">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[#ff2df0]/20 bg-[#ff2df0]/10 text-[#ff2df0]">
-                          {entry.avatar_url ? (
-                            <img src={entry.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
-                          ) : (
-                            <User size={18} />
-                          )}
+                        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[#ff2df0]/20 bg-[#ff2df0]/10">
+                          <img src={entry.avatar_url || '/default-avatar.png'} alt="Avatar" className="h-full w-full object-cover" />
                         </div>
                         <div>
                           <p className="font-medium text-white">{entry.full_name || 'Sin nombre'}</p>
@@ -599,12 +595,8 @@ const AdminUsers = () => {
           {detailUser ? (
             <div className="space-y-6">
               <div className="grid gap-4 md:grid-cols-[auto,1fr]">
-                <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-white/5 text-3xl font-black text-white">
-                  {detailUser.avatar_url ? (
-                    <img src={detailUser.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
-                  ) : (
-                    (detailUser.full_name || detailUser.email || 'U').charAt(0).toUpperCase()
-                  )}
+                <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-white/5">
+                  <img src={detailUser.avatar_url || '/default-avatar.png'} alt="Avatar" className="h-full w-full object-cover" />
                 </div>
                 <div>
                   <p className="text-2xl font-black text-white">{detailUser.full_name || 'Sin nombre'}</p>

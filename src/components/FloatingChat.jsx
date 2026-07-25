@@ -258,7 +258,7 @@ const FloatingChat = () => {
 
   return (
     <>
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4 pointer-events-none">
+      <div className={cn("fixed bottom-6 right-6 flex flex-col items-end gap-4 pointer-events-none", isOpen ? "z-[60]" : "z-50")}>
         <AnimatePresence>
           {isOpen && (
             <motion.div
@@ -301,23 +301,23 @@ const FloatingChat = () => {
                                 onClick={() => { playClickSound(); setActiveRoom(room); }}
                                 className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/5"
                               >
-                                {room.displayImage ? (
+                                {room.is_group ? (
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-600/30 to-purple-600/30 border border-pink-500/30 font-bold text-pink-400 text-sm shrink-0">
+                                    {room.displayName?.charAt(0)?.toUpperCase?.() || 'G'}
+                                  </div>
+                                ) : (
                                   <img 
-                                    src={room.displayImage} 
+                                    src={otherParticipant?.avatar_url || '/default-avatar.png'} 
                                     alt={room.displayName} 
                                     onClick={(e) => {
-                                      if (otherParticipant && otherParticipant.avatar_url) {
+                                      if (otherParticipant) {
                                         e.stopPropagation();
                                         playClickSound();
                                         setLightboxUser(otherParticipant);
                                       }
                                     }}
-                                    className="h-10 w-10 rounded-2xl object-cover cursor-zoom-in" 
+                                    className="h-10 w-10 rounded-2xl object-cover cursor-zoom-in shrink-0" 
                                   />
-                                ) : (
-                                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-600/30 to-purple-600/30 border border-pink-500/30 font-bold text-pink-400 text-sm shrink-0">
-                                    {room.displayName?.charAt(0)?.toUpperCase?.() || 'C'}
-                                  </div>
                                 )}
                                 <div className="min-w-0 flex-1">
                                   <div className="flex justify-between items-center gap-2">
@@ -368,21 +368,11 @@ const FloatingChat = () => {
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     playClickSound();
-                                    if (entry.avatar_url) {
-                                      setLightboxUser(entry);
-                                    } else {
-                                      setSelectedProfileId(entry.id);
-                                    }
+                                    setLightboxUser(entry);
                                   }}
-                                  title={entry.avatar_url ? "Ampliar foto de perfil" : "Ver Perfil"}
+                                  title="Ampliar foto de perfil"
                                 >
-                                  {entry.avatar_url ? (
-                                    <img src={entry.avatar_url} alt={entry.username || entry.full_name} className="h-9 w-9 rounded-2xl object-cover cursor-zoom-in" />
-                                  ) : (
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-500/20 to-purple-600/20 border border-pink-500/20 text-xs font-semibold text-white">
-                                      {entry.full_name?.charAt(0)?.toUpperCase?.() || 'U'}
-                                    </div>
-                                  )}
+                                  <img src={entry.avatar_url || '/default-avatar.png'} alt={entry.username || entry.full_name} className="h-9 w-9 rounded-2xl object-cover cursor-zoom-in" />
                                   {isOnline ? (
                                     isIdle ? (
                                       <>
@@ -441,12 +431,12 @@ const FloatingChat = () => {
                         className="flex items-center gap-2 text-left" 
                         title={(!activeRoom.is_group && activeRoom.otherParticipant?.avatar_url) ? "Ampliar foto de perfil" : "Ver Perfil"}
                       >
-                        {activeRoom.displayImage ? (
-                          <img src={activeRoom.displayImage} alt={activeRoom.displayName} className="h-8 w-8 rounded-2xl object-cover cursor-zoom-in" />
-                        ) : (
+                        {activeRoom.is_group ? (
                           <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-[#1f2235] text-xs font-bold text-yellow-400 shrink-0">
-                            {activeRoom.displayName?.charAt(0)?.toUpperCase?.() || 'C'}
+                            {activeRoom.displayName?.charAt(0)?.toUpperCase?.() || 'G'}
                           </div>
+                        ) : (
+                          <img src={activeRoom.otherParticipant?.avatar_url || '/default-avatar.png'} alt={activeRoom.displayName} className="h-8 w-8 rounded-2xl object-cover cursor-zoom-in" />
                         )}
                         <div className="min-w-0">
                           <p className="max-w-[170px] truncate text-sm font-bold text-white">{activeRoom.displayName}</p>
@@ -730,7 +720,7 @@ const FloatingChat = () => {
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              src={lightboxUser.avatar_url}
+              src={lightboxUser.avatar_url || '/default-avatar.png'}
               alt={lightboxUser.username || lightboxUser.full_name}
               className="max-h-[60vh] max-w-full rounded-2xl object-contain border border-white/10 shadow-2xl"
               onClick={(e) => e.stopPropagation()}

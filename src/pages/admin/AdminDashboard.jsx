@@ -476,12 +476,8 @@ const AdminDashboard = () => {
             ) : (
               recentUsers.map((item) => (
                 <div key={item.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0c0f1c] p-4">
-                  <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5 text-sm font-bold text-white">
-                    {item.avatar_url ? (
-                      <img src={item.avatar_url} alt={item.full_name || 'Usuario'} className="h-full w-full object-cover" />
-                    ) : (
-                      (item.full_name || item.email || 'U').charAt(0).toUpperCase()
-                    )}
+                  <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                    <img src={item.avatar_url || '/default-avatar.png'} alt={item.full_name || 'Usuario'} className="h-full w-full object-cover" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-white">{item.full_name || 'Perfil sin nombre'}</p>

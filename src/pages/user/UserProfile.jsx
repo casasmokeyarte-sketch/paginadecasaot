@@ -374,15 +374,11 @@ const UserProfile = () => {
                       <Loader2 className="animate-spin text-[#ff2df0]" size={24} />
                     </div>
                   )}
-                  {profile?.avatar_url ? (
-                    <img 
-                      src={profile.avatar_url} 
-                      alt="Foto de perfil" 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <User className="text-[#a7a8c7]" size={40} />
-                  )}
+                  <img 
+                    src={profile?.avatar_url || '/default-avatar.png'} 
+                    alt="Foto de perfil" 
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 
                 <label className="absolute bottom-0 right-0 p-2 bg-[#ff2df0] hover:bg-[#d91cb8] rounded-full cursor-pointer transition-colors shadow-lg border border-[#111322] flex items-center justify-center">

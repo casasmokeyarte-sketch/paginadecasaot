@@ -179,15 +179,11 @@ const UserProfileViewModal = ({ userId, isOpen, onClose }) => {
             {/* Avatar & Basic Info */}
             <div className="flex flex-col items-center text-center">
               <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-pink-500/50 bg-[#050510] flex items-center justify-center shadow-lg shadow-pink-500/10 mb-4">
-                {profile.avatar_url ? (
-                  <img 
-                    src={profile.avatar_url} 
-                    alt={profile.username || profile.full_name} 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="text-[#a7a8c7]" size={48} />
-                )}
+                <img 
+                  src={profile.avatar_url || '/default-avatar.png'} 
+                  alt={profile.username || profile.full_name} 
+                  className="w-full h-full object-cover"
+                />
               </div>
 
               <h2 className="text-2xl font-bold text-white tracking-wide">

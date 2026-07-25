@@ -388,7 +388,7 @@ const UserChat = () => {
                        {/* Click avatar to open lightbox preview */}
                        <div 
                          onClick={(e) => {
-                           if (otherParticipant && otherParticipant.avatar_url) {
+                           if (otherParticipant) {
                              e.stopPropagation();
                              playClickSound();
                              setLightboxUser(otherParticipant);
@@ -396,15 +396,13 @@ const UserChat = () => {
                          }}
                          className={cn(
                            "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shrink-0 overflow-hidden cursor-zoom-in",
-                           room.is_group ? "bg-[#00e5ff]/20 text-[#00e5ff]" : "bg-[#f4c542]/20 text-[#f4c542]"
+                           room.is_group ? "bg-[#00e5ff]/20 text-[#00e5ff]" : ""
                          )}
                        >
                          {room.is_group ? (
                            <Hash size={18} />
-                         ) : otherParticipant?.avatar_url ? (
-                           <img src={otherParticipant.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                          ) : (
-                           <User size={18} />
+                           <img src={otherParticipant?.avatar_url || '/default-avatar.png'} alt="Avatar" className="w-full h-full object-cover" />
                          )}
                        </div>
                        
@@ -469,20 +467,12 @@ const UserChat = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             playClickSound();
-                            if (u.avatar_url) {
-                              setLightboxUser(u);
-                            } else {
-                              setSelectedProfileId(u.id);
-                            }
+                            setLightboxUser(u);
                           }}
-                          title={u.avatar_url ? "Ampliar foto de perfil" : "Ver Perfil"}
+                          title="Ampliar foto de perfil"
                         >
                           <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500/30 to-purple-600/30 border border-pink-500/30 flex items-center justify-center text-xs font-bold text-white overflow-hidden">
-                            {u.avatar_url ? (
-                              <img src={u.avatar_url} alt="Avatar" className="w-full h-full object-cover cursor-zoom-in" />
-                            ) : (
-                              u.full_name?.charAt(0).toUpperCase() || 'U'
-                            )}
+                            <img src={u.avatar_url || '/default-avatar.png'} alt="Avatar" className="w-full h-full object-cover cursor-zoom-in" />
                           </div>
                           {isOnline ? (
                             isIdle ? (
@@ -540,25 +530,19 @@ const UserChat = () => {
                    onClick={(e) => {
                      if (!activeRoom.is_group && activeRoom.otherParticipant) {
                        playClickSound();
-                       if (activeRoom.otherParticipant.avatar_url) {
-                         setLightboxUser(activeRoom.otherParticipant);
-                       } else {
-                         setSelectedProfileId(activeRoom.otherParticipant.id);
-                       }
+                       setLightboxUser(activeRoom.otherParticipant);
                      }
                    }}
                    className={cn(
                      "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold overflow-hidden shrink-0",
-                     !activeRoom.is_group && activeRoom.otherParticipant?.avatar_url ? "cursor-zoom-in" : "",
-                     activeRoom.is_group ? "bg-[#00e5ff]/20 text-[#00e5ff]" : "bg-[#f4c542]/20 text-[#f4c542]"
+                     !activeRoom.is_group && activeRoom.otherParticipant ? "cursor-zoom-in" : "",
+                     activeRoom.is_group ? "bg-[#00e5ff]/20 text-[#00e5ff]" : ""
                    )}
                  >
                    {activeRoom.is_group ? (
                      <Users size={20} />
-                   ) : activeRoom.otherParticipant?.avatar_url ? (
-                     <img src={activeRoom.otherParticipant.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                    ) : (
-                     <User size={20} />
+                     <img src={activeRoom.otherParticipant?.avatar_url || '/default-avatar.png'} alt="Avatar" className="w-full h-full object-cover" />
                    )}
                  </div>
                  <div>
@@ -860,7 +844,7 @@ const UserChat = () => {
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              src={lightboxUser.avatar_url}
+              src={lightboxUser.avatar_url || '/default-avatar.png'}
               alt={lightboxUser.username || lightboxUser.full_name}
               className="max-h-[60vh] max-w-full rounded-2xl object-contain border border-white/10 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
