@@ -13,6 +13,7 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { uploadFileToBucket } from '@/lib/storageUpload';
 import { supabase } from '@/lib/customSupabaseClient';
+import { cn } from '@/lib/utils';
 import UserProfileViewModal from '@/components/UserProfileViewModal';
 
 const COUNTRIES = [

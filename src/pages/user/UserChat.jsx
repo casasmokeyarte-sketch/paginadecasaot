@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { 
   Send, Users, MessageSquare, Plus, Hash, User, 
   MoreVertical, Search, Circle, Smile, Paperclip,
-  Mic, Square, Shield, Flag, X
+  Mic, Square, Shield, Flag, X, ShieldAlert, Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -53,13 +53,16 @@ const UserChat = () => {
     createPrivateChat, 
     createGroupChat,
     blockUser,
+    unblockUser,
     reportUser,
     onlineUsers, 
     communityUsers = [],
     loadingRooms,
     loadingMessages,
     user,
-    unreadRooms
+    unreadRooms,
+    blockedUsers,
+    blockedByUsers
   } = useChat();
 
   const [messageInput, setMessageInput] = useState('');
@@ -90,6 +93,9 @@ const UserChat = () => {
   // Report dialog in UserChat
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState('');
+
+  // Lightbox Avatar State
+  const [lightboxUser, setLightboxUser] = useState(null);
 
   // Audio synthesizer beep helper using browser Web Audio API
   const playClickSound = () => {
@@ -256,7 +262,12 @@ const UserChat = () => {
     if (!activeRoom || activeRoom.is_group || !activeRoom.otherParticipant) return;
     playClickSound();
     await blockUser(activeRoom.otherParticipant.id);
-    setActiveRoom(null);
+  };
+
+  const handleUnblock = async () => {
+    if (!activeRoom || activeRoom.is_group || !activeRoom.otherParticipant) return;
+    playClickSound();
+    await unblockUser(activeRoom.otherParticipant.id);
   };
 
   const handleReport = async () => {
@@ -278,8 +289,14 @@ const UserChat = () => {
   
   const onlineList = Object.values(onlineUsers).filter(u => u.id !== user?.id);
 
+  // Check if room communication is blocked by either user
+  const isRoomBlocked = activeRoom && !activeRoom.is_group && activeRoom.otherParticipant && (
+    blockedUsers.includes(activeRoom.otherParticipant.id) ||
+    blockedByUsers.includes(activeRoom.otherParticipant.id)
+  );
+
   return (
-    <div className="h-[calc(100vh-140px)] min-h-[500px] flex flex-col md:flex-row bg-[#111322] border border-white/10 rounded-2xl overflow-hidden">
+    <div className="h-[calc(100vh-140px)] min-h-[500px] flex flex-col md:flex-row bg-[#111322] border border-white/10 rounded-2xl overflow-hidden relative">
       
       {/* SIDEBAR */}
       <div className="w-full md:w-80 border-r border-white/10 flex flex-col bg-[#0b0c15]">
@@ -357,6 +374,8 @@ const UserChat = () => {
                <div className="space-y-1">
                  {rooms.map(room => {
                    const isUnread = unreadRooms.includes(room.id);
+                   const otherParticipant = room.participants.find(p => p.id !== user?.id);
+                   
                    return (
                      <button
                        key={room.id}
@@ -366,15 +385,31 @@ const UserChat = () => {
                          activeRoom?.id === room.id ? "bg-[#ff2df0]/10 border border-[#ff2df0]/20" : "hover:bg-white/5 border border-transparent"
                        )}
                      >
-                       <div className={cn(
-                         "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shrink-0",
-                         room.is_group ? "bg-[#00e5ff]/20 text-[#00e5ff]" : "bg-[#f4c542]/20 text-[#f4c542]"
-                       )}>
-                         {room.is_group ? <Hash size={18} /> : <User size={18} />}
+                       {/* Click avatar to open lightbox preview */}
+                       <div 
+                         onClick={(e) => {
+                           if (otherParticipant && otherParticipant.avatar_url) {
+                             e.stopPropagation();
+                             playClickSound();
+                             setLightboxUser(otherParticipant);
+                           }
+                         }}
+                         className={cn(
+                           "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shrink-0 overflow-hidden cursor-zoom-in",
+                           room.is_group ? "bg-[#00e5ff]/20 text-[#00e5ff]" : "bg-[#f4c542]/20 text-[#f4c542]"
+                         )}
+                       >
+                         {room.is_group ? (
+                           <Hash size={18} />
+                         ) : otherParticipant?.avatar_url ? (
+                           <img src={otherParticipant.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                         ) : (
+                           <User size={18} />
+                         )}
                        </div>
+                       
                        <div className="flex-1 overflow-hidden">
                          <div className="flex justify-between items-center gap-2">
-                           {/* Highlight unread rooms in Green */}
                            <p className={cn("font-medium truncate", 
                              isUnread 
                                ? "text-green-400 font-bold" 
@@ -415,7 +450,7 @@ const UserChat = () => {
                   });
 
                   if (combinedList.length === 0) {
-                    return <p className="px-2 text-xs text-[#a7a8c7] italic">Inicia una conversación creando un grupo.</p>;
+                    return <p className="px-2 text-xs text-[#a7a8c7] italic">No hay otros miembros registrados.</p>;
                   }
 
                   return combinedList.map(u => {
@@ -428,19 +463,23 @@ const UserChat = () => {
                         key={u.id}
                         className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-all text-left group"
                       >
-                        {/* Clickable Avatar to View Public Profile */}
+                        {/* Clickable Avatar to View Lightbox */}
                         <div 
                           className="relative cursor-pointer transform hover:scale-105 transition-transform"
                           onClick={(e) => {
                             e.stopPropagation();
                             playClickSound();
-                            setSelectedProfileId(u.id);
+                            if (u.avatar_url) {
+                              setLightboxUser(u);
+                            } else {
+                              setSelectedProfileId(u.id);
+                            }
                           }}
-                          title="Ver Perfil"
+                          title={u.avatar_url ? "Ampliar foto de perfil" : "Ver Perfil"}
                         >
                           <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500/30 to-purple-600/30 border border-pink-500/30 flex items-center justify-center text-xs font-bold text-white overflow-hidden">
                             {u.avatar_url ? (
-                              <img src={u.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                              <img src={u.avatar_url} alt="Avatar" className="w-full h-full object-cover cursor-zoom-in" />
                             ) : (
                               u.full_name?.charAt(0).toUpperCase() || 'U'
                             )}
@@ -497,11 +536,30 @@ const UserChat = () => {
             {/* Header */}
             <div className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-[#111322]/50 backdrop-blur-sm absolute w-full top-0 z-10">
               <div className="flex items-center gap-3">
-                 <div className={cn(
-                   "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold",
-                   activeRoom.is_group ? "bg-[#00e5ff]/20 text-[#00e5ff]" : "bg-[#f4c542]/20 text-[#f4c542]"
-                 )}>
-                   {activeRoom.is_group ? <Users size={20} /> : <User size={20} />}
+                 <div 
+                   onClick={(e) => {
+                     if (!activeRoom.is_group && activeRoom.otherParticipant) {
+                       playClickSound();
+                       if (activeRoom.otherParticipant.avatar_url) {
+                         setLightboxUser(activeRoom.otherParticipant);
+                       } else {
+                         setSelectedProfileId(activeRoom.otherParticipant.id);
+                       }
+                     }
+                   }}
+                   className={cn(
+                     "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold overflow-hidden shrink-0",
+                     !activeRoom.is_group && activeRoom.otherParticipant?.avatar_url ? "cursor-zoom-in" : "",
+                     activeRoom.is_group ? "bg-[#00e5ff]/20 text-[#00e5ff]" : "bg-[#f4c542]/20 text-[#f4c542]"
+                   )}
+                 >
+                   {activeRoom.is_group ? (
+                     <Users size={20} />
+                   ) : activeRoom.otherParticipant?.avatar_url ? (
+                     <img src={activeRoom.otherParticipant.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                   ) : (
+                     <User size={20} />
+                   )}
                  </div>
                  <div>
                    <h3 className="font-bold text-white">{activeRoom.displayName}</h3>
@@ -531,13 +589,26 @@ const UserChat = () => {
                         <User className="mr-2 h-4 w-4 text-[#ff2df0]" />
                         Ver perfil
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => { playClickSound(); handleBlock(); }} 
-                        className="cursor-pointer hover:bg-white/10 text-red-400"
-                      >
-                        <Shield className="mr-2 h-4 w-4" />
-                        Bloquear usuario
-                      </DropdownMenuItem>
+                      
+                      {/* Dynamic Block/Unblock Option */}
+                      {blockedUsers.includes(activeRoom.otherParticipant.id) ? (
+                        <DropdownMenuItem 
+                          onClick={handleUnblock} 
+                          className="cursor-pointer hover:bg-white/10 text-green-400 font-bold"
+                        >
+                          <Shield className="mr-2 h-4 w-4" />
+                          Desbloquear usuario
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem 
+                          onClick={handleBlock} 
+                          className="cursor-pointer hover:bg-white/10 text-red-400"
+                        >
+                          <Shield className="mr-2 h-4 w-4" />
+                          Bloquear usuario
+                        </DropdownMenuItem>
+                      )}
+
                       <DropdownMenuItem 
                         onClick={() => { playClickSound(); setReportOpen(true); }} 
                         className="cursor-pointer hover:bg-white/10 text-yellow-400"
@@ -601,7 +672,6 @@ const UserChat = () => {
                               <img src={msg.content} alt="Adjunto" className="max-w-full rounded-lg mb-1" />
                             </a>
                           ) : isAudioUrl(msg.content) ? (
-                            /* Voice note audio element player */
                             <audio src={msg.content} controls className="max-w-full rounded-lg mt-1 bg-transparent filter invert" />
                           ) : (
                             <a href={msg.content} target="_blank" rel="noopener noreferrer" className="underline break-all">
@@ -624,6 +694,11 @@ const UserChat = () => {
 
             {/* Input Area */}
             <div className="p-4 bg-[#0b0c15] border-t border-white/10">
+              {isRoomBlocked && (
+                <div className="mb-2 text-center text-xs text-red-400 bg-red-950/20 border border-red-500/20 py-2 rounded-xl">
+                  ⚠️ El chat está bloqueado con este usuario. No puedes enviar ni recibir mensajes.
+                </div>
+              )}
               <form onSubmit={handleSend} className="flex items-center gap-3">
                 <input
                   ref={attachmentInputRef}
@@ -636,8 +711,8 @@ const UserChat = () => {
                 <button
                   type="button"
                   onClick={handleAttachClick}
-                  disabled={uploadingAttachment}
-                  className="text-[#a7a8c7] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                  disabled={uploadingAttachment || isRoomBlocked}
+                  className="text-[#a7a8c7] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
                 >
                   <Paperclip size={20} />
                 </button>
@@ -646,9 +721,9 @@ const UserChat = () => {
                 <button
                   type="button"
                   onClick={isRecording ? stopRecording : startRecording}
-                  disabled={uploadingAttachment}
+                  disabled={uploadingAttachment || isRoomBlocked}
                   className={cn(
-                    "p-2 rounded-full transition-all flex items-center justify-center shrink-0",
+                    "p-2 rounded-full transition-all flex items-center justify-center shrink-0 disabled:opacity-30",
                     isRecording 
                       ? "bg-red-500 hover:bg-red-600 text-white animate-pulse" 
                       : "text-[#a7a8c7] hover:text-[#ff2df0]"
@@ -663,56 +738,61 @@ const UserChat = () => {
                     type="text"
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
-                    placeholder={uploadingAttachment ? 'Subiendo archivo...' : isRecording ? 'Grabando audio...' : 'Escribe un mensaje...'}
-                    disabled={isRecording}
+                    placeholder={
+                      isRoomBlocked 
+                        ? 'Chat bloqueado' 
+                        : uploadingAttachment 
+                          ? 'Subiendo archivo...' 
+                          : isRecording 
+                            ? 'Grabando audio...' 
+                            : 'Escribe un mensaje...'
+                    }
+                    disabled={isRecording || isRoomBlocked}
                     className="w-full bg-[#111322] border border-white/10 rounded-full py-3 pl-4 pr-10 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all disabled:opacity-50"
                   />
+                  <button 
+                    type="button" 
+                    onClick={() => { playClickSound(); setEmojiOpen(!emojiOpen); }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a7a8c7] hover:text-[#ff2df0] transition-colors"
+                    disabled={isRecording || isRoomBlocked}
+                    title="Insertar Emoji"
+                  >
+                    <Smile size={20} />
+                  </button>
                   
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
-                    <button 
-                      type="button" 
-                      onClick={() => { playClickSound(); setEmojiOpen(!emojiOpen); }}
-                      className="text-[#a7a8c7] hover:text-[#ff2df0] transition-colors"
-                      disabled={isRecording}
-                      title="Insertar Emoji"
-                    >
-                      <Smile size={20} />
-                    </button>
-                    
-                    {emojiOpen && (
-                      <div className="absolute bottom-12 right-0 z-30 w-64 bg-[#0c1322] border border-white/10 rounded-2xl p-3 shadow-2xl">
-                        <div className="flex justify-between items-center mb-2 border-b border-white/5 pb-1.5">
-                          <span className="text-xs font-bold text-slate-300">Emojis populares</span>
-                          <button 
-                            type="button" 
-                            onClick={() => setEmojiOpen(false)}
-                            className="text-[#a7a8c7] hover:text-white"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-8 gap-1.5 max-h-40 overflow-y-auto pr-1 select-none scrollbar-thin">
-                          {POPULAR_EMOJIS.map((emoji, i) => (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => {
-                                setMessageInput(prev => prev + emoji);
-                              }}
-                              className="text-lg hover:scale-125 transition-transform duration-100 flex items-center justify-center p-1"
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
+                  {emojiOpen && (
+                    <div className="absolute bottom-12 right-0 z-30 w-64 bg-[#0c1322] border border-white/10 rounded-2xl p-3 shadow-2xl">
+                      <div className="flex justify-between items-center mb-2 border-b border-white/5 pb-1.5">
+                        <span className="text-xs font-bold text-slate-300">Emojis populares</span>
+                        <button 
+                          type="button" 
+                          onClick={() => setEmojiOpen(false)}
+                          className="text-[#a7a8c7] hover:text-white"
+                        >
+                          <X size={14} />
+                        </button>
                       </div>
-                    )}
-                  </div>
+                      <div className="grid grid-cols-8 gap-1.5 max-h-40 overflow-y-auto pr-1 select-none scrollbar-thin">
+                        {POPULAR_EMOJIS.map((emoji, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => {
+                              setMessageInput(prev => prev + emoji);
+                            }}
+                            className="text-lg hover:scale-125 transition-transform duration-100 flex items-center justify-center p-1"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <button 
                   type="submit" 
-                  disabled={!messageInput.trim() || uploadingAttachment || isRecording}
+                  disabled={!messageInput.trim() || uploadingAttachment || isRecording || isRoomBlocked}
                   className="bg-[#ff2df0] hover:bg-[#d91cb8] text-white p-3 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_10px_rgba(255,45,240,0.3)] hover:shadow-[0_0_15px_rgba(255,45,240,0.5)] shrink-0"
                 >
                   <Send size={20} />
@@ -723,7 +803,7 @@ const UserChat = () => {
         )}
       </div>
 
-      {/* Profile Dialog Modal */}
+      {/* Reusable Public Profile View Dialog */}
       <UserProfileViewModal 
         userId={selectedProfileId}
         isOpen={selectedProfileId !== null}
@@ -758,6 +838,57 @@ const UserChat = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Lightbox Profile Avatar Modal */}
+      <AnimatePresence>
+        {lightboxUser && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/90 backdrop-blur-md p-4"
+            onClick={() => setLightboxUser(null)}
+          >
+            <button 
+              className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-all"
+              onClick={() => setLightboxUser(null)}
+            >
+              <X size={20} />
+            </button>
+            
+            <motion.img 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              src={lightboxUser.avatar_url}
+              alt={lightboxUser.username || lightboxUser.full_name}
+              className="max-h-[60vh] max-w-full rounded-2xl object-contain border border-white/10 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            
+            <div 
+              className="mt-6 text-center space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-bold text-white">
+                {lightboxUser.username ? `@${lightboxUser.username}` : lightboxUser.full_name}
+              </h3>
+              
+              <button
+                onClick={() => {
+                  playClickSound();
+                  setSelectedProfileId(lightboxUser.id);
+                  setLightboxUser(null);
+                }}
+                className="px-6 py-2.5 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-pink-500/20 uppercase tracking-wider flex items-center gap-1.5 justify-center mx-auto"
+              >
+                <Eye size={14} /> Ver Información de Perfil
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

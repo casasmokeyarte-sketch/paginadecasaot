@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, PlayCircle, Image as ImageIcon, Search, BookOpen } from 'lucide-react';
+import { Download, PlayCircle, Image as ImageIcon, Search, BookOpen, X } from 'lucide-react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -10,11 +10,28 @@ const DidYouKnow = () => {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedItem, setExpandedItem] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchContent();
   }, []);
+
+  const playClickSound = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.04, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.05);
+    } catch (e) {}
+  };
 
   const fetchContent = async () => {
     try {
@@ -55,7 +72,6 @@ const DidYouKnow = () => {
       });
     } catch (error) {
       console.error('Download failed:', error);
-      // Fallback open in new tab
       window.open(url, '_blank');
     }
   };
@@ -136,7 +152,11 @@ const DidYouKnow = () => {
                         <img 
                           src={item.media_url} 
                           alt={item.title} 
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                          onClick={() => {
+                            playClickSound();
+                            setExpandedItem(item);
+                          }}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-zoom-in" 
                         />
                       )}
                       
@@ -152,17 +172,30 @@ const DidYouKnow = () => {
                       <h3 className="text-xl font-bold text-white mb-2 group-hover:text-[#ff2df0] transition-colors">
                         {item.title}
                       </h3>
-                      <p className="text-[#a7a8c7] text-sm mb-6 flex-grow">
+                      <p className="text-[#a7a8c7] text-sm mb-6 flex-grow line-clamp-3">
                         {item.description}
                       </p>
 
-                      <Button
-                        onClick={() => handleDownload(item.media_url, item.title, item.media_type)}
-                        className="w-full bg-[#15162a] hover:bg-[#ff2df0] hover:text-white text-white border border-white/10 hover:border-transparent transition-all flex items-center justify-center gap-2 py-6 rounded-xl group/btn"
-                      >
-                        <Download size={18} className="group-hover/btn:scale-110 transition-transform" />
-                        Descargar
-                      </Button>
+                      <div className="flex gap-2">
+                        {item.media_type === 'image' && (
+                          <Button
+                            onClick={() => {
+                              playClickSound();
+                              setExpandedItem(item);
+                            }}
+                            className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl py-3 text-xs font-semibold"
+                          >
+                            Ver detalle
+                          </Button>
+                        )}
+                        <Button
+                          onClick={() => handleDownload(item.media_url, item.title, item.media_type)}
+                          className="flex-1 bg-[#15162a] hover:bg-[#ff2df0] hover:text-white text-white border border-white/10 hover:border-transparent transition-all flex items-center justify-center gap-2 py-3 rounded-xl"
+                        >
+                          <Download size={14} />
+                          Descargar
+                        </Button>
+                      </div>
                     </div>
                   </motion.div>
                 ))}
@@ -179,6 +212,56 @@ const DidYouKnow = () => {
           )}
         </section>
       </div>
+
+      {/* Lightbox Modal for Curiosities */}
+      <AnimatePresence>
+        {expandedItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md p-4"
+            onClick={() => setExpandedItem(null)}
+          >
+            <button
+              onClick={() => setExpandedItem(null)}
+              className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-all"
+            >
+              <X size={20} />
+            </button>
+
+            <motion.img
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              src={expandedItem.media_url}
+              alt={expandedItem.title}
+              className="max-h-[60vh] max-w-full rounded-2xl object-contain border border-white/10 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            <div 
+              className="mt-6 text-center max-w-2xl px-4 space-y-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl md:text-2xl font-bold text-white">
+                {expandedItem.title}
+              </h3>
+              <p className="text-[#a7a8c7] text-sm md:text-base leading-relaxed">
+                {expandedItem.description}
+              </p>
+              <div className="pt-2">
+                <Button
+                  onClick={() => handleDownload(expandedItem.media_url, expandedItem.title, expandedItem.media_type)}
+                  className="bg-[#ff2df0] hover:bg-[#d91cb8] text-white px-6 py-2 rounded-xl transition-all"
+                >
+                  <Download size={16} className="inline mr-2" /> Descargar Imagen
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

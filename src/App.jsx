@@ -27,7 +27,6 @@ import ChatPresenceProvider from '@/components/ChatPresenceTracker';
 // Page Imports
 import Policies from '@/pages/Policies';
 import CasaSmokeBackground from '@/components/CasaSmokeBackground';
-import BillboardModal from '@/components/BillboardModal';
 
 // Admin Imports
 import AdminLayout from '@/pages/admin/AdminLayout';
@@ -186,7 +185,6 @@ function App() {
             {!isUserRoute && <FloatingChat />}
             {!isUserRoute && <FloatingAnnounce />}
             <Footer />
-            <BillboardModal />
             <Toaster />
             </div>
           </CasaSmokeBackground>

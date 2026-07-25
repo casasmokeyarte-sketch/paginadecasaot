@@ -36,6 +36,7 @@ export const useChat = () => {
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [blockedUsers, setBlockedUsers] = useState([]);
+  const [blockedByUsers, setBlockedByUsers] = useState([]);
   const messageSubscription = useRef(null);
   const toastRef = useRef(toast);
   const roomsRetryAfterRef = useRef(0);
@@ -108,7 +109,11 @@ export const useChat = () => {
       return;
     }
 
-    const { data, error } = await supabase.from('user_blocks').select('blocked_id').eq('blocker_id', userId);
+    const { data, error } = await supabase
+      .from('user_blocks')
+      .select('blocker_id, blocked_id')
+      .or(`blocker_id.eq.${userId},blocked_id.eq.${userId}`);
+
     if (error) {
       logChatErrorOnce('Error fetching blocked users:', error);
       if (isTransientChatError(error)) {
@@ -119,7 +124,17 @@ export const useChat = () => {
 
     blockedRetryAfterRef.current = 0;
     if (data) {
-      setBlockedUsers(data.map(b => b.blocked_id));
+      const blocked = [];
+      const blockedBy = [];
+      data.forEach(b => {
+        if (b.blocker_id === userId) {
+          blocked.push(b.blocked_id);
+        } else {
+          blockedBy.push(b.blocker_id);
+        }
+      });
+      setBlockedUsers(blocked);
+      setBlockedByUsers(blockedBy);
     }
   }, [userId, logChatErrorOnce]);
 
@@ -298,10 +313,12 @@ export const useChat = () => {
         }, {});
       }
 
-      const messagesWithProfiles = (data || []).map((message) => ({
-        ...message,
-        profiles: senderProfiles[message.sender_id] || null
-      }));
+      const messagesWithProfiles = (data || [])
+        .filter((m) => !blockedUsers.includes(m.sender_id) && !blockedByUsers.includes(m.sender_id))
+        .map((message) => ({
+          ...message,
+          profiles: senderProfiles[message.sender_id] || null
+        }));
 
       setMessages(messagesWithProfiles);
     } catch (error) {
@@ -323,6 +340,7 @@ export const useChat = () => {
         table: 'chat_messages',
         filter: `room_id=eq.${activeRoom.id}`
       }, async (payload) => {
+        if (blockedUsers.includes(payload.new.sender_id) || blockedByUsers.includes(payload.new.sender_id)) return;
         const { data: senderProfileRows } = await supabase
           .from('profiles')
           .select(CHAT_PROFILE_SELECT)
@@ -369,6 +387,7 @@ export const useChat = () => {
       }, async (payload) => {
         const msg = payload.new;
         if (msg.sender_id === userId) return;
+        if (blockedUsers.includes(msg.sender_id) || blockedByUsers.includes(msg.sender_id)) return;
 
         // Verify if the room belongs to user's conversation rooms
         const isMyRoom = rooms.some(r => r.id === msg.room_id);
@@ -523,6 +542,25 @@ export const useChat = () => {
     }
   };
 
+  const unblockUser = async (targetId) => {
+    try {
+      if (!userId || !targetId) return;
+
+      const { error } = await supabase
+        .from('user_blocks')
+        .delete()
+        .eq('blocker_id', userId)
+        .eq('blocked_id', targetId);
+
+      if (error) throw error;
+      setBlockedUsers(prev => prev.filter(id => id !== targetId));
+      toast({ title: 'Usuario desbloqueado', description: 'Ahora puedes volver a recibir mensajes de este usuario.' });
+    } catch (error) {
+      console.error(error);
+      toast({ title: 'Error', description: 'No se pudo desbloquear al usuario.', variant: 'destructive' });
+    }
+  };
+
   const reportUser = async (targetId, reason) => {
     try {
       if (!userId || !targetId) return;
@@ -551,12 +589,14 @@ export const useChat = () => {
     createPrivateChat,
     createGroupChat,
     blockUser,
+    unblockUser,
     reportUser,
     onlineUsers,
     communityUsers,
     loadingRooms,
     loadingMessages,
     blockedUsers,
+    blockedByUsers,
     user,
     unreadRooms,
     setUnreadRooms

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { 
   MessageCircle, X, Minimize2, MoreVertical, Send, ChevronLeft, 
-  Shield, Flag, User, Mic, Square, Smile 
+  Shield, Flag, User, Mic, Square, Smile, ShieldAlert, Eye, XCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -54,8 +54,10 @@ const FloatingChat = () => {
     loadingMessages,
     user,
     blockUser,
+    unblockUser,
     reportUser,
     blockedUsers,
+    blockedByUsers,
     unreadRooms,
   } = useChat();
 
@@ -74,6 +76,9 @@ const FloatingChat = () => {
 
   // Emoji Popover states
   const [emojiOpen, setEmojiOpen] = useState(false);
+
+  // Lightbox avatar states
+  const [lightboxUser, setLightboxUser] = useState(null);
 
   const messagesEndRef = useRef(null);
 
@@ -168,12 +173,15 @@ const FloatingChat = () => {
   };
 
   const handleBlock = async () => {
-    if (!selectedProfileId) return;
+    if (!activeRoom || activeRoom.is_group || !activeRoom.otherParticipant) return;
     playClickSound();
-    await blockUser(selectedProfileId);
-    setSelectedProfileId(null);
-    setView('list');
-    setActiveRoom(null);
+    await blockUser(activeRoom.otherParticipant.id);
+  };
+
+  const handleUnblock = async () => {
+    if (!activeRoom || activeRoom.is_group || !activeRoom.otherParticipant) return;
+    playClickSound();
+    await unblockUser(activeRoom.otherParticipant.id);
   };
 
   const handleReport = async () => {
@@ -242,6 +250,12 @@ const FloatingChat = () => {
   const isAudioUrl = (value) => /\.(ogg|webm|mp3|wav|m4a)$/i.test(value || '') || (value || '').includes('voice_note_');
   const isUrl = (value) => /^https?:\/\/\S+$/i.test((value || '').trim());
 
+  // Check if room communication is blocked by either user
+  const isRoomBlocked = activeRoom && !activeRoom.is_group && activeRoom.otherParticipant && (
+    blockedUsers.includes(activeRoom.otherParticipant.id) ||
+    blockedByUsers.includes(activeRoom.otherParticipant.id)
+  );
+
   return (
     <>
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4 pointer-events-none">
@@ -251,7 +265,7 @@ const FloatingChat = () => {
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 50, scale: 0.9 }}
-              className="flex h-[480px] w-[350px] flex-col rounded-3xl border border-pink-500/20 bg-[#0c0814]/95 shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md overflow-hidden pointer-events-auto shadow-pink-500/5"
+              className="flex h-[480px] w-[350px] flex-col rounded-3xl border border-pink-500/20 bg-[#0c0814]/95 shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md overflow-hidden pointer-events-auto shadow-pink-500/5 relative"
             >
               {view === 'list' && (
                 <div className="flex h-full flex-col">
@@ -279,6 +293,8 @@ const FloatingChat = () => {
                         <div className="mt-2 space-y-1">
                           {rooms.map((room) => {
                             const isUnread = unreadRooms.includes(room.id);
+                            const otherParticipant = room.participants.find(p => p.id !== user?.id);
+                            
                             return (
                               <button
                                 key={room.id}
@@ -286,15 +302,25 @@ const FloatingChat = () => {
                                 className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/5"
                               >
                                 {room.displayImage ? (
-                                  <img src={room.displayImage} alt={room.displayName} className="h-10 w-10 rounded-2xl object-cover" />
+                                  <img 
+                                    src={room.displayImage} 
+                                    alt={room.displayName} 
+                                    onClick={(e) => {
+                                      if (otherParticipant && otherParticipant.avatar_url) {
+                                        e.stopPropagation();
+                                        playClickSound();
+                                        setLightboxUser(otherParticipant);
+                                      }
+                                    }}
+                                    className="h-10 w-10 rounded-2xl object-cover cursor-zoom-in" 
+                                  />
                                 ) : (
-                                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-600/30 to-purple-600/30 border border-pink-500/30 font-bold text-pink-400 text-sm">
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-600/30 to-purple-600/30 border border-pink-500/30 font-bold text-pink-400 text-sm shrink-0">
                                     {room.displayName?.charAt(0)?.toUpperCase?.() || 'C'}
                                   </div>
                                 )}
                                 <div className="min-w-0 flex-1">
                                   <div className="flex justify-between items-center gap-2">
-                                    {/* Highlight unread rooms in Green */}
                                     <p className={cn("truncate text-xs font-semibold", 
                                       isUnread ? "text-green-400 font-bold" : "text-white"
                                     )}>
@@ -336,18 +362,22 @@ const FloatingChat = () => {
                                 key={entry.id}
                                 className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition hover:bg-white/5"
                               >
-                                {/* Avatar Click triggers Public Profile View Modal */}
+                                {/* Avatar Click triggers Lightbox Preview */}
                                 <div 
                                   className="relative cursor-pointer transform hover:scale-105 transition-transform"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     playClickSound();
-                                    setSelectedProfileId(entry.id);
+                                    if (entry.avatar_url) {
+                                      setLightboxUser(entry);
+                                    } else {
+                                      setSelectedProfileId(entry.id);
+                                    }
                                   }}
-                                  title="Ver Perfil"
+                                  title={entry.avatar_url ? "Ampliar foto de perfil" : "Ver Perfil"}
                                 >
                                   {entry.avatar_url ? (
-                                    <img src={entry.avatar_url} alt={entry.username || entry.full_name} className="h-9 w-9 rounded-2xl object-cover" />
+                                    <img src={entry.avatar_url} alt={entry.username || entry.full_name} className="h-9 w-9 rounded-2xl object-cover cursor-zoom-in" />
                                   ) : (
                                     <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-500/20 to-purple-600/20 border border-pink-500/20 text-xs font-semibold text-white">
                                       {entry.full_name?.charAt(0)?.toUpperCase?.() || 'U'}
@@ -397,11 +427,24 @@ const FloatingChat = () => {
                       <button onClick={handleBackToList} className="rounded-xl p-2 text-[#a7a8c7] transition hover:bg-white/5 hover:text-white">
                         <ChevronLeft size={18} />
                       </button>
-                      <button onClick={handleOpenProfile} className="flex items-center gap-2 text-left" title="Ver Perfil">
+                      <button 
+                        onClick={(e) => {
+                          if (!activeRoom.is_group && activeRoom.otherParticipant) {
+                            playClickSound();
+                            if (activeRoom.otherParticipant.avatar_url) {
+                              setLightboxUser(activeRoom.otherParticipant);
+                            } else {
+                              setSelectedProfileId(activeRoom.otherParticipant.id);
+                            }
+                          }
+                        }} 
+                        className="flex items-center gap-2 text-left" 
+                        title={(!activeRoom.is_group && activeRoom.otherParticipant?.avatar_url) ? "Ampliar foto de perfil" : "Ver Perfil"}
+                      >
                         {activeRoom.displayImage ? (
-                          <img src={activeRoom.displayImage} alt={activeRoom.displayName} className="h-8 w-8 rounded-2xl object-cover" />
+                          <img src={activeRoom.displayImage} alt={activeRoom.displayName} className="h-8 w-8 rounded-2xl object-cover cursor-zoom-in" />
                         ) : (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-[#1f2235] text-xs font-bold text-yellow-400">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-[#1f2235] text-xs font-bold text-yellow-400 shrink-0">
                             {activeRoom.displayName?.charAt(0)?.toUpperCase?.() || 'C'}
                           </div>
                         )}
@@ -419,10 +462,45 @@ const FloatingChat = () => {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="mr-4 border-white/10 bg-[#141926] text-white">
-                        <DropdownMenuItem onClick={handleOpenProfile} className="cursor-pointer hover:bg-white/10">
-                          <User className="mr-2 h-4 w-4 text-[#ff2df0]" />
-                          Ver perfil
-                        </DropdownMenuItem>
+                        {!activeRoom.is_group && activeRoom.otherParticipant && (
+                          <>
+                            <DropdownMenuItem onClick={handleOpenProfile} className="cursor-pointer hover:bg-white/10">
+                              <User className="mr-2 h-4 w-4 text-[#ff2df0]" />
+                              Ver perfil
+                            </DropdownMenuItem>
+                            
+                            {/* Block/Unblock dynamic dropdown list */}
+                            {blockedUsers.includes(activeRoom.otherParticipant.id) ? (
+                              <DropdownMenuItem 
+                                onClick={handleUnblock} 
+                                className="cursor-pointer hover:bg-white/10 text-green-400 font-bold"
+                              >
+                                <Shield className="mr-2 h-4 w-4" />
+                                Desbloquear usuario
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem 
+                                onClick={handleBlock} 
+                                className="cursor-pointer hover:bg-white/10 text-red-400"
+                              >
+                                <Shield className="mr-2 h-4 w-4" />
+                                Bloquear usuario
+                              </DropdownMenuItem>
+                            )}
+
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                playClickSound();
+                                setSelectedProfileId(activeRoom.otherParticipant.id);
+                                setReportOpen(true);
+                              }} 
+                              className="cursor-pointer hover:bg-white/10 text-yellow-400"
+                            >
+                              <Flag className="mr-2 h-4 w-4" />
+                              Reportar usuario
+                            </DropdownMenuItem>
+                          </>
+                        )}
                         <DropdownMenuItem onClick={handleBackToList} className="cursor-pointer hover:bg-white/10">
                           <X className="mr-2 h-4 w-4" />
                           Cerrar chat
@@ -479,13 +557,21 @@ const FloatingChat = () => {
                     )}
                   </div>
 
+                  {/* Blocked message notice */}
+                  {isRoomBlocked && (
+                    <div className="mx-3 my-2 text-center text-[10px] text-red-400 bg-red-950/20 border border-red-500/20 py-1.5 rounded-lg">
+                      ⚠️ Chat bloqueado temporalmente.
+                    </div>
+                  )}
+
+                  {/* Input Form with voice recording */}
                   <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-white/10 bg-[#050510] p-3">
                     <button
                       type="button"
                       onClick={isRecording ? stopRecording : startRecording}
-                      disabled={uploadingAttachment}
+                      disabled={uploadingAttachment || isRoomBlocked}
                       className={cn(
-                        "p-1.5 rounded-full transition-all flex items-center justify-center shrink-0",
+                        "p-1.5 rounded-full transition-all flex items-center justify-center shrink-0 disabled:opacity-30",
                         isRecording 
                           ? "bg-red-500 text-white animate-pulse" 
                           : "text-[#a7a8c7] hover:text-white"
@@ -500,15 +586,15 @@ const FloatingChat = () => {
                         type="text"
                         value={messageInput}
                         onChange={(event) => setMessageInput(event.target.value)}
-                        placeholder={isRecording ? "Grabando nota de voz..." : "Escribe un mensaje..."}
-                        disabled={isRecording}
+                        placeholder={isRoomBlocked ? "Bloqueado" : (isRecording ? "Grabando..." : "Escribe un mensaje...")}
+                        disabled={isRecording || isRoomBlocked}
                         className="w-full rounded-full border border-white/10 bg-[#0c1322] py-2 pl-4 pr-10 text-sm text-white outline-none focus:ring-1 focus:ring-yellow-400 disabled:opacity-50"
                       />
                       <button 
                         type="button" 
                         onClick={() => { playClickSound(); setEmojiOpen(!emojiOpen); }}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a7a8c7] hover:text-white transition-colors"
-                        disabled={isRecording}
+                        disabled={isRecording || isRoomBlocked}
                         title="Insertar Emoji"
                       >
                         <Smile size={16} />
@@ -542,7 +628,7 @@ const FloatingChat = () => {
 
                     <button
                       type="submit"
-                      disabled={!messageInput.trim() || isRecording}
+                      disabled={!messageInput.trim() || isRecording || isRoomBlocked}
                       className="rounded-full bg-yellow-400 p-2 text-slate-950 transition hover:bg-yellow-300 disabled:opacity-50 shrink-0"
                     >
                       <Send size={16} />
@@ -594,6 +680,7 @@ const FloatingChat = () => {
         onClose={() => setSelectedProfileId(null)}
       />
 
+      {/* Report dialog */}
       <Dialog open={reportOpen} onOpenChange={setReportOpen}>
         <DialogContent className="border-pink-500/30 bg-[#0c0814] text-white">
           <DialogHeader>
@@ -621,6 +708,56 @@ const FloatingChat = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Lightbox Avatar modal */}
+      <AnimatePresence>
+        {lightboxUser && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/90 backdrop-blur-md p-4 pointer-events-auto"
+            onClick={() => setLightboxUser(null)}
+          >
+            <button 
+              className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-all"
+              onClick={() => setLightboxUser(null)}
+            >
+              <X size={20} />
+            </button>
+            
+            <motion.img 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              src={lightboxUser.avatar_url}
+              alt={lightboxUser.username || lightboxUser.full_name}
+              className="max-h-[60vh] max-w-full rounded-2xl object-contain border border-white/10 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            
+            <div 
+              className="mt-6 text-center space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-bold text-white">
+                {lightboxUser.username ? `@${lightboxUser.username}` : lightboxUser.full_name}
+              </h3>
+              
+              <button
+                onClick={() => {
+                  playClickSound();
+                  setSelectedProfileId(lightboxUser.id);
+                  setLightboxUser(null);
+                }}
+                className="px-6 py-2.5 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-pink-500/20 uppercase tracking-wider flex items-center gap-1.5 justify-center mx-auto"
+              >
+                <Eye size={14} /> Ver Información de Perfil
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };
