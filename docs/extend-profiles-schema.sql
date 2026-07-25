@@ -1,6 +1,6 @@
 begin;
 
--- 1. Extend public.profiles table with new fields and visibility flags
+-- 1. Extend public.profiles table with new fields, visibility flags, and credit/data authorization flag
 alter table public.profiles
 add column if not exists username text,
 add column if not exists city text,
@@ -11,7 +11,8 @@ add column if not exists is_city_public boolean default true,
 add column if not exists is_country_public boolean default true,
 add column if not exists is_gender_public boolean default true,
 add column if not exists is_interests_public boolean default true,
-add column if not exists is_profile_public boolean default true;
+add column if not exists is_profile_public boolean default true,
+add column if not exists is_data_authorized boolean default false;
 
 -- 2. Create profile_reactions table
 create table if not exists public.profile_reactions (
@@ -56,14 +57,18 @@ for delete
 to authenticated
 using (from_user_id = auth.uid());
 
--- 3. Create profile_notifications table
-create table if not exists public.profile_notifications (
+-- 3. Create profile_notifications table (drop first to recreate with explicit constraint names)
+drop table if exists public.profile_notifications cascade;
+
+create table public.profile_notifications (
   id uuid default gen_random_uuid() primary key,
-  to_user_id uuid references public.profiles(id) on delete cascade not null,
-  from_user_id uuid references public.profiles(id) on delete cascade not null,
+  to_user_id uuid not null,
+  from_user_id uuid not null,
   message text not null,
   read boolean default false not null,
-  created_at timestamptz default now() not null
+  created_at timestamptz default now() not null,
+  constraint profile_notifications_from_user_id_fkey foreign key (from_user_id) references public.profiles(id) on delete cascade,
+  constraint profile_notifications_to_user_id_fkey foreign key (to_user_id) references public.profiles(id) on delete cascade
 );
 
 -- Enable Row Level Security on profile_notifications

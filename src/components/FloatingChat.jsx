@@ -1,9 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useChat } from '@/hooks/useChat';
-import { MessageCircle, X, Minimize2, MoreVertical, Send, ChevronLeft, Shield, Flag, User } from 'lucide-react';
+import { 
+  MessageCircle, X, Minimize2, MoreVertical, Send, ChevronLeft, 
+  Shield, Flag, User, Mic, Square 
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { uploadFileToBucket } from '@/lib/storageUpload';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,7 +49,54 @@ const FloatingChat = () => {
   const [selectedProfileId, setSelectedProfileId] = useState(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState('');
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  
+  // Voice note recording states
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+
   const messagesEndRef = useRef(null);
+
+  // Audio synthesizer beep helper using browser Web Audio API
+  const playClickSound = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // higher pitch click
+      gainNode.gain.setValueAtTime(0.04, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+      
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.05);
+    } catch (err) {}
+  };
+
+  // Browser Autoplay Policy Unlock
+  useEffect(() => {
+    const resumeAudio = () => {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      } catch (e) {}
+      window.removeEventListener('click', resumeAudio);
+      window.removeEventListener('touchstart', resumeAudio);
+    };
+    window.addEventListener('click', resumeAudio);
+    window.addEventListener('touchstart', resumeAudio);
+    return () => {
+      window.removeEventListener('click', resumeAudio);
+      window.removeEventListener('touchstart', resumeAudio);
+    };
+  }, []);
 
   useEffect(() => {
     setView(activeRoom ? 'chat' : 'list');
@@ -59,9 +110,13 @@ const FloatingChat = () => {
 
   const onlineList = Object.values(onlineUsers).filter((entry) => entry.id !== user.id && !blockedUsers.includes(entry.id));
 
-  const handleToggle = () => setIsOpen((prev) => !prev);
+  const handleToggle = () => {
+    playClickSound();
+    setIsOpen((prev) => !prev);
+  };
 
   const handleBackToList = () => {
+    playClickSound();
     setActiveRoom(null);
     setView('list');
   };
@@ -69,16 +124,19 @@ const FloatingChat = () => {
   const handleSend = (event) => {
     event.preventDefault();
     if (!messageInput.trim()) return;
+    playClickSound();
     sendMessage(messageInput);
     setMessageInput('');
   };
 
   const handleOpenProfile = () => {
     if (!activeRoom || activeRoom.is_group || !activeRoom.otherParticipant) return;
+    playClickSound();
     setSelectedProfileId(activeRoom.otherParticipant.id);
   };
 
   const handleStartDM = async (targetId) => {
+    playClickSound();
     const existingRoom = rooms.find((room) => !room.is_group && room.participants.some((participant) => participant.id === targetId));
     if (existingRoom) {
       setActiveRoom(existingRoom);
@@ -92,6 +150,7 @@ const FloatingChat = () => {
 
   const handleBlock = async () => {
     if (!selectedProfileId) return;
+    playClickSound();
     await blockUser(selectedProfileId);
     setSelectedProfileId(null);
     setView('list');
@@ -100,11 +159,69 @@ const FloatingChat = () => {
 
   const handleReport = async () => {
     if (!selectedProfileId || !reportReason.trim()) return;
+    playClickSound();
     await reportUser(selectedProfileId, reportReason);
     setReportReason('');
     setReportOpen(false);
     setSelectedProfileId(null);
   };
+
+  // Voice note handlers
+  const startRecording = async () => {
+    try {
+      playClickSound();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+      
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioFile = new File([audioBlob], `voice_note_${Date.now()}.webm`, { type: 'audio/webm' });
+        
+        try {
+          setUploadingAttachment(true);
+          const uploadedUrl = await uploadFileToBucket({
+            file: audioFile,
+            bucket: 'chat-attachments',
+            folder: `rooms/${activeRoom.id}`
+          });
+          await sendMessage(uploadedUrl);
+        } catch (err) {
+          console.error(err);
+          window.alert('No se pudo enviar la nota de voz.');
+        } finally {
+          setUploadingAttachment(false);
+        }
+        
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error(err);
+      window.alert('No se pudo acceder al micrófono para grabar.');
+    }
+  };
+
+  const stopRecording = () => {
+    playClickSound();
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const isImageUrl = (value) => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(value || '');
+  const isAudioUrl = (value) => /\.(ogg|webm|mp3|wav|m4a)$/i.test(value || '') || (value || '').includes('voice_note_');
+  const isUrl = (value) => /^https?:\/\/\S+$/i.test((value || '').trim());
 
   return (
     <>
@@ -141,30 +258,38 @@ const FloatingChat = () => {
                         </div>
                       ) : (
                         <div className="mt-2 space-y-1">
-                          {rooms.map((room) => (
-                            <button
-                              key={room.id}
-                              onClick={() => setActiveRoom(room)}
-                              className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/5"
-                            >
-                              {room.displayImage ? (
-                                <img src={room.displayImage} alt={room.displayName} className="h-10 w-10 rounded-2xl object-cover" />
-                              ) : (
-                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-600/30 to-purple-600/30 border border-pink-500/30 font-bold text-pink-400 text-sm">
-                                  {room.displayName?.charAt(0)?.toUpperCase?.() || 'C'}
+                          {rooms.map((room) => {
+                            const isUnread = unreadRooms.includes(room.id);
+                            return (
+                              <button
+                                key={room.id}
+                                onClick={() => { playClickSound(); setActiveRoom(room); }}
+                                className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/5"
+                              >
+                                {room.displayImage ? (
+                                  <img src={room.displayImage} alt={room.displayName} className="h-10 w-10 rounded-2xl object-cover" />
+                                ) : (
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-600/30 to-purple-600/30 border border-pink-500/30 font-bold text-pink-400 text-sm">
+                                    {room.displayName?.charAt(0)?.toUpperCase?.() || 'C'}
+                                  </div>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex justify-between items-center gap-2">
+                                    {/* Highlight unread rooms in Green */}
+                                    <p className={cn("truncate text-xs font-semibold", 
+                                      isUnread ? "text-green-400 font-bold" : "text-white"
+                                    )}>
+                                      {room.displayName}
+                                    </p>
+                                    {isUnread && (
+                                      <span className="h-2 w-2 rounded-full bg-pink-500 flex-shrink-0 animate-pulse" />
+                                    )}
+                                  </div>
+                                  <p className="truncate text-[10px] text-slate-400">{room.is_group ? 'Grupo' : 'Mensaje privado'}</p>
                                 </div>
-                              )}
-                              <div className="min-w-0 flex-1">
-                                <div className="flex justify-between items-center gap-2">
-                                  <p className="truncate text-xs font-semibold text-white">{room.displayName}</p>
-                                  {unreadRooms.includes(room.id) && (
-                                    <span className="h-2 w-2 rounded-full bg-pink-500 flex-shrink-0 animate-pulse" />
-                                  )}
-                                </div>
-                                <p className="truncate text-[10px] text-slate-400">{room.is_group ? 'Grupo' : 'Mensaje privado'}</p>
-                              </div>
-                            </button>
-                          ))}
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -197,6 +322,7 @@ const FloatingChat = () => {
                                   className="relative cursor-pointer transform hover:scale-105 transition-transform"
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    playClickSound();
                                     setSelectedProfileId(entry.id);
                                   }}
                                   title="Ver Perfil"
@@ -275,8 +401,8 @@ const FloatingChat = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="mr-4 border-white/10 bg-[#141926] text-white">
                         <DropdownMenuItem onClick={handleOpenProfile} className="cursor-pointer hover:bg-white/10">
-                          <User className="mr-2 h-4 w-4" />
-                          Ver usuario
+                          <User className="mr-2 h-4 w-4 text-[#ff2df0]" />
+                          Ver perfil
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={handleBackToList} className="cursor-pointer hover:bg-white/10">
                           <X className="mr-2 h-4 w-4" />
@@ -304,7 +430,21 @@ const FloatingChat = () => {
                                     : 'border border-white/5 bg-[#1f2235] text-[#e0e0e0] rounded-bl-md'
                                 )}
                               >
-                                <span>{message.content}</span>
+                                {isUrl(message.content) ? (
+                                  isImageUrl(message.content) ? (
+                                    <a href={message.content} target="_blank" rel="noopener noreferrer" className="block max-w-full">
+                                      <img src={message.content} alt="Adjunto" className="max-w-full rounded-lg mb-1" />
+                                    </a>
+                                  ) : isAudioUrl(message.content) ? (
+                                    <audio src={message.content} controls className="max-w-full rounded-lg mt-1 bg-transparent filter invert" />
+                                  ) : (
+                                    <a href={message.content} target="_blank" rel="noopener noreferrer" className="underline break-all">
+                                      {message.content}
+                                    </a>
+                                  )
+                                ) : (
+                                  <span>{message.content}</span>
+                                )}
                                 <span className={cn(
                                   "text-[9px] opacity-40 self-end mt-1 block font-mono",
                                   isMe ? "text-slate-950" : "text-[#a7a8c7]"
@@ -320,18 +460,33 @@ const FloatingChat = () => {
                     )}
                   </div>
 
-                  {/* Input Form */}
+                  {/* Input Form with voice recording */}
                   <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-white/10 bg-[#050510] p-3">
+                    <button
+                      type="button"
+                      onClick={isRecording ? stopRecording : startRecording}
+                      disabled={uploadingAttachment}
+                      className={cn(
+                        "p-1.5 rounded-full transition-all flex items-center justify-center shrink-0",
+                        isRecording 
+                          ? "bg-red-500 text-white animate-pulse" 
+                          : "text-[#a7a8c7] hover:text-white"
+                      )}
+                      title={isRecording ? "Detener y enviar nota de voz" : "Grabar nota de voz"}
+                    >
+                      {isRecording ? <Square size={16} /> : <Mic size={16} />}
+                    </button>
                     <input
                       type="text"
                       value={messageInput}
                       onChange={(event) => setMessageInput(event.target.value)}
-                      placeholder="Escribe un mensaje..."
-                      className="flex-1 rounded-full border border-white/10 bg-[#0c1322] px-4 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-yellow-400"
+                      placeholder={isRecording ? "Grabando nota de voz..." : "Escribe un mensaje..."}
+                      disabled={isRecording}
+                      className="flex-1 rounded-full border border-white/10 bg-[#0c1322] px-4 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-yellow-400 disabled:opacity-50"
                     />
                     <button
                       type="submit"
-                      disabled={!messageInput.trim()}
+                      disabled={!messageInput.trim() || isRecording}
                       className="rounded-full bg-yellow-400 p-2 text-slate-950 transition hover:bg-yellow-300 disabled:opacity-50"
                     >
                       <Send size={16} />

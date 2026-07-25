@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useChatPresence } from '@/components/ChatPresenceTracker';
 import { useToast } from '@/components/ui/use-toast';
 
-const CHAT_PROFILE_SELECT = 'id, full_name, avatar_url';
+const CHAT_PROFILE_SELECT = 'id, full_name, username, avatar_url';
 const CHAT_REQUEST_COOLDOWN_MS = 10000;
 
 const isTransientChatError = (error) => {
@@ -20,6 +20,7 @@ const USER_PANEL_PROFILE_SELECT = 'id, full_name, username, avatar_url, phone, a
 const normalizeChatProfile = (profile, fallbackId = null) => ({
   id: profile?.id ?? fallbackId,
   full_name: profile?.full_name ?? null,
+  username: profile?.username ?? null,
   avatar_url: profile?.avatar_url ?? null,
 });
 
@@ -231,7 +232,7 @@ export const useChat = () => {
 
         if (!room.is_group) {
           otherParticipant = parts.find((p) => p.id !== userId) || null;
-          displayName = otherParticipant?.full_name || 'Chat Privado';
+          displayName = otherParticipant?.username ? `@${otherParticipant.username}` : (otherParticipant?.full_name || 'Chat Privado');
           displayImage = otherParticipant?.avatar_url || null;
         }
 

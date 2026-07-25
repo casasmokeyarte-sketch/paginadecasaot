@@ -15,6 +15,34 @@ import { uploadFileToBucket } from '@/lib/storageUpload';
 import { supabase } from '@/lib/customSupabaseClient';
 import UserProfileViewModal from '@/components/UserProfileViewModal';
 
+const COUNTRIES = [
+  "Colombia", "México", "Venezuela", "España", "Argentina", "Chile", "Perú",
+  "Ecuador", "Guatemala", "Cuba", "Bolivia", "República Dominicana",
+  "Honduras", "Paraguay", "El Salvador", "Nicaragua", "Costa Rica",
+  "Panamá", "Uruguay", "Puerto Rico", "Estados Unidos"
+];
+
+const CITIES = [
+  "Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena", "Cúcuta",
+  "Bucaramanga", "Pereira", "Ibagué", "Santa Marta", "Manizales",
+  "Ciudad de México", "Guadalajara", "Monterrey", "Puebla", "Tijuana",
+  "Madrid", "Barcelona", "Valencia", "Sevilla", "Zaragoza",
+  "Buenos Aires", "Córdoba", "Rosario", "Santiago", "Valparaíso",
+  "Concepción", "Lima", "Arequipa", "Trujillo", "Caracas", "Maracaibo",
+  "Valencia (Venezuela)", "Quito", "Guayaquil", "Cuenca"
+];
+
+const ADDRESSES = [
+  "Calle 85 # 11-53, Bogotá, Colombia",
+  "Carrera 7 # 72-13, Bogotá, Colombia",
+  "Calle 10 # 36-24, Medellín, Colombia",
+  "Avenida Reforma 234, Ciudad de México, México",
+  "Gran Vía 45, Madrid, España",
+  "Avenida Libertador 1250, Buenos Aires, Argentina",
+  "Paseo de la Castellana 112, Madrid, España",
+  "Avenida Apoquindo 3400, Las Condes, Santiago, Chile"
+];
+
 const UserProfile = () => {
   const { 
     profile, 
@@ -29,11 +57,21 @@ const UserProfile = () => {
   const { user, deleteAccount } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showDeleteZone, setShowDeleteZone] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   
+  // Custom Autocomplete States
+  const [countrySelected, setCountrySelected] = useState(false);
+  const [citySelected, setCitySelected] = useState(false);
+  const [addressSelected, setAddressSelected] = useState(false);
+
+  const [showCountrySuggestions, setShowCountrySuggestions] = useState(false);
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+
   // New features states
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
@@ -52,8 +90,29 @@ const UserProfile = () => {
     is_country_public: true,
     is_gender_public: true,
     is_interests_public: true,
-    is_profile_public: true
+    is_profile_public: true,
+    is_data_authorized: false
   });
+
+  // Micro-interaction Audio synthesizer click cue helper
+  const playClickSound = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // high pitch click
+      gainNode.gain.setValueAtTime(0.04, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+      
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.05);
+    } catch (err) {}
+  };
 
   useEffect(() => {
     if (profile) {
@@ -70,8 +129,13 @@ const UserProfile = () => {
         is_country_public: profile.is_country_public ?? true,
         is_gender_public: profile.is_gender_public ?? true,
         is_interests_public: profile.is_interests_public ?? true,
-        is_profile_public: profile.is_profile_public ?? true
+        is_profile_public: profile.is_profile_public ?? true,
+        is_data_authorized: profile.is_data_authorized ?? false
       });
+      // Initialize selection flags as true if data already exists
+      setCountrySelected(!!profile.country);
+      setCitySelected(!!profile.city);
+      setAddressSelected(!!profile.address);
     }
   }, [profile]);
 
@@ -89,7 +153,7 @@ const UserProfile = () => {
       if (error) throw error;
       setNotifications(data || []);
     } catch (err) {
-      console.error('Error fetching notifications:', err);
+      console.log('Error fetching notifications:', err);
     } finally {
       setLoadingNotifications(false);
     }
@@ -103,6 +167,8 @@ const UserProfile = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    playClickSound();
+
     if (!formData.username.trim()) {
       toast({
         title: 'Campo obligatorio',
@@ -111,6 +177,35 @@ const UserProfile = () => {
       });
       return;
     }
+
+    // Autocomplete option validation
+    if (formData.country && !countrySelected) {
+      toast({
+        title: 'Selección requerida',
+        description: 'Debes seleccionar un país válido de las opciones de la bandeja.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (formData.city && !citySelected) {
+      toast({
+        title: 'Selección requerida',
+        description: 'Debes seleccionar una ciudad válida de las opciones de la bandeja.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (formData.address && !addressSelected) {
+      toast({
+        title: 'Selección requerida',
+        description: 'Debes seleccionar una dirección válida de las sugerencias.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     updateProfile(formData);
   };
 
@@ -198,6 +293,7 @@ const UserProfile = () => {
   };
 
   const handleDownloadInvoice = (orderId) => {
+    playClickSound();
     toast({
       title: "Descargando Factura",
       description: `Generando factura para el pedido #${orderId.slice(0, 8)}...`,
@@ -207,6 +303,7 @@ const UserProfile = () => {
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'ELIMINAR') return;
+    playClickSound();
     setIsDeletingAccount(true);
     const { error } = await deleteAccount();
     setIsDeletingAccount(false);
@@ -217,21 +314,37 @@ const UserProfile = () => {
 
   const unreadNotifications = notifications.filter(n => !n.read).length;
 
+  // Autocomplete suggestions filters
+  const filteredCountries = COUNTRIES.filter(c => 
+    c.toLowerCase().includes((formData.country || '').toLowerCase()) && 
+    (formData.country || '').toLowerCase() !== c.toLowerCase()
+  );
+
+  const filteredCities = CITIES.filter(c => 
+    c.toLowerCase().includes((formData.city || '').toLowerCase()) && 
+    (formData.city || '').toLowerCase() !== c.toLowerCase()
+  );
+
+  const filteredAddresses = ADDRESSES.filter(a => 
+    a.toLowerCase().includes((formData.address || '').toLowerCase()) && 
+    (formData.address || '').toLowerCase() !== a.toLowerCase()
+  );
+
   if (loadingProfile) return <div className="text-[#a7a8c7]">Cargando perfil...</div>;
 
   return (
     <div className="max-w-4xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Mi Cuenta</h1>
-        <p className="text-[#a7a8c7]">Gestiona tu información personal, privacidad e interactúa con la comunidad.</p>
+        <p className="text-[#a7a8c7]">Gestiona tu información personal, privacidad e autorizaciones de la empresa.</p>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="mb-6 bg-[#111322] p-1 border border-white/10 w-full sm:w-auto flex flex-wrap h-auto">
-          <TabsTrigger value="profile" className="flex-grow sm:flex-none">
+          <TabsTrigger value="profile" className="flex-grow sm:flex-none" onClick={playClickSound}>
             <User className="mr-2 h-4 w-4" /> Datos Personales
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex-grow sm:flex-none relative" onClick={fetchNotifications}>
+          <TabsTrigger value="notifications" className="flex-grow sm:flex-none relative" onClick={() => { playClickSound(); fetchNotifications(); }}>
             <Bell className="mr-2 h-4 w-4" /> Notificaciones
             {unreadNotifications > 0 && (
               <span className="ml-1.5 px-1.5 py-0.5 bg-pink-500 text-white text-[9px] font-bold rounded-full animate-pulse">
@@ -239,7 +352,7 @@ const UserProfile = () => {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex-grow sm:flex-none">
+          <TabsTrigger value="history" className="flex-grow sm:flex-none" onClick={playClickSound}>
             <FileText className="mr-2 h-4 w-4" /> Historial y Facturas
           </TabsTrigger>
         </TabsList>
@@ -271,7 +384,6 @@ const UserProfile = () => {
                   )}
                 </div>
                 
-                {/* Floating camera icon */}
                 <label className="absolute bottom-0 right-0 p-2 bg-[#ff2df0] hover:bg-[#d91cb8] rounded-full cursor-pointer transition-colors shadow-lg border border-[#111322] flex items-center justify-center">
                   <Camera size={14} className="text-white" />
                   <input 
@@ -287,7 +399,7 @@ const UserProfile = () => {
               <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
                 <h3 className="text-white font-bold text-lg">Foto de Perfil</h3>
                 <p className="text-xs text-[#a7a8c7] mt-1 mb-3">
-                  Sube una foto cuadrada de hasta 5MB. Se reflejará en tus comentarios y mensajes de chat.
+                  Sube una foto de perfil. Se reflejará en tus comentarios y mensajes de chat.
                 </p>
                 <div className="flex gap-2">
                   <label className="text-xs font-bold text-white bg-white/5 hover:bg-[#ff2df0] hover:text-white px-4 py-2 rounded-xl transition-all cursor-pointer border border-white/10 flex items-center gap-1">
@@ -347,7 +459,6 @@ const UserProfile = () => {
                     className="w-full bg-[#050510] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-[#a7a8c7] cursor-not-allowed"
                   />
                 </div>
-                <p className="text-xs text-[#a7a8c7] ml-1">* El correo no se puede cambiar.</p>
               </div>
 
               {/* Names and Username */}
@@ -376,7 +487,7 @@ const UserProfile = () => {
                       value={formData.username}
                       onChange={(e) => setFormData({...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '')})}
                       className="w-full bg-[#050510] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all font-mono"
-                      placeholder="ej. juanito_tattoo"
+                      placeholder="ej. pedro_smoke"
                       required
                     />
                   </div>
@@ -427,9 +538,11 @@ const UserProfile = () => {
                 </div>
               </div>
 
-              {/* City & Country Location */}
+              {/* City & Country Location with strict Autocomplete */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
+                
+                {/* City field */}
+                <div className="space-y-2 relative">
                   <div className="flex justify-between items-center pr-1">
                     <label className="text-sm font-medium text-[#a7a8c7] ml-1">Ciudad</label>
                     <label className="flex items-center gap-1 text-[11px] text-[#a7a8c7] cursor-pointer">
@@ -447,14 +560,46 @@ const UserProfile = () => {
                     <input
                       type="text"
                       value={formData.city}
-                      onChange={(e) => setFormData({...formData, city: e.target.value})}
-                      className="w-full bg-[#050510] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all"
+                      onChange={(e) => {
+                        setFormData({...formData, city: e.target.value});
+                        setCitySelected(false);
+                        setShowCitySuggestions(true);
+                      }}
+                      onFocus={() => setShowCitySuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowCitySuggestions(false), 200)}
+                      className={cn(
+                        "w-full bg-[#050510] border rounded-xl py-3 pl-12 pr-4 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all",
+                        formData.city && !citySelected ? "border-yellow-500/50" : "border-white/10"
+                      )}
                       placeholder="Bogotá, Medellín, etc."
                     />
                   </div>
+                  {/* Suggestions dropdown */}
+                  {showCitySuggestions && filteredCities.length > 0 && (
+                    <div className="absolute z-20 w-full bg-[#0c1322] border border-white/10 rounded-xl mt-1 max-h-40 overflow-y-auto shadow-xl">
+                      {filteredCities.map(c => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => {
+                            setFormData({...formData, city: c});
+                            setCitySelected(true);
+                            setShowCitySuggestions(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#ff2df0]/20 transition-colors"
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {formData.city && !citySelected && (
+                    <p className="text-[10px] text-yellow-400 ml-1">⚠️ Debes marcar la ciudad de la bandeja para que sea aceptada.</p>
+                  )}
                 </div>
 
-                <div className="space-y-2">
+                {/* Country field */}
+                <div className="space-y-2 relative">
                   <div className="flex justify-between items-center pr-1">
                     <label className="text-sm font-medium text-[#a7a8c7] ml-1">País</label>
                     <label className="flex items-center gap-1 text-[11px] text-[#a7a8c7] cursor-pointer">
@@ -472,15 +617,47 @@ const UserProfile = () => {
                     <input
                       type="text"
                       value={formData.country}
-                      onChange={(e) => setFormData({...formData, country: e.target.value})}
-                      className="w-full bg-[#050510] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all"
+                      onChange={(e) => {
+                        setFormData({...formData, country: e.target.value});
+                        setCountrySelected(false);
+                        setShowCountrySuggestions(true);
+                      }}
+                      onFocus={() => setShowCountrySuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowCountrySuggestions(false), 200)}
+                      className={cn(
+                        "w-full bg-[#050510] border rounded-xl py-3 pl-12 pr-4 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all",
+                        formData.country && !countrySelected ? "border-yellow-500/50" : "border-white/10"
+                      )}
                       placeholder="Colombia, México, etc."
                     />
                   </div>
+                  {/* Suggestions dropdown */}
+                  {showCountrySuggestions && filteredCountries.length > 0 && (
+                    <div className="absolute z-20 w-full bg-[#0c1322] border border-white/10 rounded-xl mt-1 max-h-40 overflow-y-auto shadow-xl">
+                      {filteredCountries.map(c => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => {
+                            setFormData({...formData, country: c});
+                            setCountrySelected(true);
+                            setShowCountrySuggestions(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#ff2df0]/20 transition-colors"
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {formData.country && !countrySelected && (
+                    <p className="text-[10px] text-yellow-400 ml-1">⚠️ Debes marcar el país de la bandeja para que sea aceptado.</p>
+                  )}
                 </div>
+
               </div>
 
-              {/* Interests & Shipping Address */}
+              {/* Interests & Shipping Address with strict Autocomplete */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <div className="flex justify-between items-center pr-1">
@@ -509,18 +686,68 @@ const UserProfile = () => {
                   </select>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 relative">
                   <label className="text-sm font-medium text-[#a7a8c7] ml-1">Dirección de Despacho (Solo Privado)</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-3 text-[#a7a8c7]" size={20} />
                     <textarea
                       value={formData.address}
-                      onChange={(e) => setFormData({...formData, address: e.target.value})}
+                      onChange={(e) => {
+                        setFormData({...formData, address: e.target.value});
+                        setAddressSelected(false);
+                        setShowAddressSuggestions(true);
+                      }}
+                      onFocus={() => setShowAddressSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 200)}
                       rows={3}
-                      className="w-full bg-[#050510] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all resize-none text-xs"
+                      className={cn(
+                        "w-full bg-[#050510] border rounded-xl py-3 pl-12 pr-4 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all resize-none text-xs",
+                        formData.address && !addressSelected ? "border-yellow-500/50" : "border-white/10"
+                      )}
                       placeholder="Dirección para tus envíos físicos..."
                     />
                   </div>
+                  {/* Suggestions dropdown */}
+                  {showAddressSuggestions && filteredAddresses.length > 0 && (
+                    <div className="absolute z-20 w-full bg-[#0c1322] border border-white/10 rounded-xl mt-1 max-h-40 overflow-y-auto shadow-xl">
+                      {filteredAddresses.map(a => (
+                        <button
+                          key={a}
+                          type="button"
+                          onClick={() => {
+                            setFormData({...formData, address: a});
+                            setAddressSelected(true);
+                            setShowAddressSuggestions(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#ff2df0]/20 transition-colors"
+                        >
+                          {a}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {formData.address && !addressSelected && (
+                    <p className="text-[10px] text-yellow-400 ml-1">⚠️ Debes marcar una dirección válida de las sugerencias para ser aceptada.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Data Authorization Checkbox Requirement */}
+              <div className="bg-[#050510] border border-pink-500/10 p-5 rounded-2xl flex items-start gap-4">
+                <input 
+                  type="checkbox"
+                  checked={formData.is_data_authorized}
+                  onChange={(e) => setFormData({...formData, is_data_authorized: e.target.checked})}
+                  className="w-5 h-5 rounded accent-[#ff2df0] cursor-pointer mt-1 flex-shrink-0"
+                  required
+                />
+                <div>
+                  <label className="text-sm font-bold text-white block">
+                    Autorización de Uso de Datos y Consulta de Historial Crediticio *
+                  </label>
+                  <span className="text-xs text-[#a7a8c7] block mt-1 leading-relaxed">
+                    Autorizo a Casa Smoke & Arte para recopilar, almacenar y tratar mis datos personales con fines de envío de información publicitaria, promociones comerciales, y verificación de historial y comportamiento crediticio en centrales de riesgo con el fin de evaluar y ofrecer cupos de crédito y financiamiento directo en compras de la tienda.
+                  </span>
                 </div>
               </div>
 
@@ -602,14 +829,14 @@ const UserProfile = () => {
 
                       <div className="flex items-center gap-2 mt-4 sm:mt-0 w-full sm:w-auto justify-end">
                         <button
-                          onClick={() => setSelectedProfileId(sender?.id)}
+                          onClick={() => { playClickSound(); setSelectedProfileId(sender?.id); }}
                           disabled={!sender?.id}
                           className="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-pink-500/30 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1"
                         >
                           Ver Perfil
                         </button>
                         <button
-                          onClick={() => sender?.id && navigate(`/user/chat?dm=${sender.id}`)}
+                          onClick={() => { playClickSound(); sender?.id && navigate(`/user/chat?dm=${sender.id}`); }}
                           disabled={!sender?.id}
                           className="px-3 py-1.5 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1"
                         >
@@ -749,7 +976,7 @@ const UserProfile = () => {
       {/* --- DANGER ZONE --- */}
       <div className="mt-10">
         <button
-          onClick={() => setShowDeleteZone((v) => !v)}
+          onClick={() => { playClickSound(); setShowDeleteZone((v) => !v); }}
           className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 transition-colors"
         >
           <AlertTriangle size={16} />
@@ -762,7 +989,7 @@ const UserProfile = () => {
               <Trash2 size={20} /> Eliminar mi cuenta
             </h3>
             <p className="text-sm text-[#a7a8c7] mb-4">
-              Esta acción es <strong className="text-white">permanente e irreversible</strong>. Se eliminarán tu cuenta, perfil y todos tus datos personales.
+              Esta acción es <strong className="text-white">permanente e irreversible</strong>.
               Escribe <span className="font-mono font-bold text-red-400">ELIMINAR</span> para confirmar.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">

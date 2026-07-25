@@ -3,7 +3,8 @@ import { useChat } from '@/hooks/useChat';
 import { useSearchParams } from 'react-router-dom';
 import { 
   Send, Users, MessageSquare, Plus, Hash, User, 
-  MoreVertical, Search, Circle, Smile, Paperclip
+  MoreVertical, Search, Circle, Smile, Paperclip,
+  Mic, Square, Shield, Flag, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,12 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import UserProfileViewModal from '@/components/UserProfileViewModal';
 
 const UserChat = () => {
@@ -29,6 +36,8 @@ const UserChat = () => {
     sendMessage, 
     createPrivateChat, 
     createGroupChat,
+    blockUser,
+    reportUser,
     onlineUsers, 
     communityUsers = [],
     loadingRooms,
@@ -54,6 +63,35 @@ const UserChat = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const dmParam = searchParams.get('dm');
 
+  // Voice Note Recording State
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+
+  // Report dialog in UserChat
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+
+  // Audio synthesizer beep helper using browser Web Audio API
+  const playClickSound = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // higher pitch click
+      gainNode.gain.setValueAtTime(0.04, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+      
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.05);
+    } catch (err) {}
+  };
+
   // Auto-scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -67,7 +105,6 @@ const UserChat = () => {
   useEffect(() => {
     if (dmParam && rooms.length > 0) {
       handleStartDM(dmParam);
-      // Clean query parameter after trigger
       setSearchParams({}, { replace: true });
     }
   }, [dmParam, rooms]);
@@ -75,14 +112,17 @@ const UserChat = () => {
   const handleSend = (e) => {
     e.preventDefault();
     if (!messageInput.trim()) return;
+    playClickSound();
     sendMessage(messageInput);
     setMessageInput('');
   };
 
   const isImageUrl = (value) => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(value || '');
+  const isAudioUrl = (value) => /\.(ogg|webm|mp3|wav|m4a)$/i.test(value || '') || (value || '').includes('voice_note_');
   const isUrl = (value) => /^https?:\/\/\S+$/i.test((value || '').trim());
 
   const handleAttachClick = () => {
+    playClickSound();
     attachmentInputRef.current?.click();
   };
 
@@ -107,8 +147,62 @@ const UserChat = () => {
     }
   };
 
+  // Voice note handlers
+  const startRecording = async () => {
+    try {
+      playClickSound();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+      
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioFile = new File([audioBlob], `voice_note_${Date.now()}.webm`, { type: 'audio/webm' });
+        
+        try {
+          setUploadingAttachment(true);
+          const uploadedUrl = await uploadFileToBucket({
+            file: audioFile,
+            bucket: 'chat-attachments',
+            folder: `rooms/${activeRoom.id}`
+          });
+          await sendMessage(uploadedUrl);
+        } catch (err) {
+          console.error(err);
+          window.alert('No se pudo enviar la nota de voz.');
+        } finally {
+          setUploadingAttachment(false);
+        }
+        
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error(err);
+      window.alert('No se pudo acceder al micrófono para grabar.');
+    }
+  };
+
+  const stopRecording = () => {
+    playClickSound();
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
   const handleCreateGroup = async () => {
     if (!newGroupName.trim() || selectedUsers.length === 0) return;
+    playClickSound();
     const roomId = await createGroupChat(newGroupName, selectedUsers);
     setNewGroupOpen(false);
     setNewGroupName('');
@@ -116,6 +210,7 @@ const UserChat = () => {
   };
 
   const handleStartDM = async (targetUserId) => {
+    playClickSound();
     const existingRoom = rooms.find(r => 
       !r.is_group && r.participants.some(p => p.id === targetUserId)
     );
@@ -138,7 +233,23 @@ const UserChat = () => {
     }
   };
 
+  const handleBlock = async () => {
+    if (!activeRoom || activeRoom.is_group || !activeRoom.otherParticipant) return;
+    playClickSound();
+    await blockUser(activeRoom.otherParticipant.id);
+    setActiveRoom(null);
+  };
+
+  const handleReport = async () => {
+    if (!activeRoom || !activeRoom.otherParticipant || !reportReason.trim()) return;
+    playClickSound();
+    await reportUser(activeRoom.otherParticipant.id, reportReason);
+    setReportReason('');
+    setReportOpen(false);
+  };
+
   const toggleUserSelection = (userId) => {
+    playClickSound();
     if (selectedUsers.includes(userId)) {
       setSelectedUsers(selectedUsers.filter(id => id !== userId));
     } else {
@@ -159,7 +270,7 @@ const UserChat = () => {
             <MessageSquare size={18} className="text-[#ff2df0]" /> Chats
           </h2>
           
-          <Dialog open={newGroupOpen} onOpenChange={setNewGroupOpen}>
+          <Dialog open={newGroupOpen} onOpenChange={(open) => { playClickSound(); setNewGroupOpen(open); }}>
             <DialogTrigger asChild>
               <button className="p-2 hover:bg-white/10 rounded-lg transition-colors text-[#a7a8c7] hover:text-white" title="Crear Grupo">
                 <Plus size={20} />
@@ -225,36 +336,44 @@ const UserChat = () => {
                <div className="px-4 py-8 text-center text-sm text-[#a7a8c7]">No tienes chats activos.</div>
              ) : (
                <div className="space-y-1">
-                 {rooms.map(room => (
-                   <button
-                     key={room.id}
-                     onClick={() => setActiveRoom(room)}
-                     className={cn(
-                       "w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left group",
-                       activeRoom?.id === room.id ? "bg-[#ff2df0]/10 border border-[#ff2df0]/20" : "hover:bg-white/5 border border-transparent"
-                     )}
-                   >
-                     <div className={cn(
-                       "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shrink-0",
-                       room.is_group ? "bg-[#00e5ff]/20 text-[#00e5ff]" : "bg-[#f4c542]/20 text-[#f4c542]"
-                     )}>
-                       {room.is_group ? <Hash size={18} /> : <User size={18} />}
-                     </div>
-                      <div className="flex-1 overflow-hidden">
-                        <div className="flex justify-between items-center gap-2">
-                          <p className={cn("font-medium truncate", activeRoom?.id === room.id ? "text-white" : "text-[#a7a8c7] group-hover:text-white")}>
-                            {room.displayName}
-                          </p>
-                          {unreadRooms.includes(room.id) && (
-                            <span className="w-2.5 h-2.5 bg-pink-500 rounded-full flex-shrink-0 animate-pulse" />
-                          )}
-                        </div>
-                        <p className="text-xs text-[#a7a8c7] truncate">
-                          {room.is_group ? `${room.participants.length} participantes` : 'Mensaje privado'}
-                        </p>
-                      </div>
-                   </button>
-                 ))}
+                 {rooms.map(room => {
+                   const isUnread = unreadRooms.includes(room.id);
+                   return (
+                     <button
+                       key={room.id}
+                       onClick={() => { playClickSound(); setActiveRoom(room); }}
+                       className={cn(
+                         "w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left group",
+                         activeRoom?.id === room.id ? "bg-[#ff2df0]/10 border border-[#ff2df0]/20" : "hover:bg-white/5 border border-transparent"
+                       )}
+                     >
+                       <div className={cn(
+                         "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shrink-0",
+                         room.is_group ? "bg-[#00e5ff]/20 text-[#00e5ff]" : "bg-[#f4c542]/20 text-[#f4c542]"
+                       )}>
+                         {room.is_group ? <Hash size={18} /> : <User size={18} />}
+                       </div>
+                       <div className="flex-1 overflow-hidden">
+                         <div className="flex justify-between items-center gap-2">
+                           {/* Highlight unread rooms in Green */}
+                           <p className={cn("font-medium truncate", 
+                             isUnread 
+                               ? "text-green-400 font-bold" 
+                               : (activeRoom?.id === room.id ? "text-white" : "text-[#a7a8c7] group-hover:text-white")
+                           )}>
+                             {room.displayName}
+                           </p>
+                           {isUnread && (
+                             <span className="w-2.5 h-2.5 bg-pink-500 rounded-full flex-shrink-0 animate-pulse" />
+                           )}
+                         </div>
+                         <p className="text-xs text-[#a7a8c7] truncate">
+                           {room.is_group ? `${room.participants.length} participantes` : 'Mensaje privado'}
+                         </p>
+                       </div>
+                     </button>
+                   );
+                 })}
                </div>
              )}
            </div>
@@ -295,6 +414,7 @@ const UserChat = () => {
                           className="relative cursor-pointer transform hover:scale-105 transition-transform"
                           onClick={(e) => {
                             e.stopPropagation();
+                            playClickSound();
                             setSelectedProfileId(u.id);
                           }}
                           title="Ver Perfil"
@@ -329,7 +449,7 @@ const UserChat = () => {
                             {u.username ? `@${u.username}` : (u.full_name || u.email?.split('@')[0])}
                           </p>
                           <span className="text-[9px] text-slate-500 block truncate">
-                            {isOnline ? (isIdle ? '🟡 Ausente / Inactivo' : '🟢 En línea ahora') : '🔴 Desconectado'}
+                            {isOnline ? (isIdle ? '🟡 Ausente' : '🟢 En línea') : '🔴 Desconectado'}
                           </span>
                         </div>
                       </div>
@@ -374,12 +494,52 @@ const UserChat = () => {
                    )}
                  </div>
               </div>
-              <button className="text-[#a7a8c7] hover:text-white">
-                <MoreVertical size={20} />
-              </button>
+              
+              {/* Dynamic Header Options Dropdown Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="rounded-xl p-2 text-[#a7a8c7] transition hover:bg-white/5 hover:text-white">
+                    <MoreVertical size={20} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="mr-4 border-white/10 bg-[#141926] text-white">
+                  {!activeRoom.is_group && activeRoom.otherParticipant && (
+                    <>
+                      <DropdownMenuItem 
+                        onClick={() => { playClickSound(); setSelectedProfileId(activeRoom.otherParticipant.id); }} 
+                        className="cursor-pointer hover:bg-white/10"
+                      >
+                        <User className="mr-2 h-4 w-4 text-[#ff2df0]" />
+                        Ver perfil
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => { playClickSound(); handleBlock(); }} 
+                        className="cursor-pointer hover:bg-white/10 text-red-400"
+                      >
+                        <Shield className="mr-2 h-4 w-4" />
+                        Bloquear usuario
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => { playClickSound(); setReportOpen(true); }} 
+                        className="cursor-pointer hover:bg-white/10 text-yellow-400"
+                      >
+                        <Flag className="mr-2 h-4 w-4" />
+                        Reportar usuario
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuItem 
+                    onClick={() => { playClickSound(); setActiveRoom(null); }} 
+                    className="cursor-pointer hover:bg-white/10"
+                  >
+                    <X className="mr-2 h-4 w-4 text-slate-400" />
+                    Cerrar chat
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
-            {/* Messages */}
+            {/* Messages list */}
             <div className="flex-1 overflow-y-auto pt-20 pb-4 px-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
               {loadingMessages ? (
                 <div className="text-center py-10 text-[#a7a8c7]">Cargando historial...</div>
@@ -403,7 +563,7 @@ const UserChat = () => {
                       {showHeader && !isMe && activeRoom.is_group && (
                          <span 
                            className="text-xs text-[#a7a8c7] ml-2 mb-1 cursor-pointer hover:text-pink-400 transition-colors"
-                           onClick={() => setSelectedProfileId(msg.sender_id)}
+                           onClick={() => { playClickSound(); setSelectedProfileId(msg.sender_id); }}
                            title="Ver Perfil"
                          >
                            {msg.profiles?.username ? `@${msg.profiles.username}` : (msg.profiles?.full_name || 'Usuario')}
@@ -411,23 +571,26 @@ const UserChat = () => {
                       )}
                       
                       <div className={cn(
-                        "max-w-[75%] px-4 py-2 rounded-2xl text-sm relative group",
+                        "max-w-[75%] px-4 py-2 rounded-2xl text-sm relative group flex flex-col",
                         isMe 
                           ? "bg-[#ff2df0] text-white rounded-br-none" 
                           : "bg-[#1f2235] text-[#e0e0e0] rounded-bl-none border border-white/5"
                       )}>
                         {isUrl(msg.content) ? (
                           isImageUrl(msg.content) ? (
-                            <a href={msg.content} target="_blank" rel="noopener noreferrer" className="block">
+                            <a href={msg.content} target="_blank" rel="noopener noreferrer" className="block max-w-full">
                               <img src={msg.content} alt="Adjunto" className="max-w-full rounded-lg mb-1" />
                             </a>
+                          ) : isAudioUrl(msg.content) ? (
+                            /* Voice note audio element player */
+                            <audio src={msg.content} controls className="max-w-full rounded-lg mt-1 bg-transparent filter invert" />
                           ) : (
                             <a href={msg.content} target="_blank" rel="noopener noreferrer" className="underline break-all">
                               {msg.content}
                             </a>
                           )
                         ) : (
-                          msg.content
+                          <span>{msg.content}</span>
                         )}
                         <span className="text-[10px] opacity-50 block text-right mt-1 font-mono">
                           {new Date(msg.created_at).toLocaleDateString([], { day: '2-digit', month: 'short' })} - {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -449,30 +612,51 @@ const UserChat = () => {
                   className="hidden"
                   onChange={handleAttachFile}
                 />
+                
+                {/* Paperclip Attach Button */}
                 <button
                   type="button"
                   onClick={handleAttachClick}
                   disabled={uploadingAttachment}
-                  className="text-[#a7a8c7] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-[#a7a8c7] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                 >
                   <Paperclip size={20} />
                 </button>
+                
+                {/* Microphone / Record voice note button */}
+                <button
+                  type="button"
+                  onClick={isRecording ? stopRecording : startRecording}
+                  disabled={uploadingAttachment}
+                  className={cn(
+                    "p-2 rounded-full transition-all flex items-center justify-center shrink-0",
+                    isRecording 
+                      ? "bg-red-500 hover:bg-red-600 text-white animate-pulse" 
+                      : "text-[#a7a8c7] hover:text-[#ff2df0]"
+                  )}
+                  title={isRecording ? "Detener y enviar nota de voz" : "Grabar nota de voz"}
+                >
+                  {isRecording ? <Square size={20} className="text-white" /> : <Mic size={20} />}
+                </button>
+
                 <div className="flex-1 relative">
                   <input
                     type="text"
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
-                    placeholder={uploadingAttachment ? 'Subiendo archivo...' : 'Escribe un mensaje...'}
-                    className="w-full bg-[#111322] border border-white/10 rounded-full py-3 pl-4 pr-10 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all"
+                    placeholder={uploadingAttachment ? 'Subiendo archivo...' : isRecording ? 'Grabando audio...' : 'Escribe un mensaje...'}
+                    disabled={isRecording}
+                    className="w-full bg-[#111322] border border-white/10 rounded-full py-3 pl-4 pr-10 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all disabled:opacity-50"
                   />
                   <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a7a8c7] hover:text-[#ff2df0] transition-colors">
                     <Smile size={20} />
                   </button>
                 </div>
+                
                 <button 
                   type="submit" 
-                  disabled={!messageInput.trim() || uploadingAttachment}
-                  className="bg-[#ff2df0] hover:bg-[#d91cb8] text-white p-3 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_10px_rgba(255,45,240,0.3)] hover:shadow-[0_0_15px_rgba(255,45,240,0.5)]"
+                  disabled={!messageInput.trim() || uploadingAttachment || isRecording}
+                  className="bg-[#ff2df0] hover:bg-[#d91cb8] text-white p-3 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_10px_rgba(255,45,240,0.3)] hover:shadow-[0_0_15px_rgba(255,45,240,0.5)] shrink-0"
                 >
                   <Send size={20} />
                 </button>
@@ -488,6 +672,35 @@ const UserChat = () => {
         isOpen={selectedProfileId !== null}
         onClose={() => setSelectedProfileId(null)}
       />
+
+      {/* Report User Dialog */}
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent className="border-pink-500/30 bg-[#0c0814] text-white">
+          <DialogHeader>
+            <DialogTitle>Reportar usuario</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Cuéntanos qué sucedió para que el equipo pueda revisar el caso.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <label className="mb-2 block text-xs font-semibold text-slate-300">Motivo del reporte</label>
+            <textarea
+              value={reportReason}
+              onChange={(event) => setReportReason(event.target.value)}
+              className="h-32 w-full resize-none rounded-xl border border-pink-500/20 bg-[#05030a] p-3 text-white text-xs outline-none focus:border-pink-400"
+              placeholder="Describe el comportamiento inapropiado..."
+            />
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setReportOpen(false)} variant="ghost" className="text-slate-400">
+              Cancelar
+            </Button>
+            <Button onClick={handleReport} className="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-xs uppercase tracking-wider">
+              Enviar reporte
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
