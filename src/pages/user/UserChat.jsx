@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useChat } from '@/hooks/useChat';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Send, Users, MessageSquare, Plus, Hash, User, 
   MoreVertical, Search, Circle, Smile, Paperclip
@@ -17,6 +18,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import UserProfileViewModal from '@/components/UserProfileViewModal';
 
 const UserChat = () => {
   const { 
@@ -43,6 +45,13 @@ const UserChat = () => {
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [selectedUsers, setSelectedUsers] = useState([]);
+  
+  // Profile Modal State
+  const [selectedProfileId, setSelectedProfileId] = useState(null);
+
+  // Search parameters for redirect DMs
+  const [searchParams, setSearchParams] = useSearchParams();
+  const dmParam = searchParams.get('dm');
 
   // Auto-scroll to bottom
   const scrollToBottom = () => {
@@ -52,6 +61,15 @@ const UserChat = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle URL redirect query parameter (?dm=user_id)
+  useEffect(() => {
+    if (dmParam && rooms.length > 0) {
+      handleStartDM(dmParam);
+      // Clean query parameter after trigger
+      setSearchParams({}, { replace: true });
+    }
+  }, [dmParam, rooms]);
 
   const handleSend = (e) => {
     e.preventDefault();
@@ -94,14 +112,9 @@ const UserChat = () => {
     setNewGroupOpen(false);
     setNewGroupName('');
     setSelectedUsers([]);
-    if(roomId) {
-       const room = rooms.find(r => r.id === roomId); // Might need a refetch logic delay in hook but hook handles it
-       // setActiveRoom(room); // Optimistic selection can be added later
-    }
   };
 
   const handleStartDM = async (targetUserId) => {
-    // Check if we already have a DM room (client-side filter of loaded rooms)
     const existingRoom = rooms.find(r => 
       !r.is_group && r.participants.some(p => p.id === targetUserId)
     );
@@ -132,7 +145,6 @@ const UserChat = () => {
     }
   };
   
-  // Prepare online users list (excluding the current account)
   const onlineList = Object.values(onlineUsers).filter(u => u.id !== user?.id);
 
   return (
@@ -185,7 +197,7 @@ const UserChat = () => {
                           }`}
                         >
                           <div className={`w-4 h-4 rounded-full border ${selectedUsers.includes(u.id) ? 'bg-[#ff2df0] border-[#ff2df0]' : 'border-[#a7a8c7]'}`}></div>
-                          <span className="text-sm">{u.full_name}</span>
+                          <span className="text-sm">{u.username ? `@${u.username}` : (u.full_name || u.email?.split('@')[0])}</span>
                         </div>
                       ))
                     )}
@@ -250,10 +262,8 @@ const UserChat = () => {
                 </span>
               </h3>
               <div className="space-y-1 max-h-60 overflow-y-auto">
-                {/* Render combined list of community members with online status indicator */}
                 {(() => {
                   const combinedList = [...communityUsers];
-                  // Add any online user not already in communityUsers list
                   onlineList.forEach(u => {
                     if (!combinedList.some(c => c.id === u.id)) {
                       combinedList.push(u);
@@ -267,28 +277,46 @@ const UserChat = () => {
                   return combinedList.map(u => {
                     const isOnline = !!onlineUsers[u.id];
                     return (
-                      <button
+                      <div
                         key={u.id}
-                        onClick={() => handleStartDM(u.id)}
                         className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-all text-left group"
                       >
-                        <div className="relative">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500/30 to-purple-600/30 border border-pink-500/30 flex items-center justify-center text-xs font-bold text-white">
-                            {u.full_name?.charAt(0).toUpperCase() || 'U'}
+                        {/* Clickable Avatar to View Public Profile */}
+                        <div 
+                          className="relative cursor-pointer transform hover:scale-105 transition-transform"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedProfileId(u.id);
+                          }}
+                          title="Ver Perfil"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500/30 to-purple-600/30 border border-pink-500/30 flex items-center justify-center text-xs font-bold text-white overflow-hidden">
+                            {u.avatar_url ? (
+                              <img src={u.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                              u.full_name?.charAt(0).toUpperCase() || 'U'
+                            )}
                           </div>
                           {isOnline ? (
-                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#0b0c15] rounded-full animate-pulse" title="En línea ahora"></span>
+                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#0b0c15] rounded-full animate-pulse"></span>
                           ) : (
-                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-slate-500 border-2 border-[#0b0c15] rounded-full" title="Desconectado"></span>
+                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-slate-500 border-2 border-[#0b0c15] rounded-full"></span>
                           )}
                         </div>
-                        <div className="flex-1 overflow-hidden">
-                          <p className="text-xs font-medium text-[#a7a8c7] group-hover:text-white truncate">{u.full_name}</p>
+                        
+                        {/* Clickable Username/Status to Start DM */}
+                        <div 
+                          className="flex-1 overflow-hidden cursor-pointer"
+                          onClick={() => handleStartDM(u.id)}
+                        >
+                          <p className="text-xs font-medium text-[#a7a8c7] group-hover:text-white truncate">
+                            {u.username ? `@${u.username}` : (u.full_name || u.email?.split('@')[0])}
+                          </p>
                           <span className="text-[9px] text-slate-500 block truncate">
                             {isOnline ? '🟢 En línea ahora' : u.role === 'admin' ? '⭐ Asesor Casa Smoke' : 'Miembro de la comunidad'}
                           </span>
                         </div>
-                      </button>
+                      </div>
                     );
                   });
                 })()}
@@ -324,7 +352,7 @@ const UserChat = () => {
                    <h3 className="font-bold text-white">{activeRoom.displayName}</h3>
                    {activeRoom.is_group && (
                      <p className="text-xs text-[#a7a8c7]">
-                        {activeRoom.participants.map(p => p.full_name?.split(' ')[0]).join(', ').slice(0, 30)}
+                        {activeRoom.participants.map(p => p.username ? `@${p.username}` : p.full_name?.split(' ')[0]).join(', ').slice(0, 30)}
                         {activeRoom.participants.length > 3 ? '...' : ''}
                      </p>
                    )}
@@ -357,7 +385,13 @@ const UserChat = () => {
                       className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                     >
                       {showHeader && !isMe && activeRoom.is_group && (
-                         <span className="text-xs text-[#a7a8c7] ml-2 mb-1">{msg.profiles?.full_name}</span>
+                         <span 
+                           className="text-xs text-[#a7a8c7] ml-2 mb-1 cursor-pointer hover:text-pink-400 transition-colors"
+                           onClick={() => setSelectedProfileId(msg.sender_id)}
+                           title="Ver Perfil"
+                         >
+                           {msg.profiles?.username ? `@${msg.profiles.username}` : (msg.profiles?.full_name || 'Usuario')}
+                         </span>
                       )}
                       
                       <div className={cn(
@@ -431,6 +465,13 @@ const UserChat = () => {
           </>
         )}
       </div>
+
+      {/* Profile Dialog Modal */}
+      <UserProfileViewModal 
+        userId={selectedProfileId}
+        isOpen={selectedProfileId !== null}
+        onClose={() => setSelectedProfileId(null)}
+      />
     </div>
   );
 };

@@ -6,7 +6,7 @@ const AuthContext = createContext(undefined);
 const ADMIN_ROLES = new Set(['admin', 'administrador']);
 
 const normalizeRole = (role) => (typeof role === 'string' ? role.trim().toLowerCase() : '');
-const PROFILE_SELECT = 'id, full_name, avatar_url, phone, address, role, updated_at';
+const PROFILE_SELECT = 'id, full_name, username, avatar_url, phone, address, role, city, country, gender, interests, is_city_public, is_country_public, is_gender_public, is_interests_public, is_profile_public, updated_at';
 const PROFILE_RETRY_COOLDOWN_MS = 12000;
 
 const isTransientProfileError = (error) => {

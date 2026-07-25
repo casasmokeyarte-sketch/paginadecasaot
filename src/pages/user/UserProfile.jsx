@@ -7,10 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Save, User, Phone, MapPin, Mail, FileText, Calendar, 
   ShoppingBag, Download, ExternalLink, Clock, Trash2, 
-  AlertTriangle, Camera, Trash, Loader2 
+  AlertTriangle, Camera, Trash, Loader2, Bell, Eye, EyeOff,
+  ThumbsUp, Heart, Smile, MessageSquare, Info
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { uploadFileToBucket } from '@/lib/storageUpload';
+import { supabase } from '@/lib/customSupabaseClient';
+import UserProfileViewModal from '@/components/UserProfileViewModal';
 
 const UserProfile = () => {
   const { 
@@ -31,24 +34,83 @@ const UserProfile = () => {
   const [showDeleteZone, setShowDeleteZone] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   
+  // New features states
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
+  const [selectedProfileId, setSelectedProfileId] = useState(null);
+  
   const [formData, setFormData] = useState({
     full_name: '',
+    username: '',
     phone: '',
-    address: ''
+    address: '',
+    city: '',
+    country: '',
+    gender: '',
+    interests: '',
+    is_city_public: true,
+    is_country_public: true,
+    is_gender_public: true,
+    is_interests_public: true,
+    is_profile_public: true
   });
 
   useEffect(() => {
     if (profile) {
       setFormData({
         full_name: profile.full_name || '',
+        username: profile.username || '',
         phone: profile.phone || '',
-        address: profile.address || ''
+        address: profile.address || '',
+        city: profile.city || '',
+        country: profile.country || '',
+        gender: profile.gender || '',
+        interests: profile.interests || '',
+        is_city_public: profile.is_city_public ?? true,
+        is_country_public: profile.is_country_public ?? true,
+        is_gender_public: profile.is_gender_public ?? true,
+        is_interests_public: profile.is_interests_public ?? true,
+        is_profile_public: profile.is_profile_public ?? true
       });
     }
   }, [profile]);
 
+  // Fetch reactions notifications
+  const fetchNotifications = async () => {
+    if (!user) return;
+    try {
+      setLoadingNotifications(true);
+      const { data, error } = await supabase
+        .from('profile_notifications')
+        .select('*, from_user_id:profiles(id, full_name, username, avatar_url)')
+        .eq('to_user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setNotifications(data || []);
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!formData.username.trim()) {
+      toast({
+        title: 'Campo obligatorio',
+        description: 'Debes definir un nombre de usuario.',
+        variant: 'destructive'
+      });
+      return;
+    }
     updateProfile(formData);
   };
 
@@ -103,13 +165,44 @@ const UserProfile = () => {
     }
   };
 
+  const handleMarkAsRead = async (id) => {
+    try {
+      const { error } = await supabase
+        .from('profile_notifications')
+        .update({ read: true })
+        .eq('id', id);
+      
+      if (error) throw error;
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    } catch (err) {
+      console.error('Error marking notification as read:', err);
+    }
+  };
+
+  const handleDeleteNotification = async (id) => {
+    try {
+      const { error } = await supabase
+        .from('profile_notifications')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      toast({
+        title: 'Notificación eliminada',
+        description: 'La notificación ha sido quitada de tu lista.'
+      });
+    } catch (err) {
+      console.error('Error deleting notification:', err);
+    }
+  };
+
   const handleDownloadInvoice = (orderId) => {
     toast({
       title: "Descargando Factura",
       description: `Generando factura para el pedido #${orderId.slice(0, 8)}...`,
       duration: 3000,
     });
-    // Here you would typically trigger a real PDF download
   };
 
   const handleDeleteAccount = async () => {
@@ -122,21 +215,31 @@ const UserProfile = () => {
     }
   };
 
+  const unreadNotifications = notifications.filter(n => !n.read).length;
+
   if (loadingProfile) return <div className="text-[#a7a8c7]">Cargando perfil...</div>;
 
   return (
     <div className="max-w-4xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Mi Cuenta</h1>
-        <p className="text-[#a7a8c7]">Gestiona tu información personal y revisa tu historial.</p>
+        <p className="text-[#a7a8c7]">Gestiona tu información personal, privacidad e interactúa con la comunidad.</p>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="mb-6 bg-[#111322] p-1 border border-white/10 w-full sm:w-auto flex-wrap h-auto">
-          <TabsTrigger value="profile" className="flex-1 sm:flex-none">
+        <TabsList className="mb-6 bg-[#111322] p-1 border border-white/10 w-full sm:w-auto flex flex-wrap h-auto">
+          <TabsTrigger value="profile" className="flex-grow sm:flex-none">
             <User className="mr-2 h-4 w-4" /> Datos Personales
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex-1 sm:flex-none">
+          <TabsTrigger value="notifications" className="flex-grow sm:flex-none relative" onClick={fetchNotifications}>
+            <Bell className="mr-2 h-4 w-4" /> Notificaciones
+            {unreadNotifications > 0 && (
+              <span className="ml-1.5 px-1.5 py-0.5 bg-pink-500 text-white text-[9px] font-bold rounded-full animate-pulse">
+                {unreadNotifications}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex-grow sm:flex-none">
             <FileText className="mr-2 h-4 w-4" /> Historial y Facturas
           </TabsTrigger>
         </TabsList>
@@ -212,6 +315,26 @@ const UserProfile = () => {
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-6">
+              
+              {/* Profile Visibility Setting (General) */}
+              <div className="bg-[#050510] border border-white/5 p-4 rounded-xl flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-bold text-white flex items-center gap-1.5">
+                    {formData.is_profile_public ? <Eye size={16} className="text-green-400" /> : <EyeOff size={16} className="text-red-400" />}
+                    Perfil Visible al Público
+                  </label>
+                  <span className="text-xs text-[#a7a8c7] block mt-0.5">
+                    Si desactivas esta opción, los demás miembros de la comunidad no podrán ver ningún dato de tu perfil.
+                  </span>
+                </div>
+                <input 
+                  type="checkbox"
+                  checked={formData.is_profile_public}
+                  onChange={(e) => setFormData({...formData, is_profile_public: e.target.checked})}
+                  className="w-5 h-5 rounded accent-[#ff2df0] cursor-pointer"
+                />
+              </div>
+
               {/* Email (Read Only) */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-[#a7a8c7] ml-1">Correo Electrónico</label>
@@ -227,6 +350,7 @@ const UserProfile = () => {
                 <p className="text-xs text-[#a7a8c7] ml-1">* El correo no se puede cambiar.</p>
               </div>
 
+              {/* Names and Username */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-[#a7a8c7] ml-1">Nombre Completo</label>
@@ -238,10 +362,30 @@ const UserProfile = () => {
                       onChange={(e) => setFormData({...formData, full_name: e.target.value})}
                       className="w-full bg-[#050510] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all"
                       placeholder="Tu nombre"
+                      required
                     />
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-[#a7a8c7] ml-1">Nombre de Usuario (Username) *</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-[#ff2df0]" size={20} />
+                    <input
+                      type="text"
+                      value={formData.username}
+                      onChange={(e) => setFormData({...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '')})}
+                      className="w-full bg-[#050510] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all font-mono"
+                      placeholder="ej. juanito_tattoo"
+                      required
+                    />
+                  </div>
+                  <p className="text-[10px] text-[#a7a8c7] ml-1">Este nombre identificará tu perfil y será visto por los demás usuarios en el chat.</p>
+                </div>
+              </div>
+
+              {/* Phone & Gender */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-[#a7a8c7] ml-1">Teléfono</label>
                   <div className="relative">
@@ -255,19 +399,128 @@ const UserProfile = () => {
                     />
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center pr-1">
+                    <label className="text-sm font-medium text-[#a7a8c7] ml-1">Sexo</label>
+                    <label className="flex items-center gap-1 text-[11px] text-[#a7a8c7] cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={formData.is_gender_public} 
+                        onChange={(e) => setFormData({...formData, is_gender_public: e.target.checked})}
+                        className="accent-[#ff2df0] w-3 h-3 rounded"
+                      />
+                      Hacer público
+                    </label>
+                  </div>
+                  <select
+                    value={formData.gender}
+                    onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                    className="w-full bg-[#050510] border border-white/10 rounded-xl py-3 px-4 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all"
+                  >
+                    <option value="">Selecciona género</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                    <option value="Otro">Otro</option>
+                    <option value="Prefiero no decirlo">Prefiero no decirlo</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-[#a7a8c7] ml-1">Dirección de Envío</label>
-                <div className="relative">
-                  <MapPin className="absolute left-4 top-3 text-[#a7a8c7]" size={20} />
-                  <textarea
-                    value={formData.address}
-                    onChange={(e) => setFormData({...formData, address: e.target.value})}
-                    rows={3}
-                    className="w-full bg-[#050510] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all resize-none"
-                    placeholder="Calle 123 # 45-67, Bogotá..."
-                  />
+              {/* City & Country Location */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center pr-1">
+                    <label className="text-sm font-medium text-[#a7a8c7] ml-1">Ciudad</label>
+                    <label className="flex items-center gap-1 text-[11px] text-[#a7a8c7] cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={formData.is_city_public} 
+                        onChange={(e) => setFormData({...formData, is_city_public: e.target.checked})}
+                        className="accent-[#ff2df0] w-3 h-3 rounded"
+                      />
+                      Hacer público
+                    </label>
+                  </div>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-[#a7a8c7]" size={20} />
+                    <input
+                      type="text"
+                      value={formData.city}
+                      onChange={(e) => setFormData({...formData, city: e.target.value})}
+                      className="w-full bg-[#050510] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all"
+                      placeholder="Bogotá, Medellín, etc."
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center pr-1">
+                    <label className="text-sm font-medium text-[#a7a8c7] ml-1">País</label>
+                    <label className="flex items-center gap-1 text-[11px] text-[#a7a8c7] cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={formData.is_country_public} 
+                        onChange={(e) => setFormData({...formData, is_country_public: e.target.checked})}
+                        className="accent-[#ff2df0] w-3 h-3 rounded"
+                      />
+                      Hacer público
+                    </label>
+                  </div>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-[#a7a8c7]" size={20} />
+                    <input
+                      type="text"
+                      value={formData.country}
+                      onChange={(e) => setFormData({...formData, country: e.target.value})}
+                      className="w-full bg-[#050510] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all"
+                      placeholder="Colombia, México, etc."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Interests & Shipping Address */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center pr-1">
+                    <label className="text-sm font-medium text-[#a7a8c7] ml-1">Interés Principal</label>
+                    <label className="flex items-center gap-1 text-[11px] text-[#a7a8c7] cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={formData.is_interests_public} 
+                        onChange={(e) => setFormData({...formData, is_interests_public: e.target.checked})}
+                        className="accent-[#ff2df0] w-3 h-3 rounded"
+                      />
+                      Hacer público
+                    </label>
+                  </div>
+                  <select
+                    value={formData.interests}
+                    onChange={(e) => setFormData({...formData, interests: e.target.value})}
+                    className="w-full bg-[#050510] border border-white/10 rounded-xl py-3 px-4 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all"
+                  >
+                    <option value="">Selecciona interés</option>
+                    <option value="Tatuajes">Tatuajes</option>
+                    <option value="Piercings">Piercings</option>
+                    <option value="Smoke Shop">Smoke Shop</option>
+                    <option value="Colecciones de Arte">Colecciones de Arte</option>
+                    <option value="Todos">Todos los anteriores</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-[#a7a8c7] ml-1">Dirección de Despacho (Solo Privado)</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-3 text-[#a7a8c7]" size={20} />
+                    <textarea
+                      value={formData.address}
+                      onChange={(e) => setFormData({...formData, address: e.target.value})}
+                      rows={3}
+                      className="w-full bg-[#050510] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-[#ff2df0] focus:ring-1 focus:ring-[#ff2df0] outline-none transition-all resize-none text-xs"
+                      placeholder="Dirección para tus envíos físicos..."
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -280,6 +533,104 @@ const UserProfile = () => {
                 </Button>
               </div>
             </form>
+          </div>
+        </TabsContent>
+
+        {/* --- NOTIFICATIONS TAB --- */}
+        <TabsContent value="notifications">
+          <div className="bg-[#111322] border border-white/10 rounded-2xl p-8 space-y-6">
+            <div className="flex justify-between items-center border-b border-white/5 pb-4">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Bell className="text-[#ff2df0]" /> Historial de Reacciones
+              </h2>
+              <button 
+                onClick={fetchNotifications}
+                className="text-xs text-pink-400 hover:text-white transition-colors"
+              >
+                Actualizar lista
+              </button>
+            </div>
+
+            {loadingNotifications ? (
+              <div className="py-12 text-center text-[#a7a8c7] flex flex-col items-center justify-center gap-2">
+                <Loader2 className="animate-spin text-[#ff2df0]" size={28} />
+                <p className="text-sm">Cargando notificaciones...</p>
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="py-12 text-center text-[#a7a8c7]">
+                <Bell className="mx-auto h-12 w-12 opacity-25 mb-3" />
+                <p>No tienes notificaciones en este momento.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {notifications.map((n) => {
+                  const sender = n.from_user_id;
+                  const isRead = n.read;
+                  
+                  return (
+                    <div 
+                      key={n.id} 
+                      onClick={() => !isRead && handleMarkAsRead(n.id)}
+                      className={`flex flex-col sm:flex-row items-center justify-between p-4 rounded-xl border transition-all ${
+                        isRead 
+                          ? 'bg-white/[0.02] border-white/5' 
+                          : 'bg-pink-500/5 border-pink-500/20 shadow-md shadow-pink-500/5'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3.5 w-full sm:w-auto">
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-[#050510] border border-white/10 flex-shrink-0">
+                          {sender?.avatar_url ? (
+                            <img src={sender.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-[#1e293b] flex items-center justify-center text-xs font-bold text-white">
+                              {sender?.full_name?.charAt(0).toUpperCase() || 'U'}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm text-white">
+                            <span className="font-bold text-pink-400">
+                              {sender?.username ? `@${sender.username}` : (sender?.full_name || 'Alguien')}
+                            </span>{' '}
+                            {n.message}
+                          </p>
+                          <span className="text-[10px] text-[#a7a8c7] block mt-0.5">
+                            {new Date(n.created_at).toLocaleDateString()} a las {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 mt-4 sm:mt-0 w-full sm:w-auto justify-end">
+                        <button
+                          onClick={() => setSelectedProfileId(sender?.id)}
+                          disabled={!sender?.id}
+                          className="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-pink-500/30 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1"
+                        >
+                          Ver Perfil
+                        </button>
+                        <button
+                          onClick={() => sender?.id && navigate(`/user/chat?dm=${sender.id}`)}
+                          disabled={!sender?.id}
+                          className="px-3 py-1.5 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1"
+                        >
+                          <MessageSquare size={12} /> Chatear
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteNotification(n.id);
+                          }}
+                          className="p-2 text-slate-500 hover:text-red-400 transition-colors rounded-lg hover:bg-white/5"
+                          title="Eliminar notificación"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </TabsContent>
 
@@ -434,6 +785,13 @@ const UserProfile = () => {
           </div>
         )}
       </div>
+
+      {/* Reusable Public Profile View Dialog */}
+      <UserProfileViewModal 
+        userId={selectedProfileId}
+        isOpen={selectedProfileId !== null}
+        onClose={() => setSelectedProfileId(null)}
+      />
     </div>
   );
 };

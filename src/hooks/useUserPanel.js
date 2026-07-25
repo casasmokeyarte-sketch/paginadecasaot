@@ -3,7 +3,7 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/components/ui/use-toast';
 
-const USER_PANEL_PROFILE_SELECT = 'id, full_name, avatar_url, phone, address, role, updated_at';
+const USER_PANEL_PROFILE_SELECT = 'id, full_name, username, avatar_url, phone, address, role, city, country, gender, interests, is_city_public, is_country_public, is_gender_public, is_interests_public, is_profile_public, updated_at';
 
 export const useUserPanel = () => {
   const { user, refreshProfile } = useAuth();

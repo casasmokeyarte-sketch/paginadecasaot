@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import UserProfileViewModal from '@/components/UserProfileViewModal';
 
 const FloatingChat = () => {
   const {
@@ -40,7 +41,7 @@ const FloatingChat = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState('list');
   const [messageInput, setMessageInput] = useState('');
-  const [profileTarget, setProfileTarget] = useState(null);
+  const [selectedProfileId, setSelectedProfileId] = useState(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const messagesEndRef = useRef(null);
@@ -73,8 +74,7 @@ const FloatingChat = () => {
 
   const handleOpenProfile = () => {
     if (!activeRoom || activeRoom.is_group || !activeRoom.otherParticipant) return;
-    setProfileTarget(activeRoom.otherParticipant);
-    setView('profile');
+    setSelectedProfileId(activeRoom.otherParticipant.id);
   };
 
   const handleStartDM = async (targetId) => {
@@ -90,19 +90,19 @@ const FloatingChat = () => {
   };
 
   const handleBlock = async () => {
-    if (!profileTarget) return;
-    await blockUser(profileTarget.id);
+    if (!selectedProfileId) return;
+    await blockUser(selectedProfileId);
+    setSelectedProfileId(null);
     setView('list');
     setActiveRoom(null);
   };
 
   const handleReport = async () => {
-    if (!profileTarget || !reportReason.trim()) return;
-    await reportUser(profileTarget.id, reportReason);
-    setReportOpen(false);
+    if (!selectedProfileId || !reportReason.trim()) return;
+    await reportUser(selectedProfileId, reportReason);
     setReportReason('');
-    setView('list');
-    setActiveRoom(null);
+    setReportOpen(false);
+    setSelectedProfileId(null);
   };
 
   return (
@@ -111,57 +111,55 @@ const FloatingChat = () => {
         <AnimatePresence>
           {isOpen && (
             <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.96 }}
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.96 }}
-              className="h-[520px] w-[360px] overflow-hidden rounded-[28px] border border-pink-500/30 bg-[#0c0814]/95 backdrop-blur-xl shadow-[0_24px_80px_rgba(0,0,0,0.7)] pointer-events-auto"
+              exit={{ opacity: 0, y: 50, scale: 0.9 }}
+              className="flex h-[480px] w-[350px] flex-col rounded-3xl border border-pink-500/20 bg-[#0c0814]/95 shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md overflow-hidden pointer-events-auto shadow-pink-500/5"
             >
               {view === 'list' && (
                 <div className="flex h-full flex-col">
-                  <div className="flex items-center justify-between border-b border-pink-500/20 bg-[#05030a] px-4 py-4">
-                    <div>
-                      <h3 className="flex items-center gap-2 font-black text-white uppercase tracking-wider text-sm">
-                        <MessageCircle className="text-pink-400" size={20} />
-                        Chat & Comunidad
-                      </h3>
-                      <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-pink-300">
-                        {onlineList.length > 0 ? `🟢 ${onlineList.length} en línea` : 'Comunidad Casa Smoke'}
-                      </p>
-                    </div>
-                    <button onClick={() => setIsOpen(false)} className="rounded-xl p-2 text-slate-400 transition hover:bg-white/5 hover:text-white">
-                      <Minimize2 size={18} />
+                  {/* Header */}
+                  <div className="flex items-center justify-between border-b border-pink-500/10 bg-[#050510] px-4 py-4">
+                    <span className="text-sm font-black tracking-widest text-white uppercase flex items-center gap-2">
+                      <MessageCircle size={16} className="text-pink-500" /> Sala de Chat
+                    </span>
+                    <button onClick={handleToggle} className="rounded-xl p-1 text-[#a7a8c7] transition hover:bg-white/5 hover:text-white">
+                      <Minimize2 size={16} />
                     </button>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-3">
-                    <div className="mb-5 space-y-1">
-                      <p className="px-2 text-[10px] font-black uppercase tracking-[0.24em] text-pink-400">Conversaciones</p>
+                  {/* Body List */}
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div>
+                      <p className="px-2 text-[10px] font-black uppercase tracking-[0.24em] text-pink-400">Tus Chats</p>
                       {loadingRooms ? (
                         <div className="p-4 text-xs text-slate-400">Cargando conversaciones...</div>
                       ) : rooms.length === 0 ? (
-                        <div className="rounded-2xl border border-pink-500/10 bg-white/5 p-4 text-xs text-slate-400">
+                        <div className="rounded-2xl border border-pink-500/10 bg-white/5 p-4 text-xs text-slate-400 mt-2">
                           No tienes conversaciones activas aún.
                         </div>
                       ) : (
-                        rooms.map((room) => (
-                          <button
-                            key={room.id}
-                            onClick={() => setActiveRoom(room)}
-                            className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/5"
-                          >
-                            {room.displayImage ? (
-                              <img src={room.displayImage} alt={room.displayName} className="h-10 w-10 rounded-2xl object-cover" />
-                            ) : (
-                              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-600/30 to-purple-600/30 border border-pink-500/30 font-bold text-pink-400">
-                                {room.displayName?.charAt(0)?.toUpperCase?.() || 'C'}
+                        <div className="mt-2 space-y-1">
+                          {rooms.map((room) => (
+                            <button
+                              key={room.id}
+                              onClick={() => setActiveRoom(room)}
+                              className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/5"
+                            >
+                              {room.displayImage ? (
+                                <img src={room.displayImage} alt={room.displayName} className="h-10 w-10 rounded-2xl object-cover" />
+                              ) : (
+                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-600/30 to-purple-600/30 border border-pink-500/30 font-bold text-pink-400 text-sm">
+                                  {room.displayName?.charAt(0)?.toUpperCase?.() || 'C'}
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-xs font-semibold text-white">{room.displayName}</p>
+                                <p className="truncate text-[10px] text-slate-400">{room.is_group ? 'Grupo' : 'Mensaje privado'}</p>
                               </div>
-                            )}
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs font-semibold text-white">{room.displayName}</p>
-                              <p className="truncate text-[10px] text-slate-400">{room.is_group ? 'Grupo' : 'Mensaje privado'}</p>
-                            </div>
-                          </button>
-                        ))
+                            </button>
+                          ))}
+                        </div>
                       )}
                     </div>
 
@@ -169,7 +167,7 @@ const FloatingChat = () => {
                       <p className="px-2 text-[10px] font-black uppercase tracking-[0.24em] text-pink-400">Comunidad & Miembros</p>
                       <div className="mt-2 space-y-1">
                         {(() => {
-                          const combined = [...communityUsers];
+                          const combined = [...(communityUsers || [])];
                           onlineList.forEach(u => {
                             if (!combined.some(c => c.id === u.id)) combined.push(u);
                           });
@@ -181,14 +179,21 @@ const FloatingChat = () => {
                           return combined.map((entry) => {
                             const isOnline = !!onlineUsers[entry.id];
                             return (
-                              <button
+                              <div
                                 key={entry.id}
-                                onClick={() => handleStartDM(entry.id)}
                                 className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition hover:bg-white/5"
                               >
-                                <div className="relative">
+                                {/* Avatar Click triggers Public Profile View Modal */}
+                                <div 
+                                  className="relative cursor-pointer transform hover:scale-105 transition-transform"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedProfileId(entry.id);
+                                  }}
+                                  title="Ver Perfil"
+                                >
                                   {entry.avatar_url ? (
-                                    <img src={entry.avatar_url} alt={entry.full_name} className="h-9 w-9 rounded-2xl object-cover" />
+                                    <img src={entry.avatar_url} alt={entry.username || entry.full_name} className="h-9 w-9 rounded-2xl object-cover" />
                                   ) : (
                                     <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-500/20 to-purple-600/20 border border-pink-500/20 text-xs font-semibold text-white">
                                       {entry.full_name?.charAt(0)?.toUpperCase?.() || 'U'}
@@ -198,13 +203,20 @@ const FloatingChat = () => {
                                     <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0c0814] bg-green-500 animate-pulse" />
                                   )}
                                 </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="truncate text-xs font-semibold text-white">{entry.full_name}</p>
+                                
+                                {/* Info click triggers active DM chat */}
+                                <div 
+                                  className="min-w-0 flex-1 cursor-pointer"
+                                  onClick={() => handleStartDM(entry.id)}
+                                >
+                                  <p className="truncate text-xs font-semibold text-white">
+                                    {entry.username ? `@${entry.username}` : (entry.full_name || entry.email?.split('@')[0])}
+                                  </p>
                                   <p className="truncate text-[10px] text-pink-300">
                                     {isOnline ? '🟢 En línea' : 'Enviar mensaje'}
                                   </p>
                                 </div>
-                              </button>
+                              </div>
                             );
                           });
                         })()}
@@ -216,12 +228,13 @@ const FloatingChat = () => {
 
               {view === 'chat' && activeRoom && (
                 <div className="flex h-full flex-col">
+                  {/* Chat Header */}
                   <div className="flex items-center justify-between border-b border-white/10 bg-[#050510] px-3 py-3">
                     <div className="flex items-center gap-2">
                       <button onClick={handleBackToList} className="rounded-xl p-2 text-[#a7a8c7] transition hover:bg-white/5 hover:text-white">
                         <ChevronLeft size={18} />
                       </button>
-                      <button onClick={handleOpenProfile} className="flex items-center gap-2 text-left">
+                      <button onClick={handleOpenProfile} className="flex items-center gap-2 text-left" title="Ver Perfil">
                         {activeRoom.displayImage ? (
                           <img src={activeRoom.displayImage} alt={activeRoom.displayName} className="h-8 w-8 rounded-2xl object-cover" />
                         ) : (
@@ -255,6 +268,7 @@ const FloatingChat = () => {
                     </DropdownMenu>
                   </div>
 
+                  {/* Messages list */}
                   <div className="flex-1 overflow-y-auto bg-[#0c1322] p-4">
                     {loadingMessages ? (
                       <div className="py-4 text-center text-xs text-[#a7a8c7]">Cargando mensajes...</div>
@@ -282,6 +296,7 @@ const FloatingChat = () => {
                     )}
                   </div>
 
+                  {/* Input Form */}
                   <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-white/10 bg-[#050510] p-3">
                     <input
                       type="text"
@@ -298,58 +313,6 @@ const FloatingChat = () => {
                       <Send size={16} />
                     </button>
                   </form>
-                </div>
-              )}
-
-              {view === 'profile' && profileTarget && (
-                <div className="flex h-full flex-col bg-[#0c1322]">
-                  <div className="flex items-center gap-2 border-b border-white/10 bg-[#050510] px-3 py-3">
-                    <button onClick={() => setView('chat')} className="rounded-xl p-2 text-[#a7a8c7] transition hover:bg-white/5 hover:text-white">
-                      <ChevronLeft size={18} />
-                    </button>
-                    <span className="font-bold text-white">Usuario</span>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto p-6">
-                    <div className="flex flex-col items-center">
-                      <div className="mb-4 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.3)]">
-                        {profileTarget.avatar_url ? (
-                          <img src={profileTarget.avatar_url} alt={profileTarget.full_name} className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-[#1f2235] text-3xl font-bold text-white">
-                            {profileTarget.full_name?.charAt(0)?.toUpperCase?.() || 'U'}
-                          </div>
-                        )}
-                      </div>
-
-                      <h2 className="text-xl font-bold text-white">{profileTarget.full_name || 'Usuario sin nombre'}</h2>
-                      <p className="mt-1 text-sm text-[#a7a8c7]">{profileTarget.email || 'Correo no disponible'}</p>
-                    </div>
-
-                    <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <h4 className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#8f98bf]">Información visible</h4>
-                      <p className="mt-3 text-sm text-white">{profileTarget.full_name || 'Usuario sin nombre'}</p>
-                      <p className="mt-2 text-sm text-[#a7a8c7]">{profileTarget.email || 'Sin correo visible'}</p>
-                    </div>
-
-                    <div className="mt-8 grid grid-cols-2 gap-3">
-                      <Button
-                        onClick={handleBlock}
-                        variant="destructive"
-                        className="flex items-center gap-2 border border-red-500/50 bg-red-500/10 text-red-500 hover:bg-red-500/20"
-                      >
-                        <Shield size={16} />
-                        Bloquear
-                      </Button>
-                      <Button
-                        onClick={() => setReportOpen(true)}
-                        className="flex items-center gap-2 border border-yellow-500/50 bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
-                      >
-                        <Flag size={16} />
-                        Reportar
-                      </Button>
-                    </div>
-                  </div>
                 </div>
               )}
             </motion.div>
@@ -373,6 +336,13 @@ const FloatingChat = () => {
           )}
         </motion.button>
       </div>
+
+      {/* User Profile View Dialog */}
+      <UserProfileViewModal 
+        userId={selectedProfileId}
+        isOpen={selectedProfileId !== null}
+        onClose={() => setSelectedProfileId(null)}
+      />
 
       <Dialog open={reportOpen} onOpenChange={setReportOpen}>
         <DialogContent className="border-pink-500/30 bg-[#0c0814] text-white">
