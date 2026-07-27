@@ -507,6 +507,23 @@ const UserChat = () => {
               </div>
            </div>
         </div>
+
+        {/* Sidebar Footer Decoration */}
+        <div className="p-3 border-t border-white/10 bg-[#07080e]/95 flex items-center gap-3">
+          <div className="relative group shrink-0">
+            <div className="absolute inset-0 bg-[#ff2df0]/20 rounded-xl blur-md opacity-50 group-hover:opacity-100 transition-opacity"></div>
+            <img 
+              src="/at-0.png" 
+              alt="Chat-OT Icon" 
+              className="relative w-12 h-12 rounded-xl object-cover border border-[#ff2df0]/40 group-hover:border-[#ff2df0] transition-colors"
+            />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ff2df0]">Casa Smoke & Arte</p>
+            <p className="text-[11px] font-bold text-white uppercase tracking-wider truncate">CHAT-OT ACTIVO</p>
+            <span className="text-[9px] text-slate-500 block truncate">Estudio de Tatuajes & Smoke Shop</span>
+          </div>
+        </div>
       </div>
 
       {/* CHAT AREA */}

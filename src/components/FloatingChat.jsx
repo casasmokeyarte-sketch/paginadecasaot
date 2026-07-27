@@ -23,6 +23,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import UserProfileViewModal from '@/components/UserProfileViewModal';
+import { useChatPresence } from '@/components/ChatPresenceTracker';
 
 const POPULAR_EMOJIS = [
   "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", 
@@ -41,6 +42,7 @@ const POPULAR_EMOJIS = [
 ];
 
 const FloatingChat = () => {
+  const { presenceStatus } = useChatPresence();
   const {
     rooms,
     activeRoom,
@@ -643,10 +645,14 @@ const FloatingChat = () => {
           )}
         >
           {isOpen ? <X size={24} /> : <MessageCircle size={28} />}
-          {!isOpen && unreadRooms.length > 0 && (
+          {!isOpen && unreadRooms.length > 0 ? (
             <span className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full border-2 border-[#0c0814] bg-pink-500 flex items-center justify-center text-[10px] font-bold text-white shadow-lg shadow-pink-500/30">
               {unreadRooms.length}
             </span>
+          ) : (
+            !isOpen && presenceStatus === 'SUBSCRIBED' && (
+              <span className="absolute top-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#0c0814] bg-green-500 shadow-md shadow-green-500/50 animate-pulse" />
+            )
           )}
         </motion.button>
       </div>

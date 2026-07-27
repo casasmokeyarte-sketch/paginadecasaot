@@ -293,13 +293,297 @@ const UserProfile = () => {
     }
   };
 
-  const handleDownloadInvoice = (orderId) => {
-    playClickSound();
-    toast({
-      title: "Descargando Factura",
-      description: `Generando factura para el pedido #${orderId.slice(0, 8)}...`,
-      duration: 3000,
+  const generateInvoicePDF = (invoice) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast({
+        title: 'Bloqueador de ventanas emergentes activo',
+        description: 'Por favor permite las ventanas emergentes (popups) para descargar la factura.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const itemsHTML = (invoice.items || []).map(item => `
+      <tr class="item">
+        <td style="padding: 10px; border-bottom: 1px solid #eee;">
+          ${item.name || 'Producto'}
+          ${item.variant_name ? `<br><small style="color: #666; font-size: 10px;">${item.variant_name}</small>` : ''}
+        </td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity || 1}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">$${new Intl.NumberFormat('es-CO').format(item.price || item.unit_price || 0)}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">$${new Intl.NumberFormat('es-CO').format((item.price || item.unit_price || 0) * (item.quantity || 1))}</td>
+      </tr>
+    `).join('');
+
+    const formattedDate = new Date(invoice.created_at).toLocaleDateString('es-CO', {
+      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
+
+    const subtotalVal = invoice.subtotal || (invoice.total_amount / 1.19);
+    const taxVal = invoice.tax_amount || (invoice.total_amount - subtotalVal);
+
+    const formattedSubtotal = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(subtotalVal);
+    const formattedTax = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(taxVal);
+    const formattedTotal = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(invoice.total_amount);
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Factura ${invoice.invoice_number}</title>
+          <style>
+            body {
+              font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+              color: #333;
+              margin: 40px;
+              font-size: 14px;
+              line-height: 1.6;
+            }
+            .invoice-box {
+              max-width: 800px;
+              margin: auto;
+              padding: 30px;
+              border: 1px solid #eee;
+              box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+              border-radius: 10px;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border-bottom: 2px solid #ff2df0;
+              padding-bottom: 20px;
+              margin-bottom: 20px;
+            }
+            .logo {
+              font-size: 24px;
+              font-weight: bold;
+              color: #ff2df0;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            }
+            .invoice-details {
+              text-align: right;
+            }
+            .invoice-details h2 {
+              margin: 0;
+              color: #111;
+              font-size: 22px;
+            }
+            .info-grid {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 30px;
+              gap: 20px;
+            }
+            .info-col {
+              flex: 1;
+              background: #fbfbfb;
+              padding: 15px;
+              border-radius: 8px;
+              border: 1px solid #f0f0f0;
+            }
+            .info-col h3 {
+              margin-top: 0;
+              border-bottom: 1px solid #eee;
+              padding-bottom: 5px;
+              color: #ff2df0;
+              font-size: 13px;
+              text-transform: uppercase;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 30px;
+            }
+            th {
+              background-color: #f7f7f7;
+              border-bottom: 2px solid #eee;
+              padding: 10px;
+              font-weight: bold;
+              text-align: left;
+              text-transform: uppercase;
+              font-size: 11px;
+            }
+            .totals {
+              width: 45%;
+              margin-left: auto;
+              margin-bottom: 30px;
+            }
+            .totals table {
+              margin-bottom: 0;
+            }
+            .totals table td {
+              padding: 6px 10px;
+              border: none;
+            }
+            .totals table tr.grand-total td {
+              border-top: 2px solid #ff2df0;
+              font-weight: bold;
+              font-size: 15px;
+              color: #ff2df0;
+            }
+            .footer {
+              text-align: center;
+              border-top: 1px solid #eee;
+              padding-top: 20px;
+              color: #999;
+              font-size: 12px;
+            }
+            @media print {
+              body { margin: 0; }
+              .invoice-box {
+                border: none;
+                box-shadow: none;
+                padding: 0;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="invoice-box">
+            <div class="header">
+              <div class="logo">Casa Smoke & Arte</div>
+              <div class="invoice-details">
+                <h2>FACTURA</h2>
+                <div>Nº: <strong>${invoice.invoice_number}</strong></div>
+                <div>Fecha: ${formattedDate}</div>
+              </div>
+            </div>
+            
+            <div class="info-grid">
+              <div class="info-col">
+                <h3>Emisor</h3>
+                <strong>Casa Smoke y Arte OT SSOT S.A.S</strong><br>
+                NIT: 901.234.567-8<br>
+                Estudio de Tatuajes & Smoke Shop<br>
+                Colombia
+              </div>
+              <div class="info-col">
+                <h3>Cliente</h3>
+                <strong>${invoice.client_name}</strong><br>
+                Email: ${invoice.client_email || 'No registrado'}<br>
+                Teléfono: ${invoice.client_phone || 'No registrado'}<br>
+                Dirección: ${invoice.client_address || 'No registrado'}
+              </div>
+            </div>
+            
+            <table>
+              <thead>
+                <tr>
+                  <th>Descripción</th>
+                  <th style="text-align: center; width: 80px;">Cant.</th>
+                  <th style="text-align: right; width: 120px;">Precio Unit.</th>
+                  <th style="text-align: right; width: 120px;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHTML}
+              </tbody>
+            </table>
+            
+            <div class="totals">
+              <table>
+                <tr>
+                  <td style="padding: 6px 10px;">Subtotal:</td>
+                  <td style="text-align: right; padding: 6px 10px;">${formattedSubtotal}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 10px;">IVA (19%):</td>
+                  <td style="text-align: right; padding: 6px 10px;">${formattedTax}</td>
+                </tr>
+                <tr class="grand-total">
+                  <td style="padding: 6px 10px; border-top: 2px solid #ff2df0;">Total:</td>
+                  <td style="text-align: right; padding: 6px 10px; border-top: 2px solid #ff2df0;">${formattedTotal}</td>
+                </tr>
+              </table>
+            </div>
+            
+            <div class="footer">
+              ¡Gracias por tu compra!<br>
+              Casa Smoke y Arte OT SSOT S.A.S — El arte en tu piel, el estilo en tu vida.
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const handleDownloadInvoice = async (orderId) => {
+    playClickSound();
+    
+    toast({
+      title: "Generando Factura",
+      description: "Buscando información de tu compra...",
+    });
+
+    try {
+      // 1. Intentar obtener factura de la tabla `invoices`
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('order_id', orderId)
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        generateInvoicePDF(data[0]);
+      } else {
+        // 2. Si no se encuentra fila en `invoices` aún, la generamos
+        // de forma dinámica con los datos del pedido en `myOrders`
+        const order = myOrders.find(o => o.id === orderId);
+        if (!order) {
+          toast({
+            title: "Error",
+            description: "No se encontró el detalle del pedido en el historial.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const mappedItems = (order.items || []).map(item => ({
+          name: item.name || 'Compra en Casa Smoke & Arte',
+          variant_name: item.variant_name || null,
+          quantity: item.quantity || 1,
+          price: item.price || (order.total_amount / (item.quantity || 1))
+        }));
+
+        const tempInvoice = {
+          invoice_number: `FACT-TEMP-${orderId.slice(0, 8).toUpperCase()}`,
+          client_name: profile?.full_name || user?.email?.split('@')[0] || 'Cliente Casa Smoke',
+          client_email: user?.email || '',
+          client_phone: profile?.phone || '',
+          client_address: profile?.address || '',
+          items: mappedItems,
+          total_amount: order.total_amount,
+          created_at: order.created_at
+        };
+
+        generateInvoicePDF(tempInvoice);
+      }
+      
+      toast({
+        title: "Factura Generada",
+        description: "La factura ha sido generada correctamente.",
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: "No se pudo recuperar la factura de la base de datos.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDeleteAccount = async () => {

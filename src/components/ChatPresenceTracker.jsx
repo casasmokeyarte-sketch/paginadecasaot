@@ -67,10 +67,10 @@ export const ChatPresenceProvider = ({ children }) => {
       clearTimeout(activityTimeoutRef.current);
     }
     
-    // Set to idle after 3 minutes (180,000 ms) of inactivity
+    // Set to idle after 1 minute (60,000 ms) of inactivity
     activityTimeoutRef.current = setTimeout(() => {
       setUserStatus('idle');
-    }, 180000);
+    }, 60000);
   };
 
   // Monitor tab visibility and user activity

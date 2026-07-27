@@ -280,6 +280,69 @@ const Hero = () => {
           </div>
         </div>
 
+        {/* 2.5. CHAT-OT PROMO BANNER */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8 }}
+          className="w-full max-w-5xl mx-auto rounded-3xl p-8 md:p-10 mb-20 overflow-hidden bg-gradient-to-br from-[#0e0a1f] via-[#170c2a] to-[#090615] border border-pink-500/20 shadow-[0_8px_32px_rgba(236,72,153,0.1)] flex flex-col md:flex-row items-center gap-8 relative z-10"
+        >
+          {/* Neon background glows */}
+          <div className="absolute top-0 left-0 w-80 h-80 bg-pink-500/5 blur-[120px] rounded-full pointer-events-none"></div>
+          <div className="absolute bottom-0 right-0 w-80 h-80 bg-cyan-500/5 blur-[120px] rounded-full pointer-events-none"></div>
+
+          <div className="flex-1 flex flex-col items-start text-left">
+            <span className="flex items-center gap-1.5 bg-[#ff2df0]/10 border border-[#ff2df0]/20 text-[#ff2df0] font-black text-[9.5px] px-3.5 py-1.5 rounded-full tracking-widest uppercase mb-4 shadow-sm">
+              <Flame size={12} className="animate-pulse text-pink-500" /> ¡NUEVO SERVICIO! CHAT-OT
+            </span>
+            
+            <h2 className="text-white text-3xl md:text-4xl font-black uppercase tracking-tight mb-4">
+              CONÉCTATE AL <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-[#00e5ff] font-black">CHAT-OT</span> DE LA OFICINA
+            </h2>
+            
+            <p className="text-slate-300 text-sm md:text-base leading-relaxed mb-6 font-medium">
+              Te presentamos el nuevo canal de comunicación interna. Diseñado para integrar a todo el equipo en tiempo real: coordina tus citas de tatuajes, revisa el inventario de la Smoke Shop, consulta dudas del estudio y chatea de forma privada o grupal. ¡Todo el equipo a un clic!
+            </p>
+
+            <button
+              onClick={() => {
+                if (user) {
+                  navigate('/user/chat');
+                } else {
+                  navigate('/login?redirect=/user/chat');
+                }
+              }}
+              className="flex items-center justify-center gap-2.5 text-xs font-black text-slate-950 bg-gradient-to-r from-[#ff2df0] via-pink-400 to-[#00e5ff] hover:brightness-110 rounded-full px-8 py-4 shadow-md shadow-pink-900/20 transition-all uppercase tracking-widest hover:scale-[1.03] duration-300"
+            >
+              INGRESAR AL CHAT-OT <ArrowRight size={16} />
+            </button>
+          </div>
+
+          <div className="w-full md:w-2/5 shrink-0 flex justify-center relative">
+            {/* Hologram/Glassmorphic frame */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-pink-500/20 to-cyan-500/20 rounded-2xl blur-md scale-105 animate-pulse"></div>
+            <motion.div
+              whileHover={{ scale: 1.05, rotate: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="relative border border-white/10 rounded-2xl overflow-hidden shadow-2xl bg-[#090d16]"
+            >
+              <img
+                src="/image-34.jpg"
+                alt="Chat-OT Promo"
+                className="w-full max-w-[320px] md:max-w-none h-64 object-cover hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0e0a1f] via-transparent to-transparent opacity-80"></div>
+              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+                <span className="text-[10px] text-white/70 font-black uppercase tracking-wider">Casa Smoke & Arte</span>
+                <span className="text-[10px] text-[#00e5ff] font-black uppercase tracking-wider flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping" /> Activo
+                </span>
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+
         {/* 3. HOME GALLERY SECTION */}
         <div id="servicios" className="border-t border-pink-500/15 w-full pt-16 select-none relative z-10">
           <div className="text-center mb-10">

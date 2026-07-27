@@ -3,7 +3,30 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, HashRouter } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import App from '@/App';
+import { supabase } from '@/lib/customSupabaseClient';
 import '@/index.css';
+
+// Manejador global para capturar y silenciar reyecciones de promesas no manejadas,
+// específicamente el error conocido del SDK de Supabase Realtime al reconectar o enviar
+// latidos de corazón (heartbeat) con un token JWT expirado.
+window.addEventListener('unhandledrejection', (event) => {
+  const reason = event.reason;
+  const message = typeof reason === 'string'
+    ? reason
+    : (reason?.message || reason?.toString() || '');
+
+  if (message.includes('InvalidJWTToken') || message.includes('JWT claim "exp"')) {
+    event.preventDefault(); // Evita el log de "Uncaught (in promise)" en la consola de producción/desarrollo
+    console.warn('Realtime: Capturado y silenciado error de token expirado en segundo plano. Solicitando actualización de sesión...');
+    
+    // Solicita la actualización de la sesión de manera asíncrona si hay un usuario activo
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        supabase.auth.refreshSession().catch(() => {});
+      }
+    }).catch(() => {});
+  }
+});
 
 const Router = Capacitor.isNativePlatform() ? HashRouter : BrowserRouter;
 
