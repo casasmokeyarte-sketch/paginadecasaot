@@ -6,6 +6,7 @@ import {
   BookOpen,
   Boxes,
   CalendarDays,
+  Crown,
   FileText,
   Image as ImageIcon,
   LayoutDashboard,
@@ -38,6 +39,7 @@ const navGroups = [
       { icon: Package, label: 'Ordenes', path: '/admin/orders' },
       { icon: FileText, label: 'Facturación', path: '/admin/billing' },
       { icon: CalendarDays, label: 'Citas', path: '/admin/bookings' },
+      { icon: Crown, label: 'Sala VIP', path: '/admin/vip' },
     ],
   },
   {

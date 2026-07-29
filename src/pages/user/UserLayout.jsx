@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { motion } from 'framer-motion';
-import { User, Calendar, ShoppingBag, LogOut, LayoutDashboard, Heart, MessageSquare as MessageSquareWarning, PhoneCall, MessageCircle } from 'lucide-react';
+import { User, Calendar, ShoppingBag, LogOut, LayoutDashboard, Heart, MessageSquare as MessageSquareWarning, PhoneCall, MessageCircle, Crown } from 'lucide-react';
 
 const UserLayout = () => {
   const { user, signOut } = useAuth();
@@ -24,6 +24,7 @@ const UserLayout = () => {
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Resumen y Soporte', path: '/user' },
+    { icon: Crown, label: 'Mi Sala VIP', path: '/user/vip' },
     { icon: User, label: 'Mi Perfil', path: '/user/profile' },
     { icon: MessageCircle, label: 'Chat y Comunidad', path: '/user/chat' },
     { icon: Calendar, label: 'Mis Citas', path: '/user/bookings' },

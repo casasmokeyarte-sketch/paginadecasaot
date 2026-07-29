@@ -73,6 +73,7 @@ const Header = () => {
     { label: 'Tienda', path: '/store' },
     { label: 'Fotos', path: '/photos' },
     { label: 'Servicios', path: '/services' },
+    { label: 'VIP', path: '/vip' },
     { label: 'Calculadora', path: '/delivery-calculator' },
     { label: 'PQR', path: '/pqr' },
     { label: 'Contacto', path: '/contact' }

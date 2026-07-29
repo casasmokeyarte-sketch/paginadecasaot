@@ -41,6 +41,7 @@ import AdminPodcast from '@/pages/admin/AdminPodcast';
 import AdminPQR from '@/pages/admin/AdminPQR';
 import AdminOrders from '@/pages/admin/AdminOrders';
 import AdminBilling from '@/pages/admin/AdminBilling';
+import AdminVip from '@/pages/admin/AdminVip';
 
 // User Imports
 import Login from '@/pages/auth/Login';
@@ -55,6 +56,7 @@ import UserOrders from '@/pages/user/UserOrders';
 import UserWishlist from '@/pages/user/UserWishlist';
 import UserPQR from '@/pages/user/UserPQR';
 import UserChat from '@/pages/user/UserChat';
+import UserVip from '@/pages/user/UserVip';
 import PublicPQR from '@/pages/PublicPQR';
 import DidYouKnow from '@/pages/DidYouKnow';
 import Podcast from '@/pages/Podcast';
@@ -62,6 +64,8 @@ import AdminLiveActivity from '@/pages/admin/AdminLiveActivity';
 import BoldCheckout from '@/pages/BoldCheckout';
 import BoldSuccess from '@/pages/BoldSuccess';
 import StoreProductDetail from '@/pages/StoreProductDetail';
+import Vip from '@/pages/Vip';
+import VipAccess from '@/pages/VipAccess';
 import { trackPageView } from '@/lib/analytics';
 
 
@@ -125,6 +129,7 @@ function App() {
                   <Route path="products" element={<AdminProducts />} />
                   <Route path="orders" element={<AdminOrders />} />
                   <Route path="billing" element={<AdminBilling />} />
+                  <Route path="vip" element={<AdminVip />} />
                   <Route path="bookings" element={<AdminBookings />} />
                   <Route path="gallery" element={<AdminGallery />} />
                   <Route path="education" element={<AdminEducation />} />
@@ -161,6 +166,8 @@ function App() {
                 <Route path="/pqr" element={<div className="pt-16"><PublicPQR /></div>} />
                 <Route path="/did-you-know" element={<div className="pt-16"><DidYouKnow /></div>} />
                 <Route path="/podcast" element={<div className="pt-16"><Podcast /></div>} />
+                <Route path="/vip" element={<Vip />} />
+                <Route path="/vip/access/:token" element={<VipAccess />} />
                 <Route path="/policies" element={<div className="pt-16"><Policies /></div>} />
 
                 {/* Auth Routes */}
@@ -178,6 +185,7 @@ function App() {
                   <Route path="wishlist" element={<UserWishlist />} />
                   <Route path="pqr" element={<UserPQR />} />
                   <Route path="chat" element={<UserChat />} />
+                  <Route path="vip" element={<UserVip />} />
                 </Route>
               </Routes>
             </main>
