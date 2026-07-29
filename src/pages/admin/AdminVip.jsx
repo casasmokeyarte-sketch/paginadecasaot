@@ -34,6 +34,14 @@ const formatDate = (value, withTime = false) => {
   }).format(new Date(value));
 };
 
+const formatBirthDate = (value) => {
+  if (!value) return 'Pendiente';
+  return new Intl.DateTimeFormat('es-CO', {
+    dateStyle: 'medium',
+    timeZone: 'America/Bogota',
+  }).format(new Date(`${value}T12:00:00-05:00`));
+};
+
 const AdminVip = () => {
   const { toast } = useToast();
   const [memberships, setMemberships] = useState([]);
@@ -278,9 +286,12 @@ const AdminVip = () => {
       toast({ variant: 'destructive', title: 'La solicitud no tiene ambos documentos' });
       return;
     }
-    const [frontResult, backResult] = await Promise.all([
+    const [frontResult, backResult, accountResult] = await Promise.all([
       supabase.storage.from('vip-documents').createSignedUrl(application.document_front_path, 90),
       supabase.storage.from('vip-documents').createSignedUrl(application.document_back_path, 90),
+      application.account_statement_path
+        ? supabase.storage.from('vip-documents').createSignedUrl(application.account_statement_path, 90)
+        : Promise.resolve({ data: null, error: null }),
     ]);
     if (frontResult.error || backResult.error) {
       toast({
@@ -294,6 +305,36 @@ const AdminVip = () => {
     window.setTimeout(() => {
       window.open(backResult.data.signedUrl, '_blank', 'noopener,noreferrer');
     }, 250);
+    if (accountResult.data?.signedUrl) {
+      window.setTimeout(() => {
+        window.open(accountResult.data.signedUrl, '_blank', 'noopener,noreferrer');
+      }, 500);
+    }
+  };
+
+  const updateCreditReview = async (membership, application) => {
+    const eligible = window.confirm(
+      '¿El cliente es elegible para crédito?\nAceptar = Sí · Cancelar = No'
+    );
+    const approved = eligible && window.confirm(
+      '¿El crédito queda aprobado por administración?\nAceptar = Sí · Cancelar = No'
+    );
+    const notes = window.prompt(
+      'Notas administrativas u observaciones:',
+      application.review_notes || ''
+    );
+    if (notes === null) return;
+
+    await runAction(
+      membership.id,
+      () => supabase.rpc('vip_admin_update_credit_review', {
+        p_application_id: application.id,
+        p_credit_eligible: eligible,
+        p_credit_approved: approved,
+        p_review_notes: notes,
+      }),
+      'Evaluación administrativa actualizada'
+    );
   };
 
   const approveApplication = async (membership, application) => {
@@ -400,9 +441,37 @@ const AdminVip = () => {
                       {membership.member_number} · {profile?.phone || 'Sin teléfono'} · vence {formatDate(membership.ends_at)}
                     </p>
                     {application && (
-                      <p className="mt-1 text-xs text-[#929abc]">
-                        Solicitud: {application.status} · Pago: {application.payment_status} · Documento terminado en {application.document_last4}
-                      </p>
+                      <div className="mt-2 space-y-1 text-xs text-[#929abc]">
+                        <p>
+                          Solicitud: {application.status} · Pago: {application.payment_status}
+                          {' '}· Documento: {application.document_type} {application.document_number || `••••${application.document_last4}`}
+                        </p>
+                        <p>
+                          {application.email || 'Sin correo'} · {application.address || 'Sin dirección'}
+                          {' '}· Nacimiento: {formatBirthDate(application.birth_date)}
+                        </p>
+                        <p>
+                          Crédito: {application.credit_approved
+                            ? 'aprobado'
+                            : application.credit_eligible
+                              ? 'elegible, pendiente de aprobación'
+                              : 'no evaluado'}
+                        </p>
+                        {application.customer_notes && <p>Cliente: {application.customer_notes}</p>}
+                        {application.review_notes && <p>Administración: {application.review_notes}</p>}
+                        {application.reference_1_name && (
+                          <p>
+                            Ref. 1: {application.reference_1_name} · {application.reference_1_phone}
+                            {' '}· {application.reference_1_relationship}
+                          </p>
+                        )}
+                        {application.reference_2_name && (
+                          <p>
+                            Ref. 2: {application.reference_2_name} · {application.reference_2_phone}
+                            {' '}· {application.reference_2_relationship}
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -446,7 +515,16 @@ const AdminVip = () => {
                         disabled={working}
                         className="rounded-xl border border-purple-400/20 bg-purple-400/10 px-3 py-2 text-xs font-bold text-purple-200"
                       >
-                        Ver documentos (90 s)
+                        Ver expediente (90 s)
+                      </button>
+                    )}
+                    {application && (
+                      <button
+                        onClick={() => updateCreditReview(membership, application)}
+                        disabled={working}
+                        className="rounded-xl border border-blue-400/20 bg-blue-400/10 px-3 py-2 text-xs font-bold text-blue-200"
+                      >
+                        Evaluar crédito
                       </button>
                     )}
                     {membership.status === 'active' && (
