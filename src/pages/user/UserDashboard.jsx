@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   Calendar, ShoppingBag, ArrowRight, UserCircle, Phone, MessageCircle,
   Heart, FileText, CheckCircle2, Clock,
-  Utensils, PenTool, Palette, Pill, Heart as HeartIcon, Zap
+  Utensils, PenTool, Palette, Pill, Heart as HeartIcon, Zap, Crown
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -15,6 +15,7 @@ const SERVICES = [
   { title: 'Zona Art',         subtitle: 'Galería y Creación',     icon: Palette,   gradient: 'from-[#feca57] to-[#ff9f43]', path: '/portfolio' },
   { title: 'Dulce Farma',      subtitle: 'Bienestar y Novedades',  image: '/dulce-farma.png', gradient: 'from-[#e040fb] to-[#7b1fa2]', path: '/shop' },
   { title: 'Smoke Sex OT',     subtitle: 'Intimidad y Placer',     icon: HeartIcon, gradient: 'from-[#fd79a8] to-[#e84393]', path: '/shop' },
+  { title: 'Casa VIP',         subtitle: 'Mi Membresía',           icon: Crown, image: '/zona-vip.png', gradient: 'from-[#d97706] to-[#7c2d12]', path: '/user/vip' },
 ];
 
 const UserDashboard = () => {

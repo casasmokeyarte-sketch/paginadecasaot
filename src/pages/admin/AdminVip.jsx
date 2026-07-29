@@ -39,6 +39,7 @@ const AdminVip = () => {
   const [memberships, setMemberships] = useState([]);
   const [profiles, setProfiles] = useState({});
   const [tokens, setTokens] = useState({});
+  const [applications, setApplications] = useState({});
   const [todayReservations, setTodayReservations] = useState([]);
   const [todayAccesses, setTodayAccesses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +52,7 @@ const AdminVip = () => {
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
 
-    const [membersResult, reservationsResult, accessResult] = await Promise.all([
+    const [membersResult, reservationsResult, accessResult, applicationsResult] = await Promise.all([
       supabase
         .from('vip_memberships')
         .select('*, vip_plans(*)')
@@ -68,6 +69,10 @@ const AdminVip = () => {
         .gte('checked_in_at', start.toISOString())
         .lt('checked_in_at', end.toISOString())
         .order('checked_in_at', { ascending: false }),
+      supabase
+        .from('vip_applications')
+        .select('*')
+        .order('created_at', { ascending: false }),
     ]);
 
     if (membersResult.error) {
@@ -84,6 +89,11 @@ const AdminVip = () => {
     setMemberships(memberRows);
     setTodayReservations(reservationsResult.data || []);
     setTodayAccesses(accessResult.data || []);
+    setApplications(
+      Object.fromEntries(
+        (applicationsResult.data || []).map((application) => [application.user_id, application])
+      )
+    );
 
     if (memberRows.length) {
       const userIds = [...new Set(memberRows.map((item) => item.user_id))];
@@ -263,6 +273,49 @@ const AdminVip = () => {
     );
   };
 
+  const viewDocuments = async (application) => {
+    if (!application?.document_front_path || !application?.document_back_path) {
+      toast({ variant: 'destructive', title: 'La solicitud no tiene ambos documentos' });
+      return;
+    }
+    const [frontResult, backResult] = await Promise.all([
+      supabase.storage.from('vip-documents').createSignedUrl(application.document_front_path, 90),
+      supabase.storage.from('vip-documents').createSignedUrl(application.document_back_path, 90),
+    ]);
+    if (frontResult.error || backResult.error) {
+      toast({
+        variant: 'destructive',
+        title: 'No se pudieron abrir los documentos',
+        description: frontResult.error?.message || backResult.error?.message,
+      });
+      return;
+    }
+    window.open(frontResult.data.signedUrl, '_blank', 'noopener,noreferrer');
+    window.setTimeout(() => {
+      window.open(backResult.data.signedUrl, '_blank', 'noopener,noreferrer');
+    }, 250);
+  };
+
+  const approveApplication = async (membership, application) => {
+    if (!membership.adult_verified) {
+      toast({
+        variant: 'destructive',
+        title: 'Verificación pendiente',
+        description: 'Primero revisa el documento físico y confirma identidad y mayoría de edad.',
+      });
+      return;
+    }
+    if (!window.confirm('¿Confirmas la aprobación y activación por 30 días?')) return;
+    await runAction(
+      membership.id,
+      () => supabase.rpc('vip_admin_approve_application', {
+        p_application_id: application.id,
+        p_days: 30,
+      }),
+      'Solicitud aprobada y membresía activada'
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-[420px] items-center justify-center text-[#aeb6da]">
@@ -323,6 +376,7 @@ const AdminVip = () => {
             </p>
           ) : memberships.map((membership) => {
             const profile = profiles[membership.user_id];
+            const application = applications[membership.user_id];
             const [statusLabel, statusClass] = statuses[membership.status] || [membership.status, ''];
             const working = workingId === membership.id;
 
@@ -345,6 +399,11 @@ const AdminVip = () => {
                     <p className="mt-2 text-sm text-[#929abc]">
                       {membership.member_number} · {profile?.phone || 'Sin teléfono'} · vence {formatDate(membership.ends_at)}
                     </p>
+                    {application && (
+                      <p className="mt-1 text-xs text-[#929abc]">
+                        Solicitud: {application.status} · Pago: {application.payment_status} · Documento terminado en {application.document_last4}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -355,20 +414,39 @@ const AdminVip = () => {
                     >
                       {membership.adult_verified ? 'Retirar verificación' : 'Verificar +18'}
                     </button>
-                    <button
-                      onClick={() => recordPayment(membership)}
-                      disabled={working}
-                      className="flex items-center gap-1 rounded-xl border border-green-400/20 bg-green-400/10 px-3 py-2 text-xs font-bold text-green-200"
-                    >
-                      <CreditCard size={14} /> Registrar pago
-                    </button>
-                    {membership.status !== 'active' && (
+                    {application?.payment_status !== 'approved' && (
+                      <button
+                        onClick={() => recordPayment(membership)}
+                        disabled={working}
+                        className="flex items-center gap-1 rounded-xl border border-green-400/20 bg-green-400/10 px-3 py-2 text-xs font-bold text-green-200"
+                      >
+                        <CreditCard size={14} /> Registrar pago
+                      </button>
+                    )}
+                    {application?.status === 'under_review' && application?.payment_status === 'approved' ? (
+                      <button
+                        onClick={() => approveApplication(membership, application)}
+                        disabled={working}
+                        className="rounded-xl bg-green-500 px-3 py-2 text-xs font-black text-white"
+                      >
+                        Aprobar solicitud pagada
+                      </button>
+                    ) : membership.status !== 'active' && (
                       <button
                         onClick={() => updateStatus(membership, 'active')}
                         disabled={working}
                         className="rounded-xl bg-green-500 px-3 py-2 text-xs font-black text-white"
                       >
                         Activar 30 días
+                      </button>
+                    )}
+                    {application?.document_front_path && application?.document_back_path && (
+                      <button
+                        onClick={() => viewDocuments(application)}
+                        disabled={working}
+                        className="rounded-xl border border-purple-400/20 bg-purple-400/10 px-3 py-2 text-xs font-bold text-purple-200"
+                      >
+                        Ver documentos (90 s)
                       </button>
                     )}
                     {membership.status === 'active' && (

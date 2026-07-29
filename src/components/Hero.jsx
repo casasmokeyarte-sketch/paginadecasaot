@@ -74,8 +74,8 @@ const CASA_SMOKE_PILLARS = [
       'Bebidas de cortesía y atención preferencial',
       'Asesoría técnica para seleccionar tu vape o tu diseño'
     ],
-    ctaText: 'Calcular Envíos a Domicilio',
-    ctaLink: '/delivery-calculator'
+    ctaText: 'Conocer la Sala VIP',
+    ctaLink: '/vip'
   }
 ];
 

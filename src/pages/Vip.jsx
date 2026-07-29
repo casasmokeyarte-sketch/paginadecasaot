@@ -13,6 +13,7 @@ import {
   Star,
   Users,
 } from 'lucide-react';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const benefits = [
   {
@@ -57,6 +58,9 @@ const rules = [
 ];
 
 const Vip = () => {
+  const { user } = useAuth();
+  const applicationPath = user ? '/user/vip/apply' : '/register?next=/user/vip/apply';
+
   return (
     <>
       <Helmet>
@@ -104,11 +108,11 @@ const Vip = () => {
 
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
                 <Link
-                  to="/register?next=/vip"
+                  to={applicationPath}
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 px-7 py-3.5 font-black text-[#09030d] shadow-lg shadow-pink-950/50 transition-transform hover:scale-[1.02]"
                 >
                   <Crown size={20} />
-                  Quiero afiliarme
+                  Solicitar y pagar
                 </Link>
                 <a
                   href="#membresia"
@@ -171,10 +175,10 @@ const Vip = () => {
                 cancelación para el siguiente periodo.
               </p>
               <Link
-                to="/register?next=/vip"
+                to={applicationPath}
                 className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-300 px-6 py-3.5 font-black text-[#100916] hover:bg-yellow-200"
               >
-                Solicitar mi cupo
+                Completar solicitud y pagar
               </Link>
               <p className="mt-3 text-center text-xs text-slate-500">
                 La afiliación queda sujeta a validación de identidad y disponibilidad.

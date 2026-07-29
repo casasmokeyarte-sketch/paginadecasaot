@@ -24,8 +24,7 @@ export const galleryImages = [
     icon: "⭐",
     alt: "Zona VIP",
     category: "brand",
-    link: "/store",
-    proximamente: true
+    link: "/vip"
   },
   {
     id: "tattoo-studio",

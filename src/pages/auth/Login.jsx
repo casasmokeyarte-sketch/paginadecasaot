@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { motion } from 'framer-motion';
 import { Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
@@ -13,6 +13,7 @@ const Login = () => {
   const [loginError, setLoginError] = useState(null);
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -43,7 +44,13 @@ const Login = () => {
     }
 
     const normalizedRole = profile?.role?.trim?.().toLowerCase?.() ?? '';
-    navigate(normalizedRole === 'admin' || normalizedRole === 'administrador' ? '/admin' : '/user', { replace: true });
+    const isAdmin = normalizedRole === 'admin' || normalizedRole === 'administrador';
+    const requestedRedirect = searchParams.get('redirect') || sessionStorage.getItem('post_login_redirect');
+    const safeRedirect = requestedRedirect?.startsWith('/') && !requestedRedirect.startsWith('//')
+      ? requestedRedirect
+      : '/user';
+    sessionStorage.removeItem('post_login_redirect');
+    navigate(isAdmin ? '/admin' : safeRedirect, { replace: true });
   };
 
   return (
@@ -118,7 +125,12 @@ const Login = () => {
           <div className="text-center mt-6">
             <p className="text-[#a7a8c7]">
               No tienes cuenta?{' '}
-              <Link to="/register" className="text-[#00e5ff] font-bold hover:underline">
+              <Link
+                to={searchParams.get('redirect')
+                  ? `/register?next=${encodeURIComponent(searchParams.get('redirect'))}`
+                  : '/register'}
+                className="text-[#00e5ff] font-bold hover:underline"
+              >
                 Registrate aqui
               </Link>
             </p>

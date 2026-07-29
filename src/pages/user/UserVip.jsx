@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   CalendarDays,
   CheckCircle2,
@@ -14,17 +15,6 @@ import {
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/components/ui/use-toast';
-
-const paymentMethods = [
-  ['cash', 'Efectivo'],
-  ['nequi', 'Nequi'],
-  ['daviplata', 'Daviplata'],
-  ['wompi', 'Wompi'],
-  ['mercadopago', 'Mercado Pago'],
-  ['card', 'Tarjeta'],
-  ['pse', 'PSE'],
-  ['bank_transfer', 'Transferencia bancaria'],
-];
 
 const statusLabels = {
   requested: 'Solicitud pendiente',
@@ -64,9 +54,7 @@ const UserVip = () => {
   const [reservations, setReservations] = useState([]);
   const [accessLogs, setAccessLogs] = useState([]);
   const [payments, setPayments] = useState([]);
-  const [paymentMethod, setPaymentMethod] = useState('nequi');
-  const [autoRenew, setAutoRenew] = useState(false);
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [application, setApplication] = useState(null);
   const [reservationStart, setReservationStart] = useState('');
 
   const loadVip = useCallback(async () => {
@@ -85,6 +73,14 @@ const UserVip = () => {
       .eq('user_id', user.id)
       .maybeSingle();
 
+    const { data: applicationData } = await supabase
+      .from('vip_applications')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     if (error && error.code !== 'PGRST116') {
       toast({
         variant: 'destructive',
@@ -95,6 +91,7 @@ const UserVip = () => {
 
     setPlan(planData || membershipData?.vip_plans || null);
     setMembership(membershipData || null);
+    setApplication(applicationData || null);
 
     if (membershipData?.id) {
       const [tokenResult, reservationResult, logsResult, paymentsResult] = await Promise.all([
@@ -165,36 +162,6 @@ const UserVip = () => {
   const accessUrl = token?.token
     ? `${window.location.origin}/vip/access/${token.token}`
     : '';
-
-  const requestMembership = async () => {
-    if (!acceptedTerms) {
-      toast({
-        variant: 'destructive',
-        title: 'Aceptación necesaria',
-        description: 'Debes aceptar el reglamento y el tratamiento de datos.',
-      });
-      return;
-    }
-
-    setWorking(true);
-    const { error } = await supabase.rpc('vip_request_membership', {
-      p_plan_code: 'vip-mensual',
-      p_payment_method: paymentMethod,
-      p_auto_renew: autoRenew,
-    });
-    setWorking(false);
-
-    if (error) {
-      toast({ variant: 'destructive', title: 'No se pudo solicitar', description: error.message });
-      return;
-    }
-
-    toast({
-      title: 'Solicitud registrada',
-      description: 'Administración revisará el pago, la identidad y la disponibilidad.',
-    });
-    loadVip();
-  };
 
   const createReservation = async () => {
     if (!reservationStart) return;
@@ -281,47 +248,32 @@ const UserVip = () => {
           </section>
 
           <section className="rounded-3xl border border-white/10 bg-[#111322] p-7">
-            <h2 className="text-xl font-black text-white">Datos de la solicitud</h2>
-            <label className="mt-5 block text-sm font-semibold text-[#c7c9dd]">
-              Medio de pago preferido
-            </label>
-            <select
-              value={paymentMethod}
-              onChange={(event) => setPaymentMethod(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-white/10 bg-[#050510] px-4 py-3 text-white"
-            >
-              {paymentMethods.map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
+            <h2 className="text-xl font-black text-white">Afiliación en tres pasos</h2>
+            <ol className="mt-5 space-y-4 text-sm text-[#c7c9dd]">
+              <li><strong className="text-white">1.</strong> Completa la solicitud y adjunta los documentos.</li>
+              <li><strong className="text-white">2.</strong> Paga el primer mes en línea con Bold.</li>
+              <li><strong className="text-white">3.</strong> Administración verifica identidad y habilita el acceso.</li>
+            </ol>
 
-            <label className="mt-5 flex items-start gap-3 text-sm text-[#c7c9dd]">
-              <input
-                type="checkbox"
-                checked={autoRenew}
-                onChange={(event) => setAutoRenew(event.target.checked)}
-                className="mt-1"
-              />
-              Autorizo la renovación mensual. Podré detenerla antes del siguiente cobro.
-            </label>
-            <label className="mt-4 flex items-start gap-3 text-sm text-[#c7c9dd]">
-              <input
-                type="checkbox"
-                checked={acceptedTerms}
-                onChange={(event) => setAcceptedTerms(event.target.checked)}
-                className="mt-1"
-              />
-              Acepto el reglamento de la sala y la política de tratamiento de datos.
-            </label>
-
-            <button
-              onClick={requestMembership}
-              disabled={working}
-              className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-300 px-5 py-3 font-black text-[#0b0710] disabled:opacity-50"
-            >
-              {working ? <Loader2 className="animate-spin" size={18} /> : <Crown size={18} />}
-              Enviar solicitud
-            </button>
+            {application?.status === 'payment_pending' ? (
+              <Link
+                to="/vip/checkout"
+                onClick={() => sessionStorage.setItem('vip_application_id', application.id)}
+                className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-300 px-5 py-3 font-black text-[#0b0710]"
+              >
+                <CreditCard size={18} /> Continuar pago pendiente
+              </Link>
+            ) : (
+              <Link
+                to="/user/vip/apply"
+                className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-300 px-5 py-3 font-black text-[#0b0710]"
+              >
+                <Crown size={18} /> Completar solicitud y pagar
+              </Link>
+            )}
+            <p className="mt-4 text-xs leading-5 text-[#8589aa]">
+              La solicitud solamente se envía después de que el servidor confirma el pago.
+            </p>
           </section>
         </div>
       </div>

@@ -57,6 +57,7 @@ import UserWishlist from '@/pages/user/UserWishlist';
 import UserPQR from '@/pages/user/UserPQR';
 import UserChat from '@/pages/user/UserChat';
 import UserVip from '@/pages/user/UserVip';
+import VipApplication from '@/pages/user/VipApplication';
 import PublicPQR from '@/pages/PublicPQR';
 import DidYouKnow from '@/pages/DidYouKnow';
 import Podcast from '@/pages/Podcast';
@@ -66,6 +67,8 @@ import BoldSuccess from '@/pages/BoldSuccess';
 import StoreProductDetail from '@/pages/StoreProductDetail';
 import Vip from '@/pages/Vip';
 import VipAccess from '@/pages/VipAccess';
+import VipCheckout from '@/pages/VipCheckout';
+import VipPaymentResult from '@/pages/VipPaymentResult';
 import { trackPageView } from '@/lib/analytics';
 
 
@@ -167,6 +170,8 @@ function App() {
                 <Route path="/did-you-know" element={<div className="pt-16"><DidYouKnow /></div>} />
                 <Route path="/podcast" element={<div className="pt-16"><Podcast /></div>} />
                 <Route path="/vip" element={<Vip />} />
+                <Route path="/vip/checkout" element={<VipCheckout />} />
+                <Route path="/vip/pago/resultado" element={<VipPaymentResult />} />
                 <Route path="/vip/access/:token" element={<VipAccess />} />
                 <Route path="/policies" element={<div className="pt-16"><Policies /></div>} />
 
@@ -186,6 +191,7 @@ function App() {
                   <Route path="pqr" element={<UserPQR />} />
                   <Route path="chat" element={<UserChat />} />
                   <Route path="vip" element={<UserVip />} />
+                  <Route path="vip/apply" element={<VipApplication />} />
                 </Route>
               </Routes>
             </main>
