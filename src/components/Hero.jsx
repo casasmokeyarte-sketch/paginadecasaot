@@ -298,11 +298,19 @@ const Hero = () => {
             </span>
             
             <h2 className="text-white text-3xl md:text-4xl font-black uppercase tracking-tight mb-4">
-              CONÉCTATE AL <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-[#00e5ff] font-black">CHAT-OT</span> DE LA OFICINA
+              CONÉCTATE AL 
+              <motion.span
+                animate={{ opacity: [1, 0.35, 1] }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                className="text-[#ff2df0] drop-shadow-[0_0_18px_rgba(255,45,240,0.85)]"
+              >
+                NUEVO
+              </motion.span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-[#00e5ff] font-black"> CHAT-OT</span> 
             </h2>
             
             <p className="text-slate-300 text-sm md:text-base leading-relaxed mb-6 font-medium">
-              Te presentamos el nuevo canal de comunicación interna. Diseñado para integrar a todo el equipo en tiempo real: coordina tus citas de tatuajes, revisa el inventario de la Smoke Shop, consulta dudas del estudio y chatea de forma privada o grupal. ¡Todo el equipo a un clic!
+              ¡Bienvenidos a Chat-OT, la nueva y emocionante sección de Casa Smokey Arte! Aquí, nuestros clientes tienen la oportunidad de socializar de manera privada y segura. En Chat-OT, puedes conversar libremente y sin prejuicios, compartiendo tus pensamientos e intereses con personas que valoran lo mismo que tú. Esta plataforma está diseñada para fomentar un ambiente acogedor y respetuoso, donde cada miembro puede expresarse sin temor a ser juzgado. Únete a nosotros y descubre la magia de conectar con una comunidad apasionada y afín. Recuerda, si estás aquí, es porque compartes el mismo amor por el arte y la creatividad que todos en Casa Smokey Arte. ¡Esperamos verte pronto en Chat-OT!
             </p>
 
             <button
@@ -333,6 +341,11 @@ const Hero = () => {
                 className="w-full max-w-[320px] md:max-w-none h-64 object-cover hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0e0a1f] via-transparent to-transparent opacity-80"></div>
+              <div className="absolute top-4 left-4 right-4 flex items-center justify-center">
+                <span className="text-xs md:text-sm font-black uppercase tracking-[0.28em] text-transparent bg-clip-text bg-gradient-to-r from-[#ff2df0] via-[#ff8ef4] to-[#00e5ff] drop-shadow-[0_0_14px_rgba(255,45,240,0.95)]">
+                  chat-ot
+                </span>
+              </div>
               <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
                 <span className="text-[10px] text-white/70 font-black uppercase tracking-wider">Casa Smoke & Arte</span>
                 <span className="text-[10px] text-[#00e5ff] font-black uppercase tracking-wider flex items-center gap-1">
