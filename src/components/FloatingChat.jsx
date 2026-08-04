@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import UserProfileViewModal from '@/components/UserProfileViewModal';
 import { useChatPresence } from '@/components/ChatPresenceTracker';
+import { PresenceDot, PresenceLabel } from '@/components/chat/PresenceIndicator';
 
 const POPULAR_EMOJIS = [
   "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", 
@@ -296,6 +297,7 @@ const FloatingChat = () => {
                           {rooms.map((room) => {
                             const isUnread = unreadRooms.includes(room.id);
                             const otherParticipant = room.participants.find(p => p.id !== user?.id);
+                            const otherPresenceStatus = onlineUsers[otherParticipant?.id]?.status || 'offline';
                             
                             return (
                               <button
@@ -332,7 +334,11 @@ const FloatingChat = () => {
                                       <span className="h-2 w-2 rounded-full bg-pink-500 flex-shrink-0 animate-pulse" />
                                     )}
                                   </div>
-                                  <p className="truncate text-[10px] text-slate-400">{room.is_group ? 'Grupo' : 'Mensaje privado'}</p>
+                                  {room.is_group ? (
+                                    <p className="truncate text-[10px] text-slate-400">Grupo</p>
+                                  ) : (
+                                    <PresenceLabel status={otherPresenceStatus} className="mt-1 text-[9px]" />
+                                  )}
                                 </div>
                               </button>
                             );
@@ -356,8 +362,7 @@ const FloatingChat = () => {
 
                           return combined.map((entry) => {
                             const presenceUser = onlineUsers[entry.id];
-                            const isOnline = !!presenceUser;
-                            const isIdle = presenceUser?.status === 'idle';
+                            const presenceStatusValue = presenceUser?.status || 'offline';
                             
                             return (
                               <div
@@ -375,18 +380,10 @@ const FloatingChat = () => {
                                   title="Ampliar foto de perfil"
                                 >
                                   <img src={entry.avatar_url || '/default-avatar.png'} alt={entry.username || entry.full_name} className="h-9 w-9 rounded-2xl object-cover cursor-zoom-in" />
-                                  {isOnline ? (
-                                    isIdle ? (
-                                      <>
-                                        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0c0814] bg-yellow-500 animate-ping" />
-                                        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0c0814] bg-yellow-500" />
-                                      </>
-                                    ) : (
-                                      <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0c0814] bg-green-500 animate-pulse" />
-                                    )
-                                  ) : (
-                                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0c0814] bg-red-600" />
-                                  )}
+                                  <PresenceDot
+                                    status={presenceStatusValue}
+                                    className="absolute -bottom-0.5 -right-0.5 ring-2 ring-[#0c0814]"
+                                  />
                                 </div>
                                 
                                 {/* Info click triggers active DM chat */}
@@ -397,9 +394,7 @@ const FloatingChat = () => {
                                   <p className="truncate text-xs font-semibold text-white">
                                     {entry.username ? `@${entry.username}` : (entry.full_name || entry.email?.split('@')[0])}
                                   </p>
-                                  <p className="truncate text-[10px] text-pink-300">
-                                    {isOnline ? (isIdle ? '🟡 Ausente' : '🟢 En línea') : '🔴 Desconectado'}
-                                  </p>
+                                  <PresenceLabel status={presenceStatusValue} className="mt-1 text-[9px]" />
                                 </div>
                               </div>
                             );
@@ -442,7 +437,12 @@ const FloatingChat = () => {
                         )}
                         <div className="min-w-0">
                           <p className="max-w-[170px] truncate text-sm font-bold text-white">{activeRoom.displayName}</p>
-                          {!activeRoom.is_group && <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-green-500">Activo</p>}
+                          {!activeRoom.is_group && (
+                            <PresenceLabel
+                              status={onlineUsers[activeRoom.otherParticipant?.id]?.status || 'offline'}
+                              className="mt-1 text-[9px]"
+                            />
+                          )}
                         </div>
                       </button>
                     </div>
@@ -650,8 +650,12 @@ const FloatingChat = () => {
               {unreadRooms.length}
             </span>
           ) : (
-            !isOpen && presenceStatus === 'SUBSCRIBED' && (
-              <span className="absolute top-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#0c0814] bg-green-500 shadow-md shadow-green-500/50 animate-pulse" />
+            !isOpen && (
+              <PresenceDot
+                status={onlineUsers[user?.id]?.status || (presenceStatus === 'SUBSCRIBED' ? 'online' : 'offline')}
+                className="absolute top-0.5 right-0.5 ring-2 ring-[#0c0814]"
+                size="lg"
+              />
             )
           )}
         </motion.button>

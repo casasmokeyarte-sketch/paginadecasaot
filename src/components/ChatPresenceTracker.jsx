@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
@@ -6,6 +6,9 @@ const ChatPresenceContext = createContext({
   onlineUsers: {},
   presenceStatus: 'CLOSED',
 });
+
+const DATABASE_HEARTBEAT_MS = 25000;
+const DATABASE_STALE_MS = 90000;
 
 const toPresenceArray = (presenceEntry) => {
   if (Array.isArray(presenceEntry)) return presenceEntry;
@@ -38,6 +41,29 @@ const extractPresenceUsers = (state) => {
   return users;
 };
 
+const extractDatabaseUsers = (rows) => {
+  const users = {};
+  const now = Date.now();
+
+  (rows || []).forEach((row) => {
+    const lastSeen = new Date(row.last_seen_at).getTime();
+    if (!Number.isFinite(lastSeen) || now - lastSeen > DATABASE_STALE_MS || row.status === 'offline') {
+      return;
+    }
+
+    users[row.user_id] = {
+      id: row.user_id,
+      email: null,
+      full_name: row.display_name || 'Usuario',
+      avatar_url: row.avatar_url || null,
+      online_at: row.last_seen_at,
+      status: row.status === 'idle' ? 'idle' : 'online',
+    };
+  });
+
+  return users;
+};
+
 export const ChatPresenceProvider = ({ children }) => {
   const { user, profile } = useAuth();
   const userId = user?.id || null;
@@ -48,10 +74,42 @@ export const ChatPresenceProvider = ({ children }) => {
   const channelRef = useRef(null);
   const syncIntervalRef = useRef(null);
   const activityTimeoutRef = useRef(null);
+  const databaseIntervalRef = useRef(null);
+  const databaseChannelRef = useRef(null);
+  const presencePayloadRef = useRef({
+    displayName: 'Usuario',
+    avatarUrl: null,
+    status: 'online',
+  });
 
   const [onlineUsers, setOnlineUsers] = useState({});
   const [presenceStatus, setPresenceStatus] = useState('CLOSED');
   const [userStatus, setUserStatus] = useState('online');
+  const [databaseUsers, setDatabaseUsers] = useState({});
+
+  presencePayloadRef.current = {
+    displayName: profileName || userEmail?.split('@')?.[0] || 'Usuario',
+    avatarUrl: profileAvatar,
+    status: userStatus,
+  };
+
+  const loadDatabasePresence = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('chat_user_presence')
+      .select('user_id, display_name, avatar_url, status, last_seen_at')
+      .gte('last_seen_at', new Date(Date.now() - DATABASE_STALE_MS).toISOString());
+
+    if (!error) setDatabaseUsers(extractDatabaseUsers(data));
+  }, []);
+
+  const publishDatabasePresence = useCallback(async (statusOverride = null) => {
+    const payload = presencePayloadRef.current;
+    await supabase.rpc('chat_set_presence', {
+      p_status: statusOverride || payload.status,
+      p_display_name: payload.displayName,
+      p_avatar_url: payload.avatarUrl,
+    });
+  }, []);
 
   const syncPresenceState = () => {
     const nextState = channelRef.current?.presenceState?.() || {};
@@ -91,11 +149,13 @@ export const ChatPresenceProvider = ({ children }) => {
       }
     };
 
+    const handleBlur = () => setUserStatus('idle');
+
     resetIdleTimer();
 
     window.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleActivity);
-    window.addEventListener('blur', () => setUserStatus('idle'));
+    window.addEventListener('blur', handleBlur);
     window.addEventListener('mousemove', handleActivity);
     window.addEventListener('keydown', handleActivity);
     window.addEventListener('click', handleActivity);
@@ -107,13 +167,66 @@ export const ChatPresenceProvider = ({ children }) => {
       }
       window.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleActivity);
-      window.removeEventListener('blur', () => setUserStatus('idle'));
+      window.removeEventListener('blur', handleBlur);
       window.removeEventListener('mousemove', handleActivity);
       window.removeEventListener('keydown', handleActivity);
       window.removeEventListener('click', handleActivity);
       window.removeEventListener('scroll', handleActivity);
     };
   }, [userId]);
+
+  // Shared database heartbeat: gives every authenticated user the same presence view
+  // and survives temporary Presence channel reconnections.
+  useEffect(() => {
+    if (!userId) {
+      setDatabaseUsers({});
+      return undefined;
+    }
+
+    publishDatabasePresence();
+    loadDatabasePresence();
+
+    const databaseChannel = supabase
+      .channel('chat-user-presence-table')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'chat_user_presence' },
+        () => loadDatabasePresence()
+      )
+      .subscribe();
+
+    databaseChannelRef.current = databaseChannel;
+    databaseIntervalRef.current = setInterval(() => {
+      if (!navigator.onLine) return;
+      publishDatabasePresence();
+      loadDatabasePresence();
+    }, DATABASE_HEARTBEAT_MS);
+
+    const handleOnline = () => {
+      publishDatabasePresence('online');
+      loadDatabasePresence();
+    };
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      if (databaseIntervalRef.current) {
+        clearInterval(databaseIntervalRef.current);
+        databaseIntervalRef.current = null;
+      }
+      if (databaseChannelRef.current) {
+        supabase.removeChannel(databaseChannelRef.current);
+        databaseChannelRef.current = null;
+      }
+      publishDatabasePresence('offline');
+      setDatabaseUsers({});
+    };
+  }, [loadDatabasePresence, publishDatabasePresence, userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    publishDatabasePresence(userStatus);
+  }, [publishDatabasePresence, userId, userStatus, profileName, profileAvatar]);
 
   // Sync state with Supabase Presence
   useEffect(() => {
@@ -135,38 +248,11 @@ export const ChatPresenceProvider = ({ children }) => {
       .on('presence', { event: 'sync' }, () => {
         syncPresenceState();
       })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        setOnlineUsers((prev) => {
-          const updated = { ...prev };
-          toPresenceArray(newPresences).forEach((presence) => {
-            const trackedUser = presence?.user_info || presence || {};
-            const trackedUserId = presence?.user_id || trackedUser.id || key;
-
-            if (!trackedUserId) return;
-
-            updated[trackedUserId] = {
-              id: trackedUserId,
-              email: trackedUser.email || null,
-              full_name: trackedUser.full_name || trackedUser.email?.split?.('@')?.[0] || 'Usuario',
-              avatar_url: trackedUser.avatar_url || null,
-              online_at: trackedUser.online_at || new Date().toISOString(),
-              status: trackedUser.status || 'online',
-            };
-          });
-          return updated;
-        });
+      .on('presence', { event: 'join' }, () => {
+        window.setTimeout(syncPresenceState, 0);
       })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        setOnlineUsers((prev) => {
-          const updated = { ...prev };
-          toPresenceArray(leftPresences).forEach((presence) => {
-            const trackedUser = presence?.user_info || presence || {};
-            const trackedUserId = presence?.user_id || trackedUser.id || key;
-
-            if (trackedUserId) delete updated[trackedUserId];
-          });
-          return updated;
-        });
+      .on('presence', { event: 'leave' }, () => {
+        window.setTimeout(syncPresenceState, 0);
       });
 
     channel.subscribe((status) => {
@@ -227,8 +313,13 @@ export const ChatPresenceProvider = ({ children }) => {
     };
   }, [presenceStatus, userId, userEmail, profileName, profileAvatar, userStatus]);
 
+  const sharedOnlineUsers = useMemo(
+    () => ({ ...databaseUsers, ...onlineUsers }),
+    [databaseUsers, onlineUsers]
+  );
+
   return (
-    <ChatPresenceContext.Provider value={{ onlineUsers, presenceStatus }}>
+    <ChatPresenceContext.Provider value={{ onlineUsers: sharedOnlineUsers, presenceStatus }}>
       {children}
     </ChatPresenceContext.Provider>
   );

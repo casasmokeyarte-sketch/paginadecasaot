@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import UserProfileViewModal from '@/components/UserProfileViewModal';
+import { PresenceDot, PresenceLabel } from '@/components/chat/PresenceIndicator';
 
 const POPULAR_EMOJIS = [
   "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", 
@@ -375,6 +376,7 @@ const UserChat = () => {
                  {rooms.map(room => {
                    const isUnread = unreadRooms.includes(room.id);
                    const otherParticipant = room.participants.find(p => p.id !== user?.id);
+                   const otherPresenceStatus = onlineUsers[otherParticipant?.id]?.status || 'offline';
                    
                    return (
                      <button
@@ -419,9 +421,13 @@ const UserChat = () => {
                              <span className="w-2.5 h-2.5 bg-pink-500 rounded-full flex-shrink-0 animate-pulse" />
                            )}
                          </div>
-                         <p className="text-xs text-[#a7a8c7] truncate">
-                           {room.is_group ? `${room.participants.length} participantes` : 'Mensaje privado'}
-                         </p>
+                         {room.is_group ? (
+                           <p className="text-xs text-[#a7a8c7] truncate">
+                             {room.participants.length} participantes
+                           </p>
+                         ) : (
+                           <PresenceLabel status={otherPresenceStatus} className="mt-1" />
+                         )}
                        </div>
                      </button>
                    );
@@ -453,8 +459,7 @@ const UserChat = () => {
 
                   return combinedList.map(u => {
                     const presenceUser = onlineUsers[u.id];
-                    const isOnline = !!presenceUser;
-                    const isIdle = presenceUser?.status === 'idle';
+                    const presenceStatusValue = presenceUser?.status || 'offline';
                     
                     return (
                       <div
@@ -474,18 +479,11 @@ const UserChat = () => {
                           <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500/30 to-purple-600/30 border border-pink-500/30 flex items-center justify-center text-xs font-bold text-white overflow-hidden">
                             <img src={u.avatar_url || '/default-avatar.png'} alt="Avatar" className="w-full h-full object-cover cursor-zoom-in" />
                           </div>
-                          {isOnline ? (
-                            isIdle ? (
-                              <>
-                                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-yellow-500 border-2 border-[#0b0c15] rounded-full animate-ping" />
-                                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-yellow-500 border-2 border-[#0b0c15] rounded-full" />
-                              </>
-                            ) : (
-                              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#0b0c15] rounded-full animate-pulse" />
-                            )
-                          ) : (
-                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-red-600 border-2 border-[#0b0c15] rounded-full" />
-                          )}
+                          <PresenceDot
+                            status={presenceStatusValue}
+                            className="absolute bottom-0 right-0 ring-2 ring-[#0b0c15]"
+                            size="sm"
+                          />
                         </div>
                         
                         {/* Clickable Username/Status to Start DM */}
@@ -496,9 +494,7 @@ const UserChat = () => {
                           <p className="text-xs font-medium text-[#a7a8c7] group-hover:text-white truncate">
                             {u.username ? `@${u.username}` : (u.full_name || u.email?.split('@')[0])}
                           </p>
-                          <span className="text-[9px] text-slate-500 block truncate">
-                            {isOnline ? (isIdle ? '🟡 Ausente' : '🟢 En línea') : '🔴 Desconectado'}
-                          </span>
+                          <PresenceLabel status={presenceStatusValue} className="mt-1" />
                         </div>
                       </div>
                     );
@@ -564,6 +560,12 @@ const UserChat = () => {
                  </div>
                  <div>
                    <h3 className="font-bold text-white">{activeRoom.displayName}</h3>
+                   {!activeRoom.is_group && (
+                     <PresenceLabel
+                       status={onlineUsers[activeRoom.otherParticipant?.id]?.status || 'offline'}
+                       className="mt-1"
+                     />
+                   )}
                    {activeRoom.is_group && (
                      <p className="text-xs text-[#a7a8c7]">
                         {activeRoom.participants.map(p => p.username ? `@${p.username}` : p.full_name?.split(' ')[0]).join(', ').slice(0, 30)}
