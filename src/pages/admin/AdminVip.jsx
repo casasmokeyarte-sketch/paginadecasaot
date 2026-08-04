@@ -50,6 +50,7 @@ const AdminVip = () => {
   const [applications, setApplications] = useState({});
   const [todayReservations, setTodayReservations] = useState([]);
   const [todayAccesses, setTodayAccesses] = useState([]);
+  const [todayGuestAccesses, setTodayGuestAccesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [workingId, setWorkingId] = useState(null);
 
@@ -60,7 +61,7 @@ const AdminVip = () => {
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
 
-    const [membersResult, reservationsResult, accessResult, applicationsResult] = await Promise.all([
+    const [membersResult, reservationsResult, accessResult, guestAccessResult, applicationsResult] = await Promise.all([
       supabase
         .from('vip_memberships')
         .select('*, vip_plans(*)')
@@ -73,6 +74,12 @@ const AdminVip = () => {
         .order('starts_at'),
       supabase
         .from('vip_access_logs')
+        .select('*')
+        .gte('checked_in_at', start.toISOString())
+        .lt('checked_in_at', end.toISOString())
+        .order('checked_in_at', { ascending: false }),
+      supabase
+        .from('vip_guest_visits')
         .select('*')
         .gte('checked_in_at', start.toISOString())
         .lt('checked_in_at', end.toISOString())
@@ -97,6 +104,7 @@ const AdminVip = () => {
     setMemberships(memberRows);
     setTodayReservations(reservationsResult.data || []);
     setTodayAccesses(accessResult.data || []);
+    setTodayGuestAccesses(guestAccessResult.data || []);
     setApplications(
       Object.fromEntries(
         (applicationsResult.data || []).map((application) => [application.user_id, application])
@@ -140,8 +148,10 @@ const AdminVip = () => {
     active: memberships.filter((item) => item.status === 'active').length,
     pending: memberships.filter((item) => item.status === 'requested').length,
     reservations: todayReservations.filter((item) => !['cancelled', 'no_show'].includes(item.status)).length,
-    inside: todayAccesses.filter((item) => !item.checked_out_at).length,
-  }), [memberships, todayAccesses, todayReservations]);
+    inside:
+      todayAccesses.filter((item) => !item.checked_out_at).length
+      + todayGuestAccesses.filter((item) => !item.checked_out_at).length,
+  }), [memberships, todayAccesses, todayGuestAccesses, todayReservations]);
 
   const runAction = async (membershipId, action, successMessage) => {
     setWorkingId(membershipId);

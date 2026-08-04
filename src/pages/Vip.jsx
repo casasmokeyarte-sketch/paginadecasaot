@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  UserPlus,
   Users,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -42,6 +43,11 @@ const benefits = [
     description: 'Acumula puntos y recibe ventajas en actividades seleccionadas.',
   },
   {
+    icon: UserPlus,
+    title: '3 amigos al mes',
+    description: 'Comparte la experiencia con hasta tres invitados por periodo, acompañados por el titular.',
+  },
+  {
     icon: Users,
     title: 'Eventos exclusivos',
     description: 'Acceso preferente a noches temáticas y actividades VIP.',
@@ -55,6 +61,8 @@ const rules = [
   'Alimentos para consumo razonable dentro de la sala.',
   'Uso responsable de controles, muebles y equipos.',
   'Verificación de identidad y cumplimiento de restricciones de edad.',
+  'Los invitados deben ser mayores de 18 años, presentar documento e ingresar con el titular.',
+  'Los tres pases de amigos se renuevan con cada periodo mensual y no son acumulables.',
 ];
 
 const Vip = () => {

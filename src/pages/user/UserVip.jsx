@@ -10,6 +10,7 @@ import {
   Loader2,
   Nfc,
   ShieldAlert,
+  UserPlus,
   XCircle,
 } from 'lucide-react';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -53,6 +54,7 @@ const UserVip = () => {
   const [token, setToken] = useState(null);
   const [reservations, setReservations] = useState([]);
   const [accessLogs, setAccessLogs] = useState([]);
+  const [guestVisits, setGuestVisits] = useState([]);
   const [payments, setPayments] = useState([]);
   const [application, setApplication] = useState(null);
   const [reservationStart, setReservationStart] = useState('');
@@ -94,7 +96,7 @@ const UserVip = () => {
     setApplication(applicationData || null);
 
     if (membershipData?.id) {
-      const [tokenResult, reservationResult, logsResult, paymentsResult] = await Promise.all([
+      const [tokenResult, reservationResult, logsResult, paymentsResult, guestsResult] = await Promise.all([
         supabase
           .from('vip_access_tokens')
           .select('*')
@@ -120,17 +122,25 @@ const UserVip = () => {
           .eq('status', 'approved')
           .order('period_start', { ascending: false })
           .limit(20),
+        supabase
+          .from('vip_guest_visits')
+          .select('*')
+          .eq('membership_id', membershipData.id)
+          .order('checked_in_at', { ascending: false })
+          .limit(50),
       ]);
 
       setToken(tokenResult.data || null);
       setReservations(reservationResult.data || []);
       setAccessLogs(logsResult.data || []);
       setPayments(paymentsResult.data || []);
+      setGuestVisits(guestsResult.data || []);
     } else {
       setToken(null);
       setReservations([]);
       setAccessLogs([]);
       setPayments([]);
+      setGuestVisits([]);
     }
 
     setLoading(false);
@@ -158,6 +168,25 @@ const UserVip = () => {
       return checkIn >= start && checkIn < end;
     }).length;
   }, [accessLogs, membership, payments]);
+
+  const periodGuests = useMemo(() => {
+    if (!membership?.starts_at) return guestVisits.length;
+    const now = Date.now();
+    const currentPayment = payments.find((item) => (
+      item.period_start
+      && item.period_end
+      && new Date(item.period_start).getTime() <= now
+      && new Date(item.period_end).getTime() > now
+    ));
+    const start = new Date(currentPayment?.period_start || membership.starts_at).getTime();
+    const end = currentPayment?.period_end
+      ? new Date(currentPayment.period_end).getTime()
+      : membership.ends_at ? new Date(membership.ends_at).getTime() : Infinity;
+    return guestVisits.filter((item) => {
+      const checkIn = new Date(item.checked_in_at).getTime();
+      return checkIn >= start && checkIn < end;
+    }).length;
+  }, [guestVisits, membership, payments]);
 
   const accessUrl = token?.token
     ? `${window.location.origin}/vip/access/${token.token}`
@@ -294,7 +323,14 @@ const UserVip = () => {
         </span>
       </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="rounded-2xl border border-white/10 bg-[#111322] p-5">
+          <UserPlus className="text-purple-300" />
+          <p className="mt-3 text-xs uppercase tracking-widest text-[#8589aa]">Pases de amigos</p>
+          <p className="mt-1 font-black text-white">
+            {periodGuests} / {membership.vip_plans?.guest_limit ?? 3}
+          </p>
+        </div>
         <div className="rounded-2xl border border-white/10 bg-[#111322] p-5">
           <CreditCard className="text-pink-400" />
           <p className="mt-3 text-xs uppercase tracking-widest text-[#8589aa]">Plan</p>
