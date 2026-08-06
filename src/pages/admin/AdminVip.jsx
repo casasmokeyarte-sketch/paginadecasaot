@@ -10,10 +10,14 @@ import {
   Nfc,
   RefreshCw,
   ShieldCheck,
+  ScanLine,
+  Unlink,
+  Usb,
   Users,
   XCircle,
 } from 'lucide-react';
 import { supabase } from '@/lib/customSupabaseClient';
+import { checkPcscReader, readPcscUid } from '@/lib/nfcPcscBridge';
 import { useToast } from '@/components/ui/use-toast';
 
 const statuses = {
@@ -53,6 +57,10 @@ const AdminVip = () => {
   const [todayGuestAccesses, setTodayGuestAccesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [workingId, setWorkingId] = useState(null);
+  const [readerStatus, setReaderStatus] = useState({ state: 'unknown', reader: '' });
+  const [accessScan, setAccessScan] = useState(null);
+  const [accessUid, setAccessUid] = useState('');
+  const [accessWorking, setAccessWorking] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -280,6 +288,128 @@ const AdminVip = () => {
     }
   };
 
+  const testUsbReader = async () => {
+    setReaderStatus({ state: 'checking', reader: '' });
+    try {
+      const result = await checkPcscReader();
+      const reader = result.preferred_reader || result.readers?.[0] || 'Lector PC/SC';
+      setReaderStatus({ state: 'ready', reader });
+      toast({ title: 'Lector NFC USB conectado', description: reader });
+    } catch (error) {
+      setReaderStatus({ state: 'offline', reader: '' });
+      toast({
+        variant: 'destructive',
+        title: 'Conector NFC no disponible',
+        description: error.message,
+      });
+    }
+  };
+
+  const bindUsbCard = async (membership) => {
+    if (membership.status !== 'active' || !membership.adult_verified) {
+      toast({
+        variant: 'destructive',
+        title: 'Membresía no preparada',
+        description: 'Activa la membresía y completa primero la verificación administrativa.',
+      });
+      return;
+    }
+
+    setWorkingId(membership.id);
+    try {
+      toast({
+        title: 'Esperando tarjeta NFC',
+        description: 'Coloca ahora la NTAG215 sobre el lector USB y mantenla quieta.',
+      });
+      const card = await readPcscUid();
+      const { error } = await supabase.rpc('vip_admin_bind_card_uid', {
+        p_membership_id: membership.id,
+        p_card_uid: card.uid,
+        p_card_type: 'NTAG215',
+        p_reader_label: card.reader || 'Generic Contactless Card Reader 0',
+      });
+      if (error) throw error;
+
+      setReaderStatus({ state: 'ready', reader: card.reader || 'Lector PC/SC' });
+      toast({
+        title: 'Tarjeta NFC vinculada',
+        description: `UID ${card.uid} asignado correctamente a este cliente.`,
+      });
+      await loadData();
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'No se pudo vincular la tarjeta',
+        description: error.message,
+      });
+    } finally {
+      setWorkingId(null);
+    }
+  };
+
+  const unbindUsbCard = async (membership) => {
+    if (!window.confirm('¿Desvincular esta tarjeta física? La membresía no será eliminada.')) return;
+    await runAction(
+      membership.id,
+      () => supabase.rpc('vip_admin_unbind_card_uid', { p_membership_id: membership.id }),
+      'Tarjeta NFC física desvinculada'
+    );
+  };
+
+  const scanUsbAccess = async () => {
+    setAccessWorking(true);
+    setAccessScan(null);
+    setAccessUid('');
+    try {
+      toast({
+        title: 'Esperando tarjeta',
+        description: 'Coloca la NTAG215 del cliente sobre el lector USB.',
+      });
+      const card = await readPcscUid();
+      const { data, error } = await supabase.rpc('vip_validate_access_by_uid', {
+        p_card_uid: card.uid,
+      });
+      if (error) throw error;
+      const result = data?.[0];
+      if (!result) throw new Error('No se encontró una membresía para esta tarjeta.');
+
+      setAccessUid(card.uid);
+      setAccessScan(result);
+      setReaderStatus({ state: 'ready', reader: card.reader || 'Lector PC/SC' });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'No se pudo validar la tarjeta',
+        description: error.message,
+      });
+    } finally {
+      setAccessWorking(false);
+    }
+  };
+
+  const registerUsbAccess = async () => {
+    if (!accessUid || !accessScan) return;
+    setAccessWorking(true);
+    const functionName = accessScan.currently_inside
+      ? 'vip_check_out_by_uid'
+      : 'vip_check_in_by_uid';
+    const { error } = await supabase.rpc(functionName, { p_card_uid: accessUid });
+    setAccessWorking(false);
+
+    if (error) {
+      toast({ variant: 'destructive', title: 'Acceso no registrado', description: error.message });
+      return;
+    }
+
+    toast({
+      title: accessScan.currently_inside ? 'Salida registrada' : 'Ingreso registrado',
+      description: accessScan.member_name,
+    });
+    setAccessScan(null);
+    setAccessUid('');
+    await loadData();
+  };
+
   const rotateToken = async (membershipId) => {
     if (!window.confirm('La tarjeta anterior dejará de funcionar. ¿Deseas continuar?')) return;
     await runAction(
@@ -411,6 +541,87 @@ const AdminVip = () => {
         ))}
       </section>
 
+      <section className="rounded-[30px] border border-cyan-300/20 bg-[linear-gradient(145deg,_rgba(6,182,212,0.10),_#101321)] p-5 md:p-7">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <Usb className="mt-1 text-cyan-300" />
+            <div>
+              <h2 className="text-xl font-black text-white">Lector NFC USB de recepción</h2>
+              <p className="mt-1 text-sm text-[#9da8cf]">
+                Generic Contactless Card Reader · PC/SC · NTAG215
+              </p>
+              <p className={`mt-2 text-xs font-bold ${
+                readerStatus.state === 'ready'
+                  ? 'text-green-300'
+                  : readerStatus.state === 'offline'
+                    ? 'text-red-300'
+                    : 'text-yellow-200'
+              }`}>
+                {readerStatus.state === 'ready'
+                  ? `● Conectado · ${readerStatus.reader}`
+                  : readerStatus.state === 'checking'
+                    ? '● Comprobando conector...'
+                    : readerStatus.state === 'offline'
+                      ? '● Conector local apagado'
+                      : '● Pulsa comprobar lector antes del primer uso'}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={testUsbReader}
+              disabled={readerStatus.state === 'checking' || accessWorking}
+              className="flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm font-black text-cyan-100"
+            >
+              {readerStatus.state === 'checking'
+                ? <Loader2 className="animate-spin" size={17} />
+                : <Usb size={17} />}
+              Comprobar lector
+            </button>
+            <button
+              onClick={scanUsbAccess}
+              disabled={accessWorking}
+              className="flex items-center gap-2 rounded-xl bg-cyan-400 px-4 py-3 text-sm font-black text-[#061018]"
+            >
+              {accessWorking
+                ? <Loader2 className="animate-spin" size={17} />
+                : <ScanLine size={17} />}
+              Leer tarjeta para acceso
+            </button>
+          </div>
+        </div>
+
+        {accessScan && (
+          <div className={`mt-5 rounded-2xl border p-5 ${
+            accessScan.access_allowed
+              ? 'border-green-400/30 bg-green-400/10'
+              : 'border-red-400/30 bg-red-400/10'
+          }`}>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest text-[#aeb6d5]">Tarjeta detectada</p>
+                <p className="mt-2 text-xl font-black text-white">{accessScan.member_name}</p>
+                <p className="mt-1 text-sm text-[#bac2df]">
+                  {accessScan.member_number} · UID {accessUid} · Visitas {accessScan.visits_used}/{accessScan.visit_limit}
+                </p>
+                <p className={`mt-2 text-sm font-bold ${accessScan.access_allowed ? 'text-green-200' : 'text-red-200'}`}>
+                  {accessScan.reason}
+                </p>
+              </div>
+              {accessScan.access_allowed && (
+                <button
+                  onClick={registerUsbAccess}
+                  disabled={accessWorking}
+                  className="rounded-xl bg-white px-5 py-3 text-sm font-black text-[#0b0d18]"
+                >
+                  {accessScan.currently_inside ? 'Registrar salida' : 'Registrar entrada'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+
       <section className="rounded-[30px] border border-white/10 bg-[#101321] p-5 md:p-7">
         <div className="flex items-center gap-3">
           <ShieldCheck className="text-cyan-300" />
@@ -449,6 +660,11 @@ const AdminVip = () => {
                     </div>
                     <p className="mt-2 text-sm text-[#929abc]">
                       {membership.member_number} · {profile?.phone || 'Sin teléfono'} · vence {formatDate(membership.ends_at)}
+                    </p>
+                    <p className="mt-1 text-xs font-bold text-cyan-200">
+                      {tokens[membership.id]?.card_uid
+                        ? `Tarjeta USB vinculada · UID ${tokens[membership.id].card_uid}`
+                        : 'Tarjeta USB sin vincular'}
                     </p>
                     {application && (
                       <div className="mt-2 space-y-1 text-xs text-[#929abc]">
@@ -559,15 +775,32 @@ const AdminVip = () => {
                       className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-3 py-2 text-xs font-black text-white"
                     >
                       {working ? <Loader2 className="animate-spin" size={14} /> : <Nfc size={14} />}
-                      Programar tarjeta
+                      Grabar NFC móvil
                     </button>
+                    <button
+                      onClick={() => bindUsbCard(membership)}
+                      disabled={working}
+                      className="flex items-center gap-1 rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-xs font-black text-cyan-100"
+                    >
+                      {working ? <Loader2 className="animate-spin" size={14} /> : <Usb size={14} />}
+                      {tokens[membership.id]?.card_uid ? 'Cambiar tarjeta USB' : 'Vincular tarjeta USB'}
+                    </button>
+                    {tokens[membership.id]?.card_uid && (
+                      <button
+                        onClick={() => unbindUsbCard(membership)}
+                        disabled={working}
+                        className="flex items-center gap-1 rounded-xl border border-slate-400/20 bg-slate-400/10 px-3 py-2 text-xs font-bold text-slate-200"
+                      >
+                        <Unlink size={14} /> Desvincular USB
+                      </button>
+                    )}
                     {tokens[membership.id] && (
                       <button
                         onClick={() => rotateToken(membership.id)}
                         disabled={working}
                         className="rounded-xl border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs font-bold text-red-200"
                       >
-                        Reemplazar tarjeta
+                        Reemplazar credencial móvil
                       </button>
                     )}
                   </div>
